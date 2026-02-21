@@ -1,0 +1,466 @@
+---
+alwaysApply: true
+---
+
+PRODUCT REQUIREMENTS DOCUMENT (PRD)
+Project: Hybrid Programmable Bag
+1. Product Overview
+1.1 Product Name
+
+Hybrid Programmable Bag
+
+1.2 Product Type
+
+Interactive fashion-tech prototype (physical + digital hybrid system)
+
+1.3 Product Vision
+
+Hybrid Programmable Bag is a 3D-printed sculptural object that merges physical form with programmable digital identity.
+
+The project explores how a physical object can become dynamically customizable through artificial intelligence and real-time web-based interaction.
+
+The bag becomes:
+
+A programmable surface
+A hybrid design object
+A digitally-extended physical artifact
+
+2. Product Goals
+2.1 Primary Goals
+
+Transform a static physical object into a programmable system
+
+Enable real-time interaction between web interface and hardware
+
+Integrate AI-generated visuals into tangible materiality
+
+Create a fully functional prototype
+
+2.2 Success Criteria
+
+The project is successful when:
+
+AI-generated textures can be created via prompt input
+
+Generated images appear on the bag’s screen
+
+LED lighting can be adjusted in real time
+
+Servo motors can be triggered via the website
+
+Communication between website and bag is stable and responsive (<2 seconds latency)
+
+3. Target Audience
+
+Design students
+
+Digital artists
+
+Creative technologists
+
+AI enthusiasts
+
+Interactive media creators
+
+This is an experimental prototype — not a commercial mass-market product.
+
+4. Product Scope
+Included
+
+3D design and 3D printing of the bag
+
+Integration of Raspberry Pi, HDMI screen, LED strip, and servo motors
+
+Development of immersive web interface
+
+AI image generation
+
+Real-time hardware communication
+
+Excluded
+
+Mass production
+
+Industrial waterproofing
+
+Autonomous AI behavior
+
+Advanced robotics
+
+Mobile application
+
+Cloud-scale infrastructure
+
+5. Physical Structure
+5.1 Design
+
+Designed in Blender.
+
+Requirements:
+
+Organic, sculptural form
+
+Flowing geometry
+
+Structural perforations
+
+Internal compartments for electronics
+
+Ventilation openings
+
+Integrated HDMI screen frame
+
+Hidden cable routing
+
+Separate strap component
+
+The bag is intentionally designed as a design object, not a conventional backpack.
+
+5.2 Production
+
+Material:
+
+PLA or PETG
+
+Constraints:
+
+Structural stability
+
+Modular internal access
+
+Safe cable management
+
+Secure screen positioning
+
+6. Hardware Requirements
+6.1 Raspberry Pi (Model 4 Recommended)
+
+Acts as central controller.
+
+Responsibilities:
+
+Receives HTTP or WebSocket requests
+
+Displays image via HDMI
+
+Controls GPIO for LED and servos
+
+6.2 HDMI Display
+
+Integrated into front panel
+
+Minimum resolution: 800x480
+
+Connected via HDMI
+
+Displays AI-generated textures.
+
+6.3 LED Strip
+
+RGB (WS2812B recommended)
+
+Controlled via GPIO
+
+Provides internal illumination
+
+6.4 Servo Motors
+
+1–2 micro servo motors
+
+Subtle, controlled movement
+
+Used to animate decorative elements (e.g. flowers)
+
+Movement must remain safe and minimal.
+
+7. Web Experience & Creative Direction
+7.1 Core Philosophy
+
+The website is not a traditional UI.
+
+It is an immersive WebGL environment.
+
+It should feel like entering a digital gallery or interactive sculpture space — inspired by experimental studios such as Rocani and Viva La Labia.
+
+The website is:
+
+A digital extension of the physical object.
+
+7.2 Frontend Technology Stack
+
+React (Vite)
+
+Three.js
+
+WebGL
+
+GSAP (optional, for advanced animation)
+
+Custom shaders (optional)
+
+Post-processing effects (optional)
+
+The primary foundation is:
+
+React + Three.js + WebGL
+
+GSAP may be used for:
+
+Camera transitions
+
+Micro-interactions
+
+Scroll animations
+
+UI transitions
+
+Motion choreography
+
+7.3 Immersive Scene Concept
+
+Instead of a standard webpage, users enter a 3D environment.
+
+The scene includes:
+
+3D model of the bag
+
+Cinematic lighting
+
+Subtle camera motion
+
+Atmospheric background
+
+Mouse-responsive interaction
+
+Soft shadows and depth
+
+7.4 Interaction Design
+
+The interface elements should feel integrated into the 3D world.
+
+Possible design directions:
+
+Floating prompt input
+
+Animated “Generate” interaction
+
+Interactive color orb for LED control
+
+Clickable hotspot to activate servo
+
+Transition effect when sending image to bag
+
+UI should feel sculptural and spatial, not flat.
+
+7.5 Visual Tone
+
+The website must feel:
+
+Futuristic
+
+Artistic
+
+Experimental
+
+High-end
+
+Minimal but expressive
+
+Not commercial or product-focused
+
+Important aesthetic elements:
+
+Depth through lighting
+
+Ambient shadows
+
+Subtle noise
+
+Reflective materials
+
+Organic motion
+
+8. Functional Requirements
+8.1 AI Image Generation Flow
+
+User Flow:
+
+User writes a prompt (e.g., “Metallic organic texture in blue and silver”)
+
+Clicks “Generate”
+
+Frontend sends prompt to backend
+
+Backend calls OpenAI Image Generation API
+
+Image is returned
+
+Image is previewed in the browser
+
+8.2 Send to Bag Flow
+
+User clicks “Send to Bag”
+
+Frontend sends image (base64 or URL) to Node.js backend
+
+Backend forwards image to Raspberry Pi
+
+Raspberry Pi renders image on HDMI screen
+
+Must occur in real time.
+
+8.3 LED Control
+
+User can:
+
+Select RGB color
+
+Optionally adjust brightness
+
+Flow:
+
+Frontend → Backend → Raspberry Pi → GPIO → LED strip
+
+8.4 Servo Activation
+
+User clicks activation control.
+
+Flow:
+
+Frontend → Backend → Raspberry Pi → GPIO → Servo movement
+
+Movement sequence is predefined and limited.
+
+9. Backend Requirements
+Technology
+
+Node.js
+
+Express
+
+REST API
+
+Optional WebSocket for real-time communication
+
+Local network communication
+
+API Endpoints
+POST /generate-image
+{
+  "prompt": "metallic organic texture blue and silver"
+}
+POST /send-to-bag
+{
+  "image": "base64_image_data"
+}
+POST /set-led
+{
+  "r": 255,
+  "g": 0,
+  "b": 0
+}
+POST /activate-servo
+
+Triggers predefined servo motion.
+
+10. System Architecture
+
+Frontend (React + Three.js + WebGL)
+↓
+Node.js Backend
+↓
+Raspberry Pi Server
+↓
+Hardware Layer (HDMI / LED / Servo)
+
+11. Non-Functional Requirements
+
+Response time under 2 seconds
+
+Stable local network communication
+
+Secure API key management (environment variables)
+
+No exposed wiring
+
+Mechanical safety
+
+Thermal ventilation for Raspberry Pi
+
+12. Risks & Mitigation
+Risk	Mitigation
+Latency	Use WebSocket if needed
+Pi overheating	Ventilation design
+Power issues with LED	External power supply
+Servo instability	Motion limiters
+Screen integration complexity	Prototype testing frame
+13. Development Milestones
+Phase 1 – 3D Design
+
+Blender modeling
+
+Structural validation
+
+Internal compartment planning
+
+Phase 2 – Hardware Integration
+
+Raspberry Pi setup
+
+HDMI testing
+
+LED testing
+
+Servo testing
+
+Phase 3 – Backend Development
+
+Express server
+
+API routes
+
+Pi communication layer
+
+Phase 4 – Immersive Frontend
+
+Three.js scene
+
+Lighting system
+
+Camera choreography
+
+AI integration
+
+Interaction system
+
+Phase 5 – Full Integration
+
+End-to-end testing
+
+Latency optimization
+
+Stability validation
+
+14. Conceptual Positioning
+
+Hybrid Programmable Bag exists between:
+
+Product design
+
+Interactive media
+
+AI-generated art
+
+Hardware engineering
+
+Digital sculpture
+
+It explores programmable matter and dynamic identity.
+
+15. Final Summary
+
+Hybrid Programmable Bag is a sculptural 3D-printed object with embedded digital technology.
+
+Through an immersive WebGL website, users generate AI-driven textures and send them to the bag in real time. LED lighting and subtle mechanical motion extend the object’s dynamic identity.
+
+The project investigates how physical form can become programmable, responsive, and digitally extended.
