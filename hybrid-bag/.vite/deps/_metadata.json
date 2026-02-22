@@ -1,0 +1,76 @@
+{
+  "hash": "5d758ea0",
+  "configHash": "445de851",
+  "lockfileHash": "3c010e22",
+  "browserHash": "d956eaa7",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "7ea92427",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "40b80d93",
+      "needsInterop": true
+    },
+    "three": {
+      "src": "../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "7196b75e",
+      "needsInterop": false
+    },
+    "three/examples/jsm/objects/Reflector.js": {
+      "src": "../../node_modules/three/examples/jsm/objects/Reflector.js",
+      "file": "three_examples_jsm_objects_Reflector__js.js",
+      "fileHash": "3f64ae71",
+      "needsInterop": false
+    },
+    "three/examples/jsm/objects/Water.js": {
+      "src": "../../node_modules/three/examples/jsm/objects/Water.js",
+      "file": "three_examples_jsm_objects_Water__js.js",
+      "fileHash": "083e10bf",
+      "needsInterop": false
+    },
+    "three/examples/jsm/objects/Sky.js": {
+      "src": "../../node_modules/three/examples/jsm/objects/Sky.js",
+      "file": "three_examples_jsm_objects_Sky__js.js",
+      "fileHash": "255c633b",
+      "needsInterop": false
+    },
+    "three/examples/jsm/postprocessing/RenderPass.js": {
+      "src": "../../node_modules/three/examples/jsm/postprocessing/RenderPass.js",
+      "file": "three_examples_jsm_postprocessing_RenderPass__js.js",
+      "fileHash": "020c3e90",
+      "needsInterop": false
+    },
+    "three/examples/jsm/postprocessing/UnrealBloomPass.js": {
+      "src": "../../node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js",
+      "file": "three_examples_jsm_postprocessing_UnrealBloomPass__js.js",
+      "fileHash": "079a44ea",
+      "needsInterop": false
+    },
+    "three/examples/jsm/loaders/RGBELoader.js": {
+      "src": "../../node_modules/three/examples/jsm/loaders/RGBELoader.js",
+      "file": "three_examples_jsm_loaders_RGBELoader__js.js",
+      "fileHash": "66809ede",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-3NNMD2PZ": {
+      "file": "chunk-3NNMD2PZ.js"
+    },
+    "chunk-X3XY4GNL": {
+      "file": "chunk-X3XY4GNL.js"
+    },
+    "chunk-PWS3YOEW": {
+      "file": "chunk-PWS3YOEW.js"
+    },
+    "chunk-BUSYA2B4": {
+      "file": "chunk-BUSYA2B4.js"
+    }
+  }
+}
