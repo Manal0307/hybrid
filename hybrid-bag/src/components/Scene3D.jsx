@@ -23,6 +23,11 @@ const DESCENT_END = 1.8;
 const EMERGENCE_START = 7.5;
 const EMERGENCE_END = 9.0;
 
+/** Rotation Y ajoutée pendant la descente (scroll) — ~1 tour */
+const DESCENT_SPIN_Y = Math.PI * 2;
+/** Petit extra de rotation pendant la ré-émergence */
+const EMERGENCE_SPIN_Y = Math.PI * 0.25;
+
 function createSkyGradientTexture() {
   const w = 1024;
   const h = 512;
@@ -37,9 +42,13 @@ function createSkyGradientTexture() {
   gradient.addColorStop(0.44, "#505eb5");
   gradient.addColorStop(0.48, "#9e8b8a");
   gradient.addColorStop(0.5, "#c9a9a0");
-  gradient.addColorStop(0.52, "#b8958a");
-  gradient.addColorStop(0.56, "#124a9e");
-  gradient.addColorStop(0.75, "#0c3d8c");
+  gradient.addColorStop(0.505, "#d0ccd8");
+  gradient.addColorStop(0.51, "#d5d3de");
+  gradient.addColorStop(0.52, "#d5d3de");
+  gradient.addColorStop(0.56, "#c8cada");
+  gradient.addColorStop(0.62, "#a8b4c8");
+  gradient.addColorStop(0.72, "#5a7aad");
+  gradient.addColorStop(0.84, "#1a4580");
   gradient.addColorStop(1, "#04182e");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, w, h);
@@ -79,8 +88,8 @@ export default function Scene3D() {
       0.05,
       20000,
     );
-    camera.position.set(0, 0.35, 3.2);
-    camera.lookAt(0, 0.6, -2);
+    camera.position.set(0, 0.28, 2.35);
+    camera.lookAt(0, 0.52, -1.85);
 
     // ─── Post-processing (Bloom) ──────────────────────────────────────────
     const composer = new EffectComposer(renderer);
@@ -120,6 +129,8 @@ export default function Scene3D() {
     // ─── Sky ──────────────────────────────────────────────────────────────
     scene.background = createSkyGradientTexture();
 
+    // Pas de fog global — le fondu horizon est géré dans le shader eau
+
     // ─── HDRI environment ─────────────────────────────────────────────────
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
@@ -149,22 +160,28 @@ export default function Scene3D() {
       waterNormals: createWaterNormalsTexture(512),
       sunDirection: sun.clone().normalize(),
       sunColor: 0xffffff,
-      waterColor: 0x0064a5,
-      distortionScale: 0.12,
+      waterColor: 0x3d7eb8,
+      distortionScale: 0.26,
       alpha: 1.0,
       fog: false,
     });
     water.rotation.x = -Math.PI / 2;
-    water.material.transparent = true;
     water.material.uniforms["alpha"].value = 1.0;
-    water.material.transparent = false;
-    water.material.uniforms["size"].value = 28;
+    water.material.uniforms["size"].value = 150;
 
-    // Renforcer les normales pour des vagues plus marquées
+    water.material.transparent = true;
     water.material.onBeforeCompile = (shader) => {
       shader.fragmentShader = shader.fragmentShader.replace(
         "noise.xzy * vec3( 1.5, 1.0, 1.5 )",
-        "noise.xzy * vec3( 1.8, 1.0, 1.8 )",
+        "noise.xzy * vec3( 1.4, 1.0, 1.4 )",
+      );
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "gl_FragColor = vec4( outgoingLight, alpha );",
+        [
+          "float dist = length(worldToEye);",
+          "float horizonFade = smoothstep(40.0, 120.0, dist);",
+          "gl_FragColor = vec4( outgoingLight, alpha * (1.0 - horizonFade) );",
+        ].join("\n"),
       );
     };
 
@@ -260,9 +277,10 @@ export default function Scene3D() {
             bagAnim.yBottom,
             p,
           );
-          bagGroup.rotation.y = Math.PI;
+          bagGroup.rotation.y = Math.PI + p * DESCENT_SPIN_Y;
         } else if (y <= EMERGENCE_START * vh) {
           bagGroup.position.y = bagAnim.yBottom;
+          bagGroup.rotation.y = Math.PI + DESCENT_SPIN_Y;
         } else if (y <= EMERGENCE_END * vh) {
           const p =
             (y - EMERGENCE_START * vh) /
@@ -272,9 +290,14 @@ export default function Scene3D() {
             bagAnim.ySurface,
             p,
           );
-          bagGroup.rotation.y = Math.PI + p * Math.PI * 0.25;
+          bagGroup.rotation.y =
+            Math.PI + DESCENT_SPIN_Y + p * EMERGENCE_SPIN_Y;
         } else {
-          bagGroup.position.y = bagAnim.ySurface;
+          const floatAmplitude = 0.06;
+          const floatSpeed = 1.2;
+          bagGroup.position.y =
+            bagAnim.ySurface +
+            Math.sin(performance.now() * 0.001 * floatSpeed) * floatAmplitude;
         }
 
         const isProduct = y >= EMERGENCE_END * vh;
