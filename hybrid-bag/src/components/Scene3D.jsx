@@ -64,7 +64,7 @@ export default function Scene3D() {
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.62;
+    renderer.toneMappingExposure = 0.85;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x050508, 1);
     renderer.shadowMap.enabled = true;
@@ -79,8 +79,8 @@ export default function Scene3D() {
       0.05,
       20000,
     );
-    camera.position.set(0, 1.6, 3.2);
-    camera.lookAt(0, 1.1, 0);
+    camera.position.set(0, 0.35, 3.2);
+    camera.lookAt(0, 0.6, -2);
 
     // ─── Post-processing (Bloom) ──────────────────────────────────────────
     const composer = new EffectComposer(renderer);
@@ -148,22 +148,23 @@ export default function Scene3D() {
       clipBias: 0.002,
       waterNormals: createWaterNormalsTexture(512),
       sunDirection: sun.clone().normalize(),
-      sunColor: 0xe4c090,
-      waterColor: 0x152535,
-      distortionScale: 0.6,
-      alpha: 0.98,
+      sunColor: 0xffffff,
+      waterColor: 0x0064a5,
+      distortionScale: 0.12,
+      alpha: 1.0,
       fog: false,
     });
     water.rotation.x = -Math.PI / 2;
     water.material.transparent = true;
-    water.material.uniforms["alpha"].value = 0.98;
-    water.material.uniforms["size"].value = 35;
+    water.material.uniforms["alpha"].value = 1.0;
+    water.material.transparent = false;
+    water.material.uniforms["size"].value = 28;
 
     // Renforcer les normales pour des vagues plus marquées
     water.material.onBeforeCompile = (shader) => {
       shader.fragmentShader = shader.fragmentShader.replace(
         "noise.xzy * vec3( 1.5, 1.0, 1.5 )",
-        "noise.xzy * vec3( 2.2, 1.0, 2.2 )",
+        "noise.xzy * vec3( 1.8, 1.0, 1.8 )",
       );
     };
 
@@ -246,7 +247,7 @@ export default function Scene3D() {
     function animate() {
       animationId = requestAnimationFrame(animate);
       timer.update(performance.now());
-      water.material.uniforms["time"].value = timer.getElapsed() * 0.32;
+      water.material.uniforms["time"].value = timer.getElapsed() * 0.25;
 
       if (bagAnim.loaded) {
         const vh = window.innerHeight;
