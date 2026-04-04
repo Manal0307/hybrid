@@ -22,11 +22,39 @@ const HDRI_PATH = new URL(
 const DESCENT_END = 1.8;
 const EMERGENCE_START = 7.5;
 const EMERGENCE_END = 9.0;
+const PEARL_MODEL_PATH = "/models/pearl.glb";
+const PEARL_SURFACE_Y = -0.006;
+const PEARL_LAYOUT = [
+  { x: -2.4, z: 1.52, size: 0.034, delay: 0.02 },
+  { x: -2.02, z: 1.18, size: 0.045, delay: 0.05 },
+  { x: -1.52, z: 0.88, size: 0.038, delay: 0.09 },
+  { x: -1.08, z: 1.36, size: 0.031, delay: 0.13 },
+  { x: 0.98, z: 1.3, size: 0.032, delay: 0.14 },
+  { x: 1.42, z: 0.92, size: 0.037, delay: 0.18 },
+  { x: 1.88, z: 1.16, size: 0.043, delay: 0.22 },
+  { x: 2.28, z: 1.54, size: 0.035, delay: 0.26 },
+  { x: 2.62, z: 0.84, size: 0.04, delay: 0.3 },
+];
 
 /** Rotation Y ajoutée pendant la descente (scroll) — ~1 tour */
 const DESCENT_SPIN_Y = Math.PI * 2;
 /** Petit extra de rotation pendant la ré-émergence */
 const EMERGENCE_SPIN_Y = Math.PI * 0.25;
+
+function createRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function smoothStep(edge0, edge1, x) {
+  const t = THREE.MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
 
 function createSkyGradientTexture() {
   const w = 1024;
@@ -222,6 +250,99 @@ export default function Scene3D() {
       loaded: false,
     };
 
+    const pearlGroup = new THREE.Group();
+    scene.add(pearlGroup);
+
+    const pearlGeometry = new THREE.SphereGeometry(1, 40, 40);
+    const pearlMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xf8f1ea,
+      roughness: 0.12,
+      metalness: 0.02,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
+      reflectivity: 0.9,
+      envMapIntensity: 1.5,
+    });
+    let pearlPrototype = null;
+
+    const random = createRandom(1229);
+    const pearlData = PEARL_LAYOUT.map((layout) => {
+      const size = layout.size;
+      const mesh = new THREE.Mesh(pearlGeometry, pearlMaterial);
+      mesh.scale.setScalar(size);
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      pearlGroup.add(mesh);
+
+      return {
+        node: mesh,
+        size,
+        baseX: layout.x,
+        baseZ: bagGroup.position.z + layout.z,
+        startDepth: 0.16 + random() * 0.22,
+        launchDelay: layout.delay + random() * 0.025,
+        bounceAmplitude: 0.08 + random() * 0.12,
+        bounceFrequency: 1.8 + random() * 1.2,
+        driftPhase: random() * Math.PI * 2,
+        surfaceOffset: (random() - 0.5) * 0.005,
+      };
+    });
+
+    function createPearlClone(size) {
+      if (!pearlPrototype) {
+        const mesh = new THREE.Mesh(pearlGeometry, pearlMaterial);
+        mesh.scale.setScalar(size);
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        return mesh;
+      }
+
+      const clone = pearlPrototype.clone(true);
+      clone.scale.setScalar(size * 1.2);
+      clone.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = false;
+          child.receiveShadow = false;
+        }
+      });
+      return clone;
+    }
+
+    new GLTFLoader().load(
+      PEARL_MODEL_PATH,
+      (gltf) => {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        model.scale.setScalar(1 / maxDim);
+        model.position.set(
+          -center.x / maxDim,
+          -center.y / maxDim,
+          -center.z / maxDim,
+        );
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = false;
+            child.receiveShadow = false;
+          }
+        });
+        pearlPrototype = model;
+
+        for (const pearl of pearlData) {
+          pearlGroup.remove(pearl.node);
+          pearl.node = createPearlClone(pearl.size);
+          pearlGroup.add(pearl.node);
+        }
+      },
+      undefined,
+      () =>
+        console.warn(
+          "pearl.glb introuvable dans public/models — fallback sur sphères.",
+        ),
+    );
+
     new GLTFLoader().load(
       "/models/codebag.glb",
       (gltf) => {
@@ -269,6 +390,13 @@ export default function Scene3D() {
       if (bagAnim.loaded) {
         const vh = window.innerHeight;
         const y = window.scrollY;
+        const emergenceProgress = THREE.MathUtils.clamp(
+          (y - EMERGENCE_START * vh) /
+            ((EMERGENCE_END - EMERGENCE_START) * vh),
+          0,
+          1,
+        );
+        const elapsed = timer.getElapsed();
 
         if (y <= DESCENT_END * vh) {
           const p = y / (DESCENT_END * vh);
@@ -316,6 +444,46 @@ export default function Scene3D() {
           bagGroup.rotation.y += drag.velocityY;
           drag.velocityY *= 0.95;
         }
+
+        for (const pearl of pearlData) {
+          const launch = THREE.MathUtils.clamp(
+            emergenceProgress * 1.18 - pearl.launchDelay,
+            0,
+            1.2,
+          );
+          const release = smoothStep(0, 0.22, launch);
+          const settleY = PEARL_SURFACE_Y + pearl.surfaceOffset;
+          const entryY = THREE.MathUtils.lerp(
+            -pearl.startDepth,
+            settleY,
+            release,
+          );
+
+          let bounce = 0;
+          if (launch > 0.12) {
+            const bounceTime = launch - 0.12;
+            bounce =
+              Math.sin(bounceTime * Math.PI * (2.2 + pearl.bounceFrequency)) *
+              pearl.bounceAmplitude *
+              Math.exp(-bounceTime * 3.2);
+            if (bounce < 0) bounce *= 0.35;
+          }
+
+          const idleLift = smoothStep(0.38, 1, launch);
+          pearl.node.visible = launch > 0.01;
+          pearl.node.position.set(
+            pearl.baseX +
+              Math.sin(elapsed * 0.9 + pearl.driftPhase) * 0.022 * idleLift,
+            entryY +
+              bounce +
+              Math.sin(elapsed * 1.6 + pearl.driftPhase * 0.7) *
+                0.004 *
+                idleLift,
+            pearl.baseZ +
+              Math.cos(elapsed * 0.7 + pearl.driftPhase) * 0.015 * idleLift,
+          );
+          pearl.node.rotation.y = elapsed * (0.6 + pearl.bounceFrequency * 0.15);
+        }
       }
 
       composer.render();
@@ -343,6 +511,8 @@ export default function Scene3D() {
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("pointerleave", onPointerUp);
       pmremGenerator.dispose();
+      pearlGeometry.dispose();
+      pearlMaterial.dispose();
       composer.dispose();
       renderer.dispose();
       if (container && renderer.domElement)

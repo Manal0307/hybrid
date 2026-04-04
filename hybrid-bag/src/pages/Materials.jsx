@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -53,7 +53,7 @@ const MATERIALS = [
   },
 ];
 
-function MaterialViewer({ material, onClose }) {
+function MaterialViewer({ material }) {
   const mountRef = useRef(null);
   const cleanupRef = useRef(null);
 
@@ -67,6 +67,8 @@ function MaterialViewer({ material, onClose }) {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.domElement.style.touchAction = "none";
+    renderer.domElement.style.cursor = "grab";
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -108,6 +110,7 @@ function MaterialViewer({ material, onClose }) {
       drag.active = true;
       drag.prevX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
       drag.velY = 0;
+      renderer.domElement.style.cursor = "grabbing";
     }
     function onMove(e) {
       if (!drag.active) return;
@@ -118,6 +121,7 @@ function MaterialViewer({ material, onClose }) {
     }
     function onUp() {
       drag.active = false;
+      renderer.domElement.style.cursor = "grab";
     }
     renderer.domElement.addEventListener("pointerdown", onDown);
     renderer.domElement.addEventListener("pointermove", onMove);
@@ -165,21 +169,20 @@ function MaterialViewer({ material, onClose }) {
 
   return (
     <div className="material-viewer">
-      <button className="material-viewer-close" onClick={onClose}>
-        &times;
-      </button>
       <div className="material-viewer-scene" ref={mountRef} />
       <div className="material-viewer-info">
         <h3>{material.label}</h3>
         <p>{material.description}</p>
+        <span className="material-viewer-hint">Drag to rotate</span>
       </div>
     </div>
   );
 }
 
 export default function Materials() {
-  const [activeMaterial, setActiveMaterial] = useState(null);
-  const videoRef = useRef(null);
+  const [activeMaterial, setActiveMaterial] = useState(MATERIALS[0]);
+  const leftMaterials = MATERIALS.slice(0, 2);
+  const rightMaterials = MATERIALS.slice(2, 4);
 
   return (
     <div className="materials-page">
@@ -203,44 +206,56 @@ export default function Materials() {
       {/* ─── Section 3 : Zone blanche — 4 cercles matériaux ───────────────── */}
       <section className="mat-circles-section">
         <h2>Explore Our Materials</h2>
-        <div className="mat-circles">
-          {MATERIALS.map((m) => (
-            <button
-              key={m.id}
-              className="mat-circle"
-              style={{ background: m.color }}
-              onClick={() => setActiveMaterial(m)}
-            >
-              <span className="mat-circle-label">{m.label}</span>
-            </button>
-          ))}
+        <div className="mat-showcase">
+          <div className="mat-side-column">
+            {leftMaterials.map((m) => (
+              <button
+                key={m.id}
+                className={`mat-chip ${activeMaterial.id === m.id ? "active" : ""}`}
+                onClick={() => setActiveMaterial(m)}
+              >
+                <span
+                  className="mat-chip-swatch"
+                  style={{ background: m.color }}
+                  aria-hidden
+                />
+                <span className="mat-chip-label">{m.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <MaterialViewer material={activeMaterial} />
+
+          <div className="mat-side-column">
+            {rightMaterials.map((m) => (
+              <button
+                key={m.id}
+                className={`mat-chip ${activeMaterial.id === m.id ? "active" : ""}`}
+                onClick={() => setActiveMaterial(m)}
+              >
+                <span
+                  className="mat-chip-swatch"
+                  style={{ background: m.color }}
+                  aria-hidden
+                />
+                <span className="mat-chip-label">{m.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </section>
-
-      {/* ─── Section 4 : Material 3D viewer (overlay) ─────────────────────── */}
-      {activeMaterial && (
-        <MaterialViewer
-          material={activeMaterial}
-          onClose={() => setActiveMaterial(null)}
-        />
-      )}
 
       {/* ─── Section 5 : Vidéo ────────────────────────────────────────────── */}
       <section className="mat-video-section">
         <div className="mat-video-wrapper">
-          <video
-            ref={videoRef}
+          <iframe
             className="mat-video"
-            playsInline
-            controls
-            muted
-            poster=""
-          >
-            {/* <source src="/videos/materials.mp4" type="video/mp4" /> */}
-          </video>
-          <div className="mat-video-placeholder">
-            <span>Video placeholder</span>
-          </div>
+            src="https://www.youtube.com/embed/nusOkCRcjlw?rel=0"
+            title="Hybrid materials video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
         </div>
       </section>
 
