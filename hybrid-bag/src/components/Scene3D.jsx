@@ -23,18 +23,9 @@ const DESCENT_END = 1.8;
 const EMERGENCE_START = 7.5;
 const EMERGENCE_END = 9.0;
 const PEARL_MODEL_PATH = "/models/pearl.glb";
-const PEARL_SURFACE_Y = -0.006;
-const PEARL_LAYOUT = [
-  { x: -2.4, z: 1.52, size: 0.034, delay: 0.02 },
-  { x: -2.02, z: 1.18, size: 0.045, delay: 0.05 },
-  { x: -1.52, z: 0.88, size: 0.038, delay: 0.09 },
-  { x: -1.08, z: 1.36, size: 0.031, delay: 0.13 },
-  { x: 0.98, z: 1.3, size: 0.032, delay: 0.14 },
-  { x: 1.42, z: 0.92, size: 0.037, delay: 0.18 },
-  { x: 1.88, z: 1.16, size: 0.043, delay: 0.22 },
-  { x: 2.28, z: 1.54, size: 0.035, delay: 0.26 },
-  { x: 2.62, z: 0.84, size: 0.04, delay: 0.3 },
-];
+/** Centre Y des perles : plan d'eau y=0 → moitié de la sphère au-dessus de l'eau */
+const PEARL_SURFACE_Y = 0;
+const PEARL_COUNT = 9;
 
 /** Rotation Y ajoutée pendant la descente (scroll) — ~1 tour */
 const DESCENT_SPIN_Y = Math.PI * 2;
@@ -50,6 +41,65 @@ function createRandom(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+
+/**
+ * 9 perles, positions pseudo-aléatoires (seed fixe).
+ * z est ajouté à bagGroup.position.z (-1.2). Écart minimum entre perles + exclusion du sac.
+ */
+function buildPearlLayout() {
+  const rnd = createRandom(7421);
+  const layout = [];
+  const minDist = 0.48;
+  const bagExcl = 0.92;
+  for (let i = 0; i < PEARL_COUNT; i++) {
+    let x = 0;
+    let zz = 0;
+    let ok = false;
+    for (let attempt = 0; attempt < 220; attempt++) {
+      x = -3.25 + rnd() * 6.5;
+      zz = -1.05 + rnd() * 3.55;
+      if (Math.hypot(x, zz + 0.35) <= bagExcl) continue;
+      ok = layout.every((p) => Math.hypot(p.x - x, p.z - zz) > minDist);
+      if (ok) break;
+    }
+    layout.push({
+      x,
+      z: zz,
+      size: 0.03 + rnd() * 0.028,
+      delay: 0.015 + i * 0.014 + rnd() * 0.02,
+    });
+  }
+  return layout;
+}
+
+const PEARL_LAYOUT = buildPearlLayout();
+
+/**
+ * Points en espace local du bagGroup (origine ≈ centre du modèle).
+ * Ajustables si le mesh GLB change.
+ */
+const BAG_HOTSPOTS = [
+  {
+    title: "Anse & structure",
+    body: "Structure légère et renforcée pour une portée confortable au quotidien.",
+    local: { x: 0, y: 0.44, z: 0.14 },
+  },
+  {
+    title: "Façade avant",
+    body: "Accès rapide aux essentiels et volumes pensés pour la modularité.",
+    local: { x: 0.22, y: 0.06, z: 0.2 },
+  },
+  {
+    title: "Panneau latéral",
+    body: "Zone de personnalisation et détails techniques du programme Hybrid.",
+    local: { x: -0.26, y: 0.02, z: 0.16 },
+  },
+  {
+    title: "Base & finitions",
+    body: "Stabilité au posé et protection des contenus par une base soignée.",
+    local: { x: 0, y: -0.28, z: 0.14 },
+  },
+];
 
 function smoothStep(edge0, edge1, x) {
   const t = THREE.MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1);
@@ -87,6 +137,7 @@ function createSkyGradientTexture() {
 
 export default function Scene3D() {
   const containerRef = useRef(null);
+  const hotspotRefs = useRef([]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -132,6 +183,10 @@ export default function Scene3D() {
 
     // ─── Drag-to-rotate (sac uniquement, caméra fixe) ──────────────────────
     const drag = { active: false, prevX: 0, velocityY: 0, productPhase: false };
+    const worldHotspot = new THREE.Vector3();
+    const localHotspot = new THREE.Vector3();
+    const toPointVec = new THREE.Vector3();
+    const camDir = new THREE.Vector3();
 
     function onPointerDown(e) {
       if (!drag.productPhase) return;
@@ -251,6 +306,7 @@ export default function Scene3D() {
     };
 
     const pearlGroup = new THREE.Group();
+    pearlGroup.renderOrder = 2;
     scene.add(pearlGroup);
 
     const pearlGeometry = new THREE.SphereGeometry(1, 40, 40);
@@ -279,12 +335,8 @@ export default function Scene3D() {
         size,
         baseX: layout.x,
         baseZ: bagGroup.position.z + layout.z,
-        startDepth: 0.16 + random() * 0.22,
-        launchDelay: layout.delay + random() * 0.025,
-        bounceAmplitude: 0.08 + random() * 0.12,
-        bounceFrequency: 1.8 + random() * 1.2,
         driftPhase: random() * Math.PI * 2,
-        surfaceOffset: (random() - 0.5) * 0.005,
+        surfaceOffset: (random() - 0.5) * 0.002,
       };
     });
 
@@ -435,6 +487,64 @@ export default function Scene3D() {
           wasProduct = isProduct;
         }
 
+        bagGroup.updateMatrixWorld(true);
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        camera.getWorldDirection(camDir);
+
+        BAG_HOTSPOTS.forEach((spot, i) => {
+          const el = hotspotRefs.current[i];
+          if (!el) return;
+
+          if (!isProduct || !bagAnim.loaded) {
+            el.style.opacity = "0";
+            el.style.visibility = "hidden";
+            el.style.pointerEvents = "none";
+            el.setAttribute("aria-hidden", "true");
+            return;
+          }
+
+          localHotspot.set(spot.local.x, spot.local.y, spot.local.z);
+          worldHotspot.copy(localHotspot).applyMatrix4(bagGroup.matrixWorld);
+
+          toPointVec.copy(worldHotspot).sub(camera.position);
+          const inFront = toPointVec.dot(camDir) > 0.02;
+          if (!inFront) {
+            el.style.opacity = "0";
+            el.style.visibility = "hidden";
+            el.style.pointerEvents = "none";
+            el.setAttribute("aria-hidden", "true");
+            return;
+          }
+
+          worldHotspot.copy(localHotspot).applyMatrix4(bagGroup.matrixWorld);
+          worldHotspot.project(camera);
+
+          const onScreen =
+            worldHotspot.z > -1 &&
+            worldHotspot.z < 1 &&
+            Math.abs(worldHotspot.x) < 1.15 &&
+            Math.abs(worldHotspot.y) < 1.15;
+
+          if (!onScreen) {
+            el.style.opacity = "0";
+            el.style.visibility = "hidden";
+            el.style.pointerEvents = "none";
+            el.setAttribute("aria-hidden", "true");
+            return;
+          }
+
+          const px = (worldHotspot.x * 0.5 + 0.5) * w;
+          const py = (-worldHotspot.y * 0.5 + 0.5) * h;
+
+          el.style.left = `${px}px`;
+          el.style.top = `${py}px`;
+          el.style.opacity = "1";
+          el.style.visibility = "visible";
+          el.style.pointerEvents = "auto";
+          el.setAttribute("aria-hidden", "false");
+        });
+
         // Inertie : le sac continue de tourner doucement après le drag
         if (
           drag.productPhase &&
@@ -446,43 +556,17 @@ export default function Scene3D() {
         }
 
         for (const pearl of pearlData) {
-          const launch = THREE.MathUtils.clamp(
-            emergenceProgress * 1.18 - pearl.launchDelay,
-            0,
-            1.2,
-          );
-          const release = smoothStep(0, 0.22, launch);
-          const settleY = PEARL_SURFACE_Y + pearl.surfaceOffset;
-          const entryY = THREE.MathUtils.lerp(
-            -pearl.startDepth,
-            settleY,
-            release,
-          );
-
-          let bounce = 0;
-          if (launch > 0.12) {
-            const bounceTime = launch - 0.12;
-            bounce =
-              Math.sin(bounceTime * Math.PI * (2.2 + pearl.bounceFrequency)) *
-              pearl.bounceAmplitude *
-              Math.exp(-bounceTime * 3.2);
-            if (bounce < 0) bounce *= 0.35;
-          }
-
-          const idleLift = smoothStep(0.38, 1, launch);
-          pearl.node.visible = launch > 0.01;
+          pearl.node.visible = true;
+          const bobY =
+            Math.sin(elapsed * 0.8 + pearl.driftPhase) * 0.004;
           pearl.node.position.set(
             pearl.baseX +
-              Math.sin(elapsed * 0.9 + pearl.driftPhase) * 0.022 * idleLift,
-            entryY +
-              bounce +
-              Math.sin(elapsed * 1.6 + pearl.driftPhase * 0.7) *
-                0.004 *
-                idleLift,
+              Math.sin(elapsed * 0.5 + pearl.driftPhase) * 0.012,
+            PEARL_SURFACE_Y + pearl.surfaceOffset + bobY,
             pearl.baseZ +
-              Math.cos(elapsed * 0.7 + pearl.driftPhase) * 0.015 * idleLift,
+              Math.cos(elapsed * 0.4 + pearl.driftPhase) * 0.008,
           );
-          pearl.node.rotation.y = elapsed * (0.6 + pearl.bounceFrequency * 0.15);
+          pearl.node.rotation.y = elapsed * 0.4;
         }
       }
 
@@ -520,5 +604,30 @@ export default function Scene3D() {
     };
   }, []);
 
-  return <div ref={containerRef} className="scene-container" />;
+  return (
+    <>
+      <div ref={containerRef} className="scene-container" />
+      <div className="product-hotspots-layer">
+        {BAG_HOTSPOTS.map((spot, i) => (
+          <div
+            key={spot.title}
+            ref={(el) => {
+              hotspotRefs.current[i] = el;
+            }}
+            className="product-hotspot"
+          >
+            <button
+              type="button"
+              className="product-hotspot__pin"
+              aria-label={spot.title}
+            />
+            <div className="product-hotspot__panel">
+              <h3 className="product-hotspot__title">{spot.title}</h3>
+              <p className="product-hotspot__body">{spot.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
 }
