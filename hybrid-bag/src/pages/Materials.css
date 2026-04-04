@@ -77,7 +77,9 @@
 /* ─── Section 3 : Cercles matériaux ──────────────────────────────────────── */
 .mat-circles-section {
   min-height: 100vh;
-  background: #fff;
+  background:
+    radial-gradient(circle at top, rgba(0, 68, 120, 0.08), transparent 35%),
+    linear-gradient(180deg, #f8f7f3 0%, #ffffff 35%, #f4f1eb 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -95,53 +97,81 @@
   color: #1a1a1a;
 }
 
-.mat-circles {
-  display: flex;
-  gap: 3rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.mat-circle {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
-
-.mat-circle:hover {
-  transform: scale(1.08);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
-}
-
-.mat-circle-label {
-  position: absolute;
-  bottom: -2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #555;
-}
-
-/* ─── Section 4 : Material 3D Viewer (overlay) ───────────────────────────── */
-.material-viewer {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.92);
+.mat-showcase {
+  width: min(1200px, 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4rem;
-  padding: 3rem;
-  animation: fadeIn 0.4s ease;
+  gap: 3rem;
+}
+
+.mat-side-column {
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.mat-chip {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(24, 31, 36, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease,
+    border-color 0.35s ease,
+    background 0.35s ease;
+  box-shadow: 0 16px 40px rgba(26, 35, 46, 0.08);
+}
+
+.mat-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 50px rgba(26, 35, 46, 0.12);
+}
+
+.mat-chip.active {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(24, 31, 36, 0.18);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 22px 60px rgba(26, 35, 46, 0.16);
+}
+
+.mat-chip-swatch {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  border-radius: 50%;
+  box-shadow: inset -10px -12px 18px rgba(0, 0, 0, 0.12);
+}
+
+.mat-chip-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #444;
+}
+
+.material-viewer {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2.5rem 2rem 2rem;
+  border-radius: 36px;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.95), rgba(245, 239, 231, 0.85)),
+    rgba(255, 255, 255, 0.86);
+  box-shadow:
+    0 36px 90px rgba(33, 45, 59, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 @keyframes fadeIn {
@@ -149,34 +179,20 @@
   to { opacity: 1; }
 }
 
-.material-viewer-close {
-  position: absolute;
-  top: 2rem;
-  right: 2.5rem;
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 2.5rem;
-  cursor: pointer;
-  line-height: 1;
-  opacity: 0.6;
-  transition: opacity 0.3s;
-}
-
-.material-viewer-close:hover {
-  opacity: 1;
-}
-
 .material-viewer-scene {
-  width: 50%;
-  max-width: 500px;
+  width: 100%;
+  max-width: 420px;
   aspect-ratio: 1;
-  border-radius: 12px;
+  border-radius: 28px;
   overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.96), rgba(236, 234, 228, 0.6)),
+    linear-gradient(180deg, rgba(234, 235, 240, 0.4), rgba(248, 246, 240, 0.8));
 }
 
 .material-viewer-info {
-  max-width: 360px;
+  max-width: 420px;
+  text-align: center;
 }
 
 .material-viewer-info h3 {
@@ -185,15 +201,24 @@
   font-weight: 300;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin-bottom: 1.5rem;
-  color: #e8ddd0;
+  margin-bottom: 1rem;
+  color: #1b1b1b;
 }
 
 .material-viewer-info p {
   font-size: 1rem;
   line-height: 1.9;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(27, 27, 27, 0.64);
   letter-spacing: 0.02em;
+}
+
+.material-viewer-hint {
+  display: inline-block;
+  margin-top: 1.1rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(27, 27, 27, 0.45);
 }
 
 /* ─── Section 5 : Vidéo ──────────────────────────────────────────────────── */
@@ -203,15 +228,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6rem 2rem;
+  padding: 4rem 0;
 }
 
 .mat-video-wrapper {
   position: relative;
-  width: 80%;
-  max-width: 960px;
+  width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 12px;
+  border-radius: 0;
   overflow: hidden;
   background: #111;
 }
@@ -221,21 +245,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.mat-video-placeholder {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.25);
-  font-size: 1rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  pointer-events: none;
+  border: 0;
 }
 
 /* ─── Section 6 : Retour à l'océan ───────────────────────────────────────── */
@@ -283,22 +293,27 @@
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .material-viewer {
+  .mat-showcase {
     flex-direction: column;
     gap: 2rem;
-    padding: 2rem 1.5rem;
+  }
+
+  .mat-side-column {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .material-viewer {
+    padding: 2rem 1.25rem 1.5rem;
   }
 
   .material-viewer-scene {
-    width: 80%;
+    max-width: 320px;
   }
 
-  .mat-circle {
-    width: 100px;
-    height: 100px;
-  }
-
-  .mat-circles {
-    gap: 2rem;
+  .mat-chip-swatch {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
   }
 }

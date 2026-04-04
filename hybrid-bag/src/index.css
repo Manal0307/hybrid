@@ -23,6 +23,96 @@ body {
   min-height: 100%;
 }
 
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 0;
+  pointer-events: none;
+}
+
+.brand-mark,
+.menu-button,
+.sound-button {
+  pointer-events: auto;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-mark {
+  color: #f6eee3;
+  text-decoration: none;
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.menu-button {
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+.sound-button {
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+.sound-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: #f6eee3;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.menu-button span {
+  display: block;
+  width: 18px;
+  height: 1px;
+  background: #f6eee3;
+}
+
+.sound-button:hover,
+.menu-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
 /* ─── Canvas 3D (fixe derrière tout) ──────────────────────────────────── */
 .scene-container {
   position: fixed;
@@ -137,4 +227,24 @@ body {
 
 .cta-button:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 640px) {
+  .top-nav {
+    padding: 1rem 1rem 0;
+  }
+
+  .brand-mark {
+    letter-spacing: 0.16em;
+  }
+
+  .menu-button {
+    width: 50px;
+    height: 50px;
+  }
+
+  .sound-button {
+    width: 50px;
+    height: 50px;
+  }
 }
