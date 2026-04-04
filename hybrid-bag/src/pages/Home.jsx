@@ -39,13 +39,62 @@ function getSlideOpacity(index, total, progress) {
   return 1;
 }
 
+const LOGO_LETTERS = "HYBRID".split("");
+const INTRO_LINES = [
+  "Where the ocean meets design",
+  "Born from nature, shaped by craft",
+  "A new category of object",
+];
+
 export default function Home() {
+  const [phase, setPhase] = useState("loading");
+  const [loadPercent, setLoadPercent] = useState(0);
   const [fadeOpacity, setFadeOpacity] = useState(0);
   const [textProgress, setTextProgress] = useState(0);
   const [productVisible, setProductVisible] = useState(false);
+  const [scrollHintVisible, setScrollHintVisible] = useState(false);
   const textTrackRef = useRef(null);
 
+  const SCROLL_HINT_HIDE_AFTER = 140;
+
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+    const interval = setInterval(() => {
+      setLoadPercent((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 1;
+      });
+    }, 28);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (loadPercent < 100) return;
+    const t = setTimeout(() => setPhase("intro"), 800);
+    return () => clearTimeout(t);
+  }, [loadPercent]);
+
+  useEffect(() => {
+    if (phase !== "intro") return;
+    const toExit = setTimeout(() => setPhase("introExit"), 9000);
+    return () => clearTimeout(toExit);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "introExit") return;
+    const toScene = setTimeout(() => {
+      setPhase("scene");
+      document.body.style.overflow = "";
+      window.scrollTo(0, 0);
+    }, 2200);
+    return () => clearTimeout(toScene);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "scene") return;
     function onScroll() {
       const vh = window.innerHeight;
       const y = window.scrollY;
@@ -78,14 +127,65 @@ export default function Home() {
       }
 
       setProductVisible(y >= PRODUCT_VH * vh);
+      setScrollHintVisible(y < SCROLL_HINT_HIDE_AFTER);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "scene") {
+      setScrollHintVisible(false);
+      return;
+    }
+    setScrollHintVisible(window.scrollY < SCROLL_HINT_HIDE_AFTER);
+  }, [phase]);
+
+  function handleScrollDownClick() {
+    const step = Math.min(window.innerHeight * 0.45, 520);
+    window.scrollTo({ top: step, behavior: "smooth" });
+  }
 
   return (
     <div className="app">
+      {/* ─── Loading screen ─────────────────────────────────────────────── */}
+      {(phase === "loading" || phase === "intro") && (
+        <div
+          className={`loading-screen ${phase === "intro" ? "fade-out" : ""}`}
+        >
+          <div className="loading-logo">
+            {LOGO_LETTERS.map((letter, i) => (
+              <span
+                key={i}
+                className="loading-letter"
+                style={{ animationDelay: `${0.15 + i * 0.12}s` }}
+              >
+                {letter}
+              </span>
+            ))}
+          </div>
+          <span className="loading-percent">{loadPercent}%</span>
+        </div>
+      )}
+
+      {/* ─── Cinematic intro ────────────────────────────────────────────── */}
+      {(phase === "intro" || phase === "introExit") && (
+        <div
+          className={`intro-screen ${phase === "introExit" ? "intro-screen--fade-out" : ""}`}
+        >
+          {INTRO_LINES.map((line, i) => (
+            <p
+              key={i}
+              className="intro-text"
+              style={{ animationDelay: `${i * 3}s` }}
+            >
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+
       <header className="top-nav">
         <Link to="/" className="brand-mark" aria-label="Hybrid home">
           Hybrid
@@ -113,6 +213,21 @@ export default function Home() {
 
       <Scene3D />
       <div className="fade-overlay" style={{ opacity: fadeOpacity }} />
+
+      {phase === "scene" && (
+        <button
+          type="button"
+          className={`scroll-down-cta ${scrollHintVisible ? "scroll-down-cta--visible" : ""}`}
+          onClick={handleScrollDownClick}
+          aria-label="Scroll down to continue"
+        >
+          <span className="scroll-down-cta__label">Scroll</span>
+          <span className="scroll-down-cta__chevrons" aria-hidden>
+            <span className="scroll-down-cta__chevron" />
+            <span className="scroll-down-cta__chevron" />
+          </span>
+        </button>
+      )}
 
       <div
         className="scroll-spacer"
