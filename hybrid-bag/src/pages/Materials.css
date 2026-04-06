@@ -61,7 +61,7 @@
 }
 
 .mat-hero-title {
-  font-family: "Times New Roman", Georgia, serif;
+  font-family: "Telma", Georgia, serif;
   font-size: clamp(3rem, 9vw, 7.5rem);
   font-weight: 300;
   letter-spacing: 0.25em;
@@ -169,7 +169,7 @@
 }
 
 .mat-story-text h2 {
-  font-family: "Times New Roman", Georgia, serif;
+  font-family: "Telma", Georgia, serif;
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 300;
   letter-spacing: 0.18em;
@@ -256,7 +256,7 @@
 }
 
 .mat-circles-section h2 {
-  font-family: "Times New Roman", Georgia, serif;
+  font-family: "Telma", Georgia, serif;
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 300;
   letter-spacing: 0.18em;
@@ -359,7 +359,7 @@
 }
 
 .material-viewer-info h3 {
-  font-family: "Times New Roman", Georgia, serif;
+  font-family: "Telma", Georgia, serif;
   font-size: clamp(1.4rem, 2.5vw, 2rem);
   font-weight: 300;
   letter-spacing: 0.14em;
@@ -394,7 +394,7 @@
 }
 
 .mat-process h2 {
-  font-family: "Times New Roman", Georgia, serif;
+  font-family: "Telma", Georgia, serif;
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 300;
   letter-spacing: 0.18em;
@@ -437,7 +437,7 @@
 }
 
 .mat-process-step h3 {
-  font-family: "Times New Roman", Georgia, serif;
+  font-family: "Telma", Georgia, serif;
   font-size: clamp(1.2rem, 2vw, 1.5rem);
   font-weight: 300;
   letter-spacing: 0.14em;
@@ -475,7 +475,7 @@
 }
 
 .mat-video-section h2 {
-  font-family: "Times New Roman", Georgia, serif;
+  font-family: "Telma", Georgia, serif;
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 300;
   letter-spacing: 0.18em;
@@ -515,7 +515,7 @@
 }
 
 .mat-return h2 {
-  font-family: "Times New Roman", Georgia, serif;
+  font-family: "Telma", Georgia, serif;
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 300;
   letter-spacing: 0.18em;

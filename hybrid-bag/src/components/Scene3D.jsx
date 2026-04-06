@@ -23,8 +23,18 @@ const DESCENT_END = 1.8;
 const EMERGENCE_START = 7.5;
 const EMERGENCE_END = 9.0;
 const PEARL_MODEL_PATH = "/models/pearl.glb";
-/** Centre Y des perles : plan d'eau y=0 → moitié de la sphère au-dessus de l'eau */
+/** Plan d’eau y=0 — perles à l’équilibre à la surface */
 const PEARL_SURFACE_Y = 0;
+/** Décalage vertical initial : centre de la sphère pour ~moitié immergée (rayon ≈ size) */
+function pearlHalfSubmergedY(size) {
+  return -size * 0.5;
+}
+/** Plus bas que le 50/50 surface : perles un peu plus immergées au repos */
+const PEARL_REST_EXTRA_DEPTH = 0.045;
+/** Lissage max par frame vers la cible scroll (évite les sauts si scroll brutal) */
+const PEARL_EMERGE_MAX_STEP = 0.012;
+/** Bien cachées sous l’eau au début de la scène 2 */
+const PEARL_HIDDEN_EXTRA_DEPTH = 0.14;
 const PEARL_COUNT = 9;
 
 /** Rotation Y ajoutée pendant la descente (scroll) — ~1 tour */
@@ -104,6 +114,14 @@ const BAG_HOTSPOTS = [
 function smoothStep(edge0, edge1, x) {
   const t = THREE.MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1);
   return t * t * (3 - 2 * t);
+}
+
+/** Elastic spring overshoot — effet "myrtille qui sort de la crème" */
+function elasticOut(t) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  const c4 = (2 * Math.PI) / 3.2;
+  return Math.pow(2, -9 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
 }
 
 function createSkyGradientTexture() {
@@ -433,6 +451,9 @@ export default function Scene3D() {
     const timer = new THREE.Timer();
     let animationId;
     let wasProduct = false;
+    /** Suit le scroll avec inertie pour éviter le « pop » si le scroll saute */
+    let pearlEmergeSmooth = 0;
+    let pearlMaterialsReset = false;
 
     function animate() {
       animationId = requestAnimationFrame(animate);
@@ -442,12 +463,6 @@ export default function Scene3D() {
       if (bagAnim.loaded) {
         const vh = window.innerHeight;
         const y = window.scrollY;
-        const emergenceProgress = THREE.MathUtils.clamp(
-          (y - EMERGENCE_START * vh) /
-            ((EMERGENCE_END - EMERGENCE_START) * vh),
-          0,
-          1,
-        );
         const elapsed = timer.getElapsed();
 
         if (y <= DESCENT_END * vh) {
@@ -470,8 +485,7 @@ export default function Scene3D() {
             bagAnim.ySurface,
             p,
           );
-          bagGroup.rotation.y =
-            Math.PI + DESCENT_SPIN_Y + p * EMERGENCE_SPIN_Y;
+          bagGroup.rotation.y = Math.PI + DESCENT_SPIN_Y + p * EMERGENCE_SPIN_Y;
         } else {
           const floatAmplitude = 0.06;
           const floatSpeed = 1.2;
@@ -555,18 +569,71 @@ export default function Scene3D() {
           drag.velocityY *= 0.95;
         }
 
-        for (const pearl of pearlData) {
-          pearl.node.visible = true;
-          const bobY =
-            Math.sin(elapsed * 0.8 + pearl.driftPhase) * 0.004;
-          pearl.node.position.set(
-            pearl.baseX +
-              Math.sin(elapsed * 0.5 + pearl.driftPhase) * 0.012,
-            PEARL_SURFACE_Y + pearl.surfaceOffset + bobY,
-            pearl.baseZ +
-              Math.cos(elapsed * 0.4 + pearl.driftPhase) * 0.008,
+        // Perles: pas en scene 1; scene 2 = cachees sous l’eau puis montent avec le scroll
+        const inScene2 = y >= EMERGENCE_START * vh;
+
+        if (!inScene2) {
+          pearlGroup.visible = false;
+          pearlEmergeSmooth = 0;
+          pearlMaterialsReset = false;
+        } else {
+          pearlGroup.visible = true;
+
+          const emergeTarget = THREE.MathUtils.clamp(
+            (y - EMERGENCE_START * vh) /
+              ((EMERGENCE_END - EMERGENCE_START) * vh),
+            0,
+            1,
           );
-          pearl.node.rotation.y = elapsed * 0.4;
+          if (emergeTarget > pearlEmergeSmooth) {
+            pearlEmergeSmooth = Math.min(
+              pearlEmergeSmooth + PEARL_EMERGE_MAX_STEP,
+              emergeTarget,
+            );
+          } else {
+            pearlEmergeSmooth = emergeTarget;
+          }
+
+          const t = pearlEmergeSmooth;
+
+          for (const pearl of pearlData) {
+            pearl.node.visible = true;
+
+            if (!pearlMaterialsReset) {
+              pearl.node.traverse((child) => {
+                if (!child.isMesh || !child.material) return;
+                const mats = Array.isArray(child.material)
+                  ? child.material
+                  : [child.material];
+                for (const m of mats) {
+                  m.transparent = false;
+                  m.opacity = 1;
+                  m.depthWrite = true;
+                }
+              });
+            }
+
+            const bobY = Math.sin(elapsed * 0.8 + pearl.driftPhase) * 0.0032;
+            const driftX = Math.sin(elapsed * 0.5 + pearl.driftPhase) * 0.012;
+            const driftZ = Math.cos(elapsed * 0.4 + pearl.driftPhase) * 0.008;
+
+            const yDeep =
+              pearlHalfSubmergedY(pearl.size) - PEARL_HIDDEN_EXTRA_DEPTH;
+            const yFloat =
+              -pearl.size * 0.5 -
+              PEARL_REST_EXTRA_DEPTH +
+              pearl.surfaceOffset +
+              bobY;
+            const currentY = THREE.MathUtils.lerp(yDeep, yFloat, t);
+
+            pearl.node.position.set(
+              pearl.baseX + driftX,
+              currentY,
+              pearl.baseZ + driftZ,
+            );
+            pearl.node.rotation.y = elapsed * 0.4;
+          }
+          pearlMaterialsReset = true;
         }
       }
 
