@@ -20,6 +20,10 @@ const HDRI_PATH = new URL(
 
 /* Scroll thresholds (multiples of window.innerHeight) */
 const DESCENT_END = 1.8;
+/** Fin de la descente auto (Home) : sac juste au-dessus de l’eau, face avant visible */
+export const AUTO_DESCENT_SCROLL_END = 0.52;
+/** Rotation Y du devant (face aux trous) — ajuster 0 / PI / PI/2 si besoin */
+const BAG_FRONT_ROTATION_Y = Math.PI;
 const EMERGENCE_START = 7.5;
 const EMERGENCE_END = 9.0;
 const PEARL_MODEL_PATH = "/models/pearl.glb";
@@ -320,6 +324,7 @@ export default function Scene3D() {
       yTop: 2.8,
       yBottom: -1.8,
       ySurface: 0.05,
+      yHover: 0.14,
       loaded: false,
     };
 
@@ -440,8 +445,9 @@ export default function Scene3D() {
         bagAnim.yTop = Math.max(2.8, h * 2.5);
         bagAnim.yBottom = -(h + 0.5);
         bagAnim.ySurface = 0.05;
+        bagAnim.yHover = Math.max(0.1, bagAnim.ySurface + 0.12);
         bagAnim.loaded = true;
-        bagGroup.rotation.y = Math.PI;
+        bagGroup.rotation.y = BAG_FRONT_ROTATION_Y;
       },
       undefined,
       (err) => console.error("Erreur chargement GLB :", err),
@@ -465,17 +471,28 @@ export default function Scene3D() {
         const y = window.scrollY;
         const elapsed = timer.getElapsed();
 
-        if (y <= DESCENT_END * vh) {
-          const p = y / (DESCENT_END * vh);
+        if (y <= AUTO_DESCENT_SCROLL_END * vh) {
+          const p = y / (AUTO_DESCENT_SCROLL_END * vh);
+          const e = smoothStep(0, 1, p);
           bagGroup.position.y = THREE.MathUtils.lerp(
             bagAnim.yTop,
+            bagAnim.yHover,
+            e,
+          );
+          bagGroup.rotation.y = BAG_FRONT_ROTATION_Y;
+        } else if (y <= DESCENT_END * vh) {
+          const p =
+            (y - AUTO_DESCENT_SCROLL_END * vh) /
+            ((DESCENT_END - AUTO_DESCENT_SCROLL_END) * vh);
+          bagGroup.position.y = THREE.MathUtils.lerp(
+            bagAnim.yHover,
             bagAnim.yBottom,
             p,
           );
-          bagGroup.rotation.y = Math.PI + p * DESCENT_SPIN_Y;
+          bagGroup.rotation.y = BAG_FRONT_ROTATION_Y + p * DESCENT_SPIN_Y;
         } else if (y <= EMERGENCE_START * vh) {
           bagGroup.position.y = bagAnim.yBottom;
-          bagGroup.rotation.y = Math.PI + DESCENT_SPIN_Y;
+          bagGroup.rotation.y = BAG_FRONT_ROTATION_Y + DESCENT_SPIN_Y;
         } else if (y <= EMERGENCE_END * vh) {
           const p =
             (y - EMERGENCE_START * vh) /
@@ -485,7 +502,8 @@ export default function Scene3D() {
             bagAnim.ySurface,
             p,
           );
-          bagGroup.rotation.y = Math.PI + DESCENT_SPIN_Y + p * EMERGENCE_SPIN_Y;
+          bagGroup.rotation.y =
+            BAG_FRONT_ROTATION_Y + DESCENT_SPIN_Y + p * EMERGENCE_SPIN_Y;
         } else {
           const floatAmplitude = 0.06;
           const floatSpeed = 1.2;

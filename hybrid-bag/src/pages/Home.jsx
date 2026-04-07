@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import Scene3D from "../components/Scene3D";
+import Scene3D, { AUTO_DESCENT_SCROLL_END } from "../components/Scene3D";
 
 const FADE_IN_START = 1.5;
 const FADE_IN_END = 2.5;
 const FADE_OUT_START = 6.5;
 const FADE_OUT_END = 7.5;
 const PRODUCT_VH = 9.0;
+const AUTO_DESCENT_MS = 4500;
 
 const SPACER1_VH = 3;
 const TEXT_TRACK_VH = 4;
@@ -26,6 +27,10 @@ const TEXTS = [
     body: "Premium materials, innovative structure.\nMade to evolve with you.",
   },
 ];
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 function getSlideOpacity(index, total, progress) {
   const size = 1 / total;
@@ -54,8 +59,11 @@ export default function Home() {
   const [productVisible, setProductVisible] = useState(false);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
   const textTrackRef = useRef(null);
+  const autoDescentCompleteRef = useRef(false);
+  const autoDescentRafRef = useRef(null);
 
-  const SCROLL_HINT_HIDE_AFTER = 140;
+  /** Après la descente auto : bande de scroll où le CTA reste visible (px) */
+  const SCROLL_HINT_AFTER_DESCENT_PX = 420;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -87,10 +95,53 @@ export default function Home() {
     if (phase !== "introExit") return;
     const toScene = setTimeout(() => {
       setPhase("scene");
-      document.body.style.overflow = "";
       window.scrollTo(0, 0);
     }, 2200);
     return () => clearTimeout(toScene);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "scene") {
+      autoDescentCompleteRef.current = false;
+      setScrollHintVisible(false);
+      return;
+    }
+
+    let cancelled = false;
+    window.scrollTo(0, 0);
+    document.body.style.overflow = "hidden";
+    autoDescentCompleteRef.current = false;
+
+    const targetY = AUTO_DESCENT_SCROLL_END * window.innerHeight;
+    const t0 = performance.now();
+
+    function tick(now) {
+      if (cancelled) return;
+      const u = Math.min(1, (now - t0) / AUTO_DESCENT_MS);
+      const eased = easeInOutCubic(u);
+      window.scrollTo(0, targetY * eased);
+      if (u < 1) {
+        autoDescentRafRef.current = requestAnimationFrame(tick);
+      } else {
+        autoDescentCompleteRef.current = true;
+        document.body.style.overflow = "";
+        const descentEnd = AUTO_DESCENT_SCROLL_END * window.innerHeight;
+        const y = window.scrollY;
+        setScrollHintVisible(
+          y >= descentEnd - 48 && y < descentEnd + SCROLL_HINT_AFTER_DESCENT_PX,
+        );
+      }
+    }
+
+    autoDescentRafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      cancelled = true;
+      if (autoDescentRafRef.current != null) {
+        cancelAnimationFrame(autoDescentRafRef.current);
+      }
+      document.body.style.overflow = "";
+    };
   }, [phase]);
 
   useEffect(() => {
@@ -127,24 +178,33 @@ export default function Home() {
       }
 
       setProductVisible(y >= PRODUCT_VH * vh);
-      setScrollHintVisible(y < SCROLL_HINT_HIDE_AFTER);
+
+      const descentEnd = AUTO_DESCENT_SCROLL_END * vh;
+      if (!autoDescentCompleteRef.current) {
+        setScrollHintVisible(false);
+      } else {
+        setScrollHintVisible(
+          y >= descentEnd - 48 &&
+            y < descentEnd + SCROLL_HINT_AFTER_DESCENT_PX,
+        );
+      }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, [phase]);
 
-  useEffect(() => {
-    if (phase !== "scene") {
-      setScrollHintVisible(false);
-      return;
-    }
-    setScrollHintVisible(window.scrollY < SCROLL_HINT_HIDE_AFTER);
-  }, [phase]);
-
   function handleScrollDownClick() {
     const step = Math.min(window.innerHeight * 0.45, 520);
-    window.scrollTo({ top: step, behavior: "smooth" });
+    window.scrollTo({
+      top: window.scrollY + step,
+      behavior: "smooth",
+    });
+  }
+
+  function handleSkipIntro() {
+    if (phase !== "intro") return;
+    setPhase("introExit");
   }
 
   return (
@@ -183,6 +243,16 @@ export default function Home() {
               {line}
             </p>
           ))}
+          {phase === "intro" && (
+            <button
+              type="button"
+              className="intro-skip"
+              onClick={handleSkipIntro}
+              aria-label="Passer l'introduction"
+            >
+              Passer
+            </button>
+          )}
         </div>
       )}
 
