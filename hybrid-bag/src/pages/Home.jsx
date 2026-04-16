@@ -1,17 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import Scene3D, { AUTO_DESCENT_SCROLL_END } from "../components/Scene3D";
+import Scene3D, { BOTTLE_SCROLL_VH } from "../components/Scene3D";
+import ShellLoader from "../components/ShellLoader";
+import MenuOverlay from "../components/MenuOverlay";
 
-const FADE_IN_START = 1.5;
-const FADE_IN_END = 2.5;
-const FADE_OUT_START = 6.5;
-const FADE_OUT_END = 7.5;
-const PRODUCT_VH = 9.0;
-const AUTO_DESCENT_MS = 4500;
+const B = BOTTLE_SCROLL_VH;
 
-const SPACER1_VH = 3;
 const TEXT_TRACK_VH = 4;
-const SPACER2_VH = 3.5;
+// Phase texte : B → B+4 (4vh→8vh). Phase bag : B+4 → fin.
+/** Voile noir s'active juste avant la fin de la bouteille */
+const FADE_BOTTLE_START = B - 0.5;   // 3.5
+/** Noir complet pendant tout le texte */
+const FADE_BOTTLE_FULL = B + 0.3;    // 4.3
+/** Le voile commence à se lever vers la fin du texte */
+const FADE_OUT_START = B + TEXT_TRACK_VH - 0.8; // 7.2
+/** Transparent exactement quand le sac commence (y=8vh) */
+const FADE_OUT_END = B + TEXT_TRACK_VH;          // 8
+const PRODUCT_VH = B + TEXT_TRACK_VH + 2.5;      // 10.5
+
+const SPACER1_VH = B; // 4 — juste la bottle scene, texte commence direct après
+const SPACER2_VH = 5.5; // assez de scroll pour que le sac flotte à la fin
 
 const TEXTS = [
   {
@@ -28,19 +36,22 @@ const TEXTS = [
   },
 ];
 
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+function smoothstep(edge0, edge1, x) {
+  if (x <= edge0) return 0;
+  if (x >= edge1) return 1;
+  const t = (x - edge0) / (edge1 - edge0);
+  return t * t * (3 - 2 * t);
 }
 
 function getSlideOpacity(index, total, progress) {
   const size = 1 / total;
   const start = index * size;
   const end = start + size;
-  const fade = size * 0.3;
+  const fade = size * 0.42;
 
   if (progress < start || progress >= end) return 0;
-  if (progress < start + fade) return (progress - start) / fade;
-  if (progress > end - fade) return (end - progress) / fade;
+  if (progress < start + fade) return smoothstep(start, start + fade, progress);
+  if (progress > end - fade) return 1 - smoothstep(end - fade, end, progress);
   return 1;
 }
 
@@ -53,17 +64,14 @@ const INTRO_LINES = [
 
 export default function Home() {
   const [phase, setPhase] = useState("loading");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scenePrimed, setScenePrimed] = useState(false);
   const [loadPercent, setLoadPercent] = useState(0);
   const [fadeOpacity, setFadeOpacity] = useState(0);
   const [textProgress, setTextProgress] = useState(0);
   const [productVisible, setProductVisible] = useState(false);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
   const textTrackRef = useRef(null);
-  const autoDescentCompleteRef = useRef(false);
-  const autoDescentRafRef = useRef(null);
-
-  /** Après la descente auto : bande de scroll où le CTA reste visible (px) */
-  const SCROLL_HINT_AFTER_DESCENT_PX = 420;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -93,55 +101,22 @@ export default function Home() {
 
   useEffect(() => {
     if (phase !== "introExit") return;
+    if (!scenePrimed) return;
     const toScene = setTimeout(() => {
       setPhase("scene");
       window.scrollTo(0, 0);
     }, 2200);
     return () => clearTimeout(toScene);
-  }, [phase]);
+  }, [phase, scenePrimed]);
 
   useEffect(() => {
     if (phase !== "scene") {
-      autoDescentCompleteRef.current = false;
       setScrollHintVisible(false);
       return;
     }
-
-    let cancelled = false;
+    document.body.style.overflow = ""; // relâche le lock posé pendant le loading
     window.scrollTo(0, 0);
-    document.body.style.overflow = "hidden";
-    autoDescentCompleteRef.current = false;
-
-    const targetY = AUTO_DESCENT_SCROLL_END * window.innerHeight;
-    const t0 = performance.now();
-
-    function tick(now) {
-      if (cancelled) return;
-      const u = Math.min(1, (now - t0) / AUTO_DESCENT_MS);
-      const eased = easeInOutCubic(u);
-      window.scrollTo(0, targetY * eased);
-      if (u < 1) {
-        autoDescentRafRef.current = requestAnimationFrame(tick);
-      } else {
-        autoDescentCompleteRef.current = true;
-        document.body.style.overflow = "";
-        const descentEnd = AUTO_DESCENT_SCROLL_END * window.innerHeight;
-        const y = window.scrollY;
-        setScrollHintVisible(
-          y >= descentEnd - 48 && y < descentEnd + SCROLL_HINT_AFTER_DESCENT_PX,
-        );
-      }
-    }
-
-    autoDescentRafRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      cancelled = true;
-      if (autoDescentRafRef.current != null) {
-        cancelAnimationFrame(autoDescentRafRef.current);
-      }
-      document.body.style.overflow = "";
-    };
+    setScrollHintVisible(true);
   }, [phase]);
 
   useEffect(() => {
@@ -150,23 +125,20 @@ export default function Home() {
       const vh = window.innerHeight;
       const y = window.scrollY;
 
-      if (y <= FADE_IN_START * vh) {
-        setFadeOpacity(0);
-      } else if (y <= FADE_IN_END * vh) {
-        setFadeOpacity(
-          (y - FADE_IN_START * vh) / ((FADE_IN_END - FADE_IN_START) * vh),
-        );
-      } else if (y <= FADE_OUT_START * vh) {
-        setFadeOpacity(1);
-      } else if (y <= FADE_OUT_END * vh) {
-        setFadeOpacity(
-          1 -
-            (y - FADE_OUT_START * vh) /
-              ((FADE_OUT_END - FADE_OUT_START) * vh),
-        );
+      const yVh = y / vh;
+      let nextFade = 0;
+      if (yVh < FADE_BOTTLE_START) {
+        nextFade = 0;
+      } else if (yVh < FADE_BOTTLE_FULL) {
+        nextFade = smoothstep(FADE_BOTTLE_START, FADE_BOTTLE_FULL, yVh);
+      } else if (yVh <= FADE_OUT_START) {
+        nextFade = 1;
+      } else if (yVh < FADE_OUT_END) {
+        nextFade = 1 - smoothstep(FADE_OUT_START, FADE_OUT_END, yVh);
       } else {
-        setFadeOpacity(0);
+        nextFade = 0;
       }
+      setFadeOpacity(nextFade);
 
       const track = textTrackRef.current;
       if (track) {
@@ -178,16 +150,7 @@ export default function Home() {
       }
 
       setProductVisible(y >= PRODUCT_VH * vh);
-
-      const descentEnd = AUTO_DESCENT_SCROLL_END * vh;
-      if (!autoDescentCompleteRef.current) {
-        setScrollHintVisible(false);
-      } else {
-        setScrollHintVisible(
-          y >= descentEnd - 48 &&
-            y < descentEnd + SCROLL_HINT_AFTER_DESCENT_PX,
-        );
-      }
+      setScrollHintVisible(y < B * vh);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
@@ -214,6 +177,7 @@ export default function Home() {
         <div
           className={`loading-screen ${phase === "intro" ? "fade-out" : ""}`}
         >
+          <ShellLoader percent={loadPercent} />
           <div className="loading-logo">
             {LOGO_LETTERS.map((letter, i) => (
               <span
@@ -225,7 +189,6 @@ export default function Home() {
               </span>
             ))}
           </div>
-          <span className="loading-percent">{loadPercent}%</span>
         </div>
       )}
 
@@ -273,7 +236,12 @@ export default function Home() {
             </svg>
           </button>
 
-          <button type="button" className="menu-button" aria-label="Open menu">
+          <button
+            type="button"
+            className={`menu-button ${menuOpen ? "menu-button--open" : ""}`}
+            aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
             <span />
             <span />
             <span />
@@ -281,8 +249,12 @@ export default function Home() {
         </div>
       </header>
 
-      <Scene3D />
-      <div className="fade-overlay" style={{ opacity: fadeOpacity }} />
+      {phase !== "loading" && (
+        <Scene3D onBottleReady={() => setScenePrimed(true)} />
+      )}
+      {phase === "scene" && (
+        <div className="fade-overlay" style={{ opacity: fadeOpacity }} />
+      )}
 
       {phase === "scene" && (
         <button
@@ -292,10 +264,7 @@ export default function Home() {
           aria-label="Scroll down to continue"
         >
           <span className="scroll-down-cta__label">Scroll</span>
-          <span className="scroll-down-cta__chevrons" aria-hidden>
-            <span className="scroll-down-cta__chevron" />
-            <span className="scroll-down-cta__chevron" />
-          </span>
+          <span className="scroll-down-cta__line" aria-hidden />
         </button>
       )}
 
@@ -345,6 +314,8 @@ export default function Home() {
       >
         Discover Materials
       </Link>
+
+      {menuOpen && <MenuOverlay onClose={() => setMenuOpen(false)} />}
     </div>
   );
 }
