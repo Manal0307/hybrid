@@ -1,36 +1,61 @@
-import { useEffect } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { Link } from "react-router-dom";
 
+const EXIT_MS = 420;
+
+/* Accents glow — palette proche du ciel sac (mauve A78699, rose pâle, lavande) */
 const ITEMS = [
   {
     num: "01", label: "Materials", sub: "Les matières du sac",
-    to: "/materials", color: "#8855cc",
+    to: "/materials", color: "#c9a0b8",
   },
   {
     num: "02", label: "Contact", sub: "Nous écrire",
-    to: "#contact", color: "#2288cc",
+    to: "#contact", color: "#b8a8dc",
   },
   {
     num: "03", label: "Process", sub: "Comment c'est fait",
-    to: "#process", color: "#228855",
+    to: "#process", color: "#dba8c4",
   },
   {
     num: "04", label: "À Propos", sub: "Notre mission",
-    to: "#about", color: "#bb8820",
+    to: "#about", color: "#a894cc",
   },
   {
     num: "05", label: "FAQ", sub: "Questions fréquentes",
-    to: "#faq", color: "#558899",
+    to: "#faq", color: "#9b8ac4",
   },
   {
     num: "06", label: "Mentions\nlégales", sub: "Confidentialité",
-    to: "#legal", color: "#446688",
+    to: "#legal", color: "#8f7eb0",
   },
 ];
 
-export default function MenuOverlay({ onClose }) {
+const MenuOverlay = forwardRef(function MenuOverlay({ onClose }, ref) {
+  const [exiting, setExiting] = useState(false);
+
+  const beginClose = useCallback(() => {
+    setExiting((v) => (v ? v : true));
+  }, []);
+
+  useImperativeHandle(ref, () => ({ requestClose: beginClose }), [beginClose]);
+
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    if (!exiting) return;
+    const id = window.setTimeout(() => onClose(), EXIT_MS);
+    return () => clearTimeout(id);
+  }, [exiting, onClose]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") beginClose();
+    };
     window.addEventListener("keydown", onKey);
 
     document.body.style.overflow = "hidden";
@@ -39,11 +64,16 @@ export default function MenuOverlay({ onClose }) {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [beginClose]);
 
   return (
-    <div className="mo-overlay" role="dialog" aria-modal="true" aria-label="Menu principal">
-      <div className="mo-backdrop" onClick={onClose} />
+    <div
+      className={`mo-overlay${exiting ? " mo-overlay--exiting" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menu principal"
+    >
+      <div className="mo-backdrop" onClick={beginClose} />
 
       <div className="mo-panel">
         {/* Grid 3×2 */}
@@ -54,7 +84,7 @@ export default function MenuOverlay({ onClose }) {
               to={item.to}
               className="mo-card"
               style={{ "--c": item.color, animationDelay: `${0.04 + i * 0.055}s` }}
-              onClick={onClose}
+              onClick={beginClose}
             >
               <span className="mo-card-num">{item.num}</span>
               <div className="mo-card-body">
@@ -74,4 +104,8 @@ export default function MenuOverlay({ onClose }) {
       </div>
     </div>
   );
-}
+});
+
+MenuOverlay.displayName = "MenuOverlay";
+
+export default MenuOverlay;
