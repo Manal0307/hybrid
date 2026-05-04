@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import "./Materials.css";
 
-const HDRI_PATH = new URL("../map/hdri/table_mountain_1_puresky_2k.hdr", import.meta.url).href;
+const HDRI_PATH = new URL(
+  "../map/hdri/table_mountain_1_puresky_2k.hdr",
+  import.meta.url,
+).href;
 
-/* ══════════════════════════════════════════════════════════════════
-   Matières du sac
-══════════════════════════════════════════════════════════════════ */
+const BAG_MODEL_PATH = "/models/codebag.glb";
+/** Même orientation que BagScene : face caméra (évite l’effet « de dos »). */
+const BAG_FRONT_ROTATION_Y = Math.PI;
+
 const MATERIALS = [
   {
     id: "oyster-filament",
@@ -72,42 +77,20 @@ const MATERIALS = [
   },
 ];
 
-const STATS = [
-  { value: 100, suffix: "%", label: "Bio-sourcé" },
-  { value: 0,   suffix: "",  label: "Plastique vierge" },
-  { value: 3,   suffix: "",  label: "Continents" },
-  { value: 84,  suffix: "%", label: "CO₂ évité" },
-];
-
-const PROCESS_STEPS = [
-  {
-    num: "01", title: "Source",
-    body: "Raw bio-materials are harvested from regenerative farms and ocean clean-up initiatives across three continents.",
-  },
-  {
-    num: "02", title: "Transform",
-    body: "Through proprietary low-energy processes, raw matter becomes high-grade textile, composite, and leather alternatives.",
-  },
-  {
-    num: "03", title: "Craft",
-    body: "Each bag is assembled by hand in our Brussels atelier, where traditional craftsmanship meets programmable design.",
-  },
-];
-
-/* ══════════════════════════════════════════════════════════════════
-   Three.js — builders (un groupe par matière)
-══════════════════════════════════════════════════════════════════ */
-
-/** Applique l'opacité à tous les meshes/lignes d'un groupe. */
 function setGroupOpacity(group, opacity) {
   group.traverse((child) => {
     if ((child.isMesh || child.isLine) && child.material) {
-      child.material.opacity = opacity;
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      for (const m of mats) {
+        if (m && "opacity" in m) {
+          m.transparent = opacity < 1;
+          m.opacity = opacity;
+        }
+      }
     }
   });
 }
 
-/** 01 — Filament d'Huître : perle irisée + filaments hélicoïdaux */
 function buildOyster() {
   const g = new THREE.Group();
   const mat = new THREE.MeshPhysicalMaterial({
@@ -120,34 +103,38 @@ function buildOyster() {
     clearcoat: 1,
     clearcoatRoughness: 0.04,
     transparent: true,
+    opacity: 1,
   });
-
-  // Perle centrale
   g.add(new THREE.Mesh(new THREE.SphereGeometry(0.62, 64, 64), mat));
-
-  // Filaments hélicoïdaux
   for (let i = 0; i < 12; i++) {
     const base = (i / 12) * Math.PI * 2;
     const pts = [];
     for (let t = 0; t <= 1; t += 0.04) {
       const a = base + t * Math.PI * 3.5;
       const r = 0.72 + t * 0.42;
-      pts.push(new THREE.Vector3(
-        Math.cos(a) * r * 0.4,
-        (t - 0.5) * 2.3,
-        Math.sin(a) * r * 0.4,
-      ));
+      pts.push(
+        new THREE.Vector3(
+          Math.cos(a) * r * 0.4,
+          (t - 0.5) * 2.3,
+          Math.sin(a) * r * 0.4,
+        ),
+      );
     }
-    const tube = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 30, 0.012, 5);
-    g.add(new THREE.Mesh(tube, mat.clone()));
+    const tube = new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(pts),
+      30,
+      0.012,
+      5,
+    );
+    const m = mat.clone();
+    m.transparent = true;
+    g.add(new THREE.Mesh(tube, m));
   }
   return g;
 }
 
-/** 02 — Biomaterial Algue : frondes de kelp ondulantes */
 function buildAlgae() {
   const g = new THREE.Group();
-
   for (let i = 0; i < 7; i++) {
     const angle = (i / 7) * Math.PI * 2;
     const geo = new THREE.PlaneGeometry(0.3, 2.4, 4, 36);
@@ -159,7 +146,6 @@ function buildAlgae() {
       pos.setZ(j, Math.sin(y * 1.8 + i * 0.9) * 0.06);
     }
     geo.computeVertexNormals();
-
     const l = i / 7;
     const mat = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0x156628).lerp(new THREE.Color(0x3db860), l),
@@ -169,8 +155,8 @@ function buildAlgae() {
       thickness: 0.4,
       side: THREE.DoubleSide,
       transparent: true,
+      opacity: 1,
     });
-
     const mesh = new THREE.Mesh(geo, mat);
     mesh.rotation.y = angle;
     mesh.position.set(Math.sin(angle) * 0.14, 0, Math.cos(angle) * 0.14);
@@ -179,19 +165,16 @@ function buildAlgae() {
   return g;
 }
 
-/** 03 — Filet Recyclé : sphère de cordages tressés */
 function buildNet() {
   const g = new THREE.Group();
   const R = 1.1;
-
   const ropeMat = new THREE.MeshStandardMaterial({
     color: 0x2070a0,
     metalness: 0.15,
     roughness: 0.6,
     transparent: true,
+    opacity: 1,
   });
-
-  // Cercles de latitude
   for (let lat = 1; lat < 8; lat++) {
     const phi = (lat / 8) * Math.PI;
     const y = R * Math.cos(phi);
@@ -203,88 +186,103 @@ function buildNet() {
     }
     pts.push(pts[0].clone());
     const tube = new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(pts, true), 80, 0.02, 5,
+      new THREE.CatmullRomCurve3(pts, true),
+      80,
+      0.02,
+      5,
     );
     g.add(new THREE.Mesh(tube, ropeMat.clone()));
   }
-
-  // Arcs de longitude
   for (let lon = 0; lon < 10; lon++) {
     const theta = (lon / 10) * Math.PI * 2;
     const pts = [];
     for (let t = 0; t <= 1; t += 0.04) {
       const phi = t * Math.PI;
-      pts.push(new THREE.Vector3(
-        R * Math.sin(phi) * Math.cos(theta),
-        R * Math.cos(phi),
-        R * Math.sin(phi) * Math.sin(theta),
-      ));
+      pts.push(
+        new THREE.Vector3(
+          R * Math.sin(phi) * Math.cos(theta),
+          R * Math.cos(phi),
+          R * Math.sin(phi) * Math.sin(theta),
+        ),
+      );
     }
-    const tube = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 30, 0.02, 5);
+    const tube = new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3(pts),
+      30,
+      0.02,
+      5,
+    );
     g.add(new THREE.Mesh(tube, ropeMat.clone()));
   }
   return g;
 }
 
-/** 04 — Textile Recyclé : sphère avec motif de tissage en relief */
 function buildTextile() {
   const g = new THREE.Group();
-
   const geo = new THREE.SphereGeometry(1.05, 96, 96);
   const pos = geo.attributes.position;
   const nrm = geo.attributes.normal;
-
   for (let i = 0; i < pos.count; i++) {
-    const nx = nrm.getX(i), ny = nrm.getY(i), nz = nrm.getZ(i);
-    // Coordonnées sphériques → motif tissé
+    const nx = nrm.getX(i),
+      ny = nrm.getY(i),
+      nz = nrm.getZ(i);
     const u = Math.atan2(nz, nx) / (Math.PI * 2) + 0.5;
     const v = Math.acos(Math.max(-1, Math.min(1, ny))) / Math.PI;
     const weave = Math.sin(u * 36) * Math.cos(v * 18) * 0.048;
-    pos.setXYZ(i,
+    pos.setXYZ(
+      i,
       pos.getX(i) + nx * weave,
       pos.getY(i) + ny * weave,
       pos.getZ(i) + nz * weave,
     );
   }
   geo.computeVertexNormals();
-
   const mat = new THREE.MeshStandardMaterial({
     color: 0x8a5c38,
     metalness: 0.05,
     roughness: 0.9,
     transparent: true,
+    opacity: 1,
   });
-
   g.add(new THREE.Mesh(geo, mat));
   return g;
 }
 
 const BUILDERS = [buildOyster, buildAlgae, buildNet, buildTextile];
 
-/* ══════════════════════════════════════════════════════════════════
-   InteractiveScene — renderer Three.js persistent
-══════════════════════════════════════════════════════════════════ */
-function InteractiveScene({ activeIdx }) {
+/** Viewer central : sac (aucune sélection) ou maquette matière + clic pour détail */
+function MaterialsViewer({ focusMaterial, onOpenDetail }) {
   const mountRef = useRef(null);
-  const activeIdxRef = useRef(activeIdx);
+  const focusRef = useRef(focusMaterial);
+  const onOpenDetailRef = useRef(onOpenDetail);
 
-  useEffect(() => { activeIdxRef.current = activeIdx; }, [activeIdx]);
+  useEffect(() => {
+    focusRef.current = focusMaterial;
+  }, [focusMaterial]);
+  useEffect(() => {
+    onOpenDetailRef.current = onOpenDetail;
+  }, [onOpenDetail]);
 
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.4;
+    renderer.toneMappingExposure = 1.35;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 0, 4);
+    const camera = new THREE.PerspectiveCamera(
+      40,
+      container.clientWidth / container.clientHeight,
+      0.1,
+      100,
+    );
+    camera.position.set(0, 0.06, 3.65);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     pmrem.compileEquirectangularShader();
@@ -293,271 +291,476 @@ function InteractiveScene({ activeIdx }) {
       scene.environment = pmrem.fromEquirectangular(tex).texture;
     });
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const key = new THREE.DirectionalLight(0xffffff, 1.3);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 1.25);
     key.position.set(3, 4, 5);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x88aaff, 0.3);
+    const fill = new THREE.DirectionalLight(0xb8a0c8, 0.35);
     fill.position.set(-3, 2, 2);
     scene.add(fill);
 
-    // Construire les 4 groupes
-    const groups = BUILDERS.map((build) => build());
-    const opacities = [1, 0, 0, 0];
-    groups.forEach((g, i) => {
-      setGroupOpacity(g, i === 0 ? 1 : 0);
-      g.visible = i === 0;
-      scene.add(g);
+    const spin = new THREE.Group();
+    scene.add(spin);
+
+    const bagWrapper = new THREE.Group();
+    bagWrapper.visible = true;
+    bagWrapper.rotation.y = BAG_FRONT_ROTATION_Y;
+    bagWrapper.position.set(0, -0.07, 0);
+    spin.add(bagWrapper);
+
+    const materialRoots = BUILDERS.map((build) => {
+      const g = build();
+      g.visible = false;
+      setGroupOpacity(g, 0);
+      spin.add(g);
+      return g;
     });
 
-    // Drag pour rotation
-    let velY = 0, isDragging = false, prevX = 0;
-    const onDown = (e) => { isDragging = true; prevX = e.clientX; velY = 0; };
-    const onMove = (e) => { if (!isDragging) return; velY = (e.clientX - prevX) * 0.009; prevX = e.clientX; };
-    const onUp = () => { isDragging = false; };
+    new GLTFLoader().load(
+      BAG_MODEL_PATH,
+      (gltf) => {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const s = 1.42 / maxDim;
+        model.scale.setScalar(s);
+        model.position.set(
+          -center.x * s,
+          -center.y * s + (size.y * s) * 0.5,
+          -center.z * s,
+        );
+        model.traverse((c) => {
+          if (c.isMesh) {
+            c.castShadow = false;
+            c.receiveShadow = false;
+          }
+        });
+        bagWrapper.add(model);
+      },
+      undefined,
+      () => console.warn("codebag.glb introuvable sur /materials"),
+    );
+
+    const matOpacities = [0, 0, 0, 0];
+    let bagOpacity = 1;
+
+    const raycaster = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let pointerDown = false;
+    let prevX = 0;
+    let velY = 0;
+
+    const DRAG_THRESH = 6;
+
+    let lastCX = 0;
+    let lastCY = 0;
+
+    const onDown = (e) => {
+      pointerDown = true;
+      isDragging = false;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      prevX = e.clientX;
+      velY = 0;
+      lastCX = e.clientX;
+      lastCY = e.clientY;
+    };
+    const onPointerMove = (e) => {
+      lastCX = e.clientX;
+      lastCY = e.clientY;
+      const rect = renderer.domElement.getBoundingClientRect();
+
+      if (pointerDown) {
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        if (!isDragging && (Math.abs(dx) > DRAG_THRESH || Math.abs(dy) > DRAG_THRESH)) {
+          isDragging = true;
+        }
+        if (isDragging) {
+          renderer.domElement.style.cursor = "grabbing";
+          velY = (e.clientX - prevX) * 0.01;
+          prevX = e.clientX;
+        }
+        return;
+      }
+
+      const fx = focusRef.current;
+      if (fx !== null && materialRoots[fx]?.visible) {
+        ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(ndc, camera);
+        const hits = raycaster.intersectObject(materialRoots[fx], true);
+        renderer.domElement.style.cursor =
+          hits.length > 0 ? "pointer" : "grab";
+      } else if (focusRef.current === null && bagWrapper.visible) {
+        renderer.domElement.style.cursor = "grab";
+      } else {
+        renderer.domElement.style.cursor = "default";
+      }
+    };
+
+    const onPointerLeave = () => {
+      renderer.domElement.style.cursor = "";
+      if (pointerDown) finishPointerUp(lastCX, lastCY);
+    };
+
+    const finishPointerUp = (clientX, clientY) => {
+      if (!pointerDown) return;
+      const wasDragging = isDragging;
+      pointerDown = false;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      const fx = focusRef.current;
+
+      if (!wasDragging && fx !== null && materialRoots[fx]) {
+        ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(ndc, camera);
+        const hits = raycaster.intersectObject(materialRoots[fx], true);
+        if (hits.length > 0) {
+          onOpenDetailRef.current?.(fx);
+        }
+      }
+      isDragging = false;
+    };
+
+    const onUp = (e) => finishPointerUp(e.clientX, e.clientY);
+
     renderer.domElement.addEventListener("pointerdown", onDown);
-    renderer.domElement.addEventListener("pointermove", onMove);
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
     renderer.domElement.addEventListener("pointerup", onUp);
-    renderer.domElement.addEventListener("pointerleave", onUp);
+    renderer.domElement.addEventListener("pointerleave", onPointerLeave);
 
     const onResize = () => {
-      const w = container.clientWidth, h = container.clientHeight;
-      camera.aspect = w / h; camera.updateProjectionMatrix();
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
     window.addEventListener("resize", onResize);
 
-    let raf;
+    let rafId = 0;
     const animate = () => {
-      raf = requestAnimationFrame(animate);
-      const ai = activeIdxRef.current;
-
+      rafId = requestAnimationFrame(animate);
       if (!isDragging) velY *= 0.92;
 
-      groups.forEach((g, i) => {
-        const target = i === ai ? 1 : 0;
-        opacities[i] += (target - opacities[i]) * 0.07;
-        setGroupOpacity(g, opacities[i]);
-        g.visible = opacities[i] > 0.005;
-        if (i === ai && g.visible) {
-          g.rotation.y += isDragging ? velY : velY + 0.004;
-        }
-      });
+      const f = focusRef.current;
+      const showBag = f === null;
+
+      if (showBag) {
+        bagOpacity += (1 - bagOpacity) * 0.09;
+        bagWrapper.visible = bagOpacity > 0.01;
+      } else {
+        bagOpacity = 0;
+        bagWrapper.visible = false;
+      }
+
+      if (bagWrapper.visible) {
+        bagWrapper.traverse((child) => {
+          if ((child.isMesh || child.isLine) && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            for (const m of mats) {
+              if (m && "opacity" in m) {
+                m.transparent = bagOpacity < 1;
+                m.opacity = bagOpacity;
+              }
+            }
+          }
+        });
+      }
+
+      for (let i = 0; i < 4; i++) {
+        const target = f === i ? 1 : 0;
+        matOpacities[i] += (target - matOpacities[i]) * 0.1;
+        setGroupOpacity(materialRoots[i], matOpacities[i]);
+        materialRoots[i].visible = matOpacities[i] > 0.02;
+      }
+
+      const activeSpin =
+        f === null ? velY * 0.85 + 0.0022 : velY + 0.003;
+      spin.rotation.y += activeSpin;
 
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
       renderer.domElement.removeEventListener("pointerdown", onDown);
-      renderer.domElement.removeEventListener("pointermove", onMove);
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerup", onUp);
-      renderer.domElement.removeEventListener("pointerleave", onUp);
-      groups.forEach((g) => {
+      renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
+      materialRoots.forEach((g) => {
         g.traverse((child) => {
           if (child.isMesh || child.isLine) {
-            child.geometry.dispose();
-            if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
-            else child.material.dispose();
+            child.geometry?.dispose();
+            const mats = Array.isArray(child.material)
+              ? child.material
+              : [child.material];
+            mats.forEach((m) => m?.dispose?.());
           }
         });
       });
+      bagWrapper.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry?.dispose();
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach((m) => m?.dispose?.());
+        }
+      });
       pmrem.dispose();
       renderer.dispose();
-      if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
-    };
-  }, []); // eslint-disable-line
-
-  return <div ref={mountRef} className="mat-scene-canvas" />;
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   Animated counter
-══════════════════════════════════════════════════════════════════ */
-function Counter({ value, suffix }) {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !started.current) {
-        started.current = true;
-        const start = performance.now();
-        const tick = (now) => {
-          const t = Math.min((now - start) / 1600, 1);
-          setDisplay(Math.round((1 - Math.pow(1 - t, 3)) * value));
-          if (t < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
       }
-    }, { threshold: 0.5 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [value]);
+    };
+  }, []);
 
-  return <span ref={ref} className="mat-stat-value">{display}{suffix}</span>;
+  return <div ref={mountRef} className="mat-viewer-canvas" />;
 }
 
-/* ── Scroll reveal ─────────────────────────────────────────────── */
-function useReveal() {
-  const els = useRef([]);
-  const register = useCallback((el) => {
-    if (el && !els.current.includes(el)) els.current.push(el);
-  }, []);
+function MaterialDetailModal({ material, open, onClose }) {
+  const closeRef = useRef(null);
+
   useEffect(() => {
-    const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("visible"); }),
-      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
-    );
-    els.current.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-  return register;
-}
+    if (!open) return;
+    const t = setTimeout(() => closeRef.current?.focus(), 50);
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
 
-/* ══════════════════════════════════════════════════════════════════
-   Page
-══════════════════════════════════════════════════════════════════ */
-export default function Materials() {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const reveal = useReveal();
-  const active = MATERIALS[activeIdx];
-
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  if (!open || !material) return null;
 
   return (
-    <div className="mat-page" style={{ "--accent": active.accent }}>
+    <div
+      className="mat-modal-backdrop"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="mat-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mat-modal-sheet-label mat-modal-title"
+        onClick={(e) => e.stopPropagation()}
+        style={{ "--accent": material.accent }}
+      >
+        <header className="mat-modal__head">
+          <span className="mat-modal__sheet-label" id="mat-modal-sheet-label">
+            Fiche matériau
+          </span>
+          <button
+            ref={closeRef}
+            type="button"
+            className="mat-modal-close"
+            aria-label="Fermer la fiche"
+            onClick={onClose}
+          >
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path
+                d="M4 4l8 8M12 4l-8 8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.35"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </header>
+        <div className="mat-modal__body">
+          <span className="mat-modal-num" aria-describedby="mat-modal-sheet-label">
+            {material.num}
+          </span>
+          <h2 id="mat-modal-title" className="mat-modal-title">
+            {material.name}
+          </h2>
+          <p className="mat-modal-role">{material.role}</p>
+          <p className="mat-modal-desc">{material.description}</p>
+          <dl className="mat-modal-specs">
+            {material.specs.map((s) => (
+              <div key={s.label} className="mat-modal-spec">
+                <dt>{s.label}</dt>
+                <dd style={{ color: material.accent }}>{s.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-      {/* ── Nav ─────────────────────────────────────────────────── */}
+export default function Materials() {
+  /** null = vue sac (accueil viewer) ; 0..3 = uniquement la maquette matière — le sac est entièrement masqué */
+  const [focusMaterial, setFocusMaterial] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailIndex, setDetailIndex] = useState(0);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const openDetail = useCallback((idx) => {
+    setDetailIndex(idx);
+    setDetailOpen(true);
+  }, []);
+
+  const closeDetail = useCallback(() => setDetailOpen(false), []);
+
+  const leftOrbs = MATERIALS.slice(0, 2);
+  const rightOrbs = MATERIALS.slice(2, 4);
+
+  return (
+    <div
+      className="mat-page"
+      style={{
+        "--accent": focusMaterial != null ? MATERIALS[focusMaterial].accent : "#c9a0b8",
+      }}
+    >
       <header className="mat-nav">
         <Link to="/" className="mat-nav-back">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <path
+              d="M10 3L5 8l5 5"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           Hybrid
         </Link>
         <span className="mat-nav-title">Materials</span>
       </header>
 
-      {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="mat-hero">
-        <span className="mat-eyebrow">Hybrid Programmable Bag</span>
-        <h1 className="mat-hero-title">Materials</h1>
-        <p className="mat-hero-sub">
-          Quatre matières. Une seule conviction :<br />
-          la nature fait mieux que le pétrole.
+      <main className="mat-main">
+        <p className="mat-lead">
+          Les quatre matières du sac : choisis une sphère pour la voir en 3D, puis clique la forme pour
+          les détails.
         </p>
-      </section>
 
-      {/* ── Scene interactive ───────────────────────────────────── */}
-      <section className="mat-scene">
+        <section className="mat-stage" aria-label="Sélecteur matériaux">
+          <div className="mat-orb-col mat-orb-col--left">
+            {leftOrbs.map((m, i) => {
+              const idx = i;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`mat-orb ${focusMaterial === idx ? "is-active" : ""}`}
+                  style={{ "--orb": m.accent }}
+                  onClick={() =>
+                    setFocusMaterial((prev) => (prev === idx ? null : idx))
+                  }
+                  aria-pressed={focusMaterial === idx}
+                >
+                  <span className="mat-orb__inner" />
+                  <span className="mat-orb__label">{m.num}</span>
+                  <span className="mat-orb__name">{m.name}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Sélecteur gauche */}
-        <div className="mat-selector">
-          {MATERIALS.map((m, i) => (
-            <button
-              key={m.id}
-              className={`mat-sel-item ${activeIdx === i ? "active" : ""}`}
-              style={{ "--accent": m.accent }}
-              onClick={() => setActiveIdx(i)}
-            >
-              <span className="mat-sel-num">{m.num}</span>
-              <div className="mat-sel-text">
-                <span className="mat-sel-name">{m.name}</span>
-                <span className="mat-sel-role">{m.role}</span>
+          <div className="mat-viewer-wrap">
+            <div className="mat-viewer-glow" aria-hidden />
+            <MaterialsViewer focusMaterial={focusMaterial} onOpenDetail={openDetail} />
+            {focusMaterial != null && (
+              <div className="mat-viewer-click-badge" role="status">
+                <svg
+                  className="mat-viewer-click-badge__icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M15 15l-2 5L9 9l11 4-5 2z" />
+                  <path d="M9 9V6a3 3 0 016 0v3" opacity="0.55" />
+                </svg>
+                <span>Clique sur le modèle 3D pour la fiche détaillée</span>
               </div>
-              <div className="mat-sel-bar" />
-            </button>
-          ))}
-        </div>
-
-        {/* Droite : canvas + info */}
-        <div className="mat-scene-right">
-          <div className="mat-scene-canvas-wrap">
-            <InteractiveScene activeIdx={activeIdx} />
-            <p className="mat-viewer-hint">Drag to rotate</p>
+            )}
+            <p
+              className={`mat-viewer-hint${focusMaterial != null ? " mat-viewer-hint--detail" : ""}`}
+            >
+              {focusMaterial == null
+                ? "Tourne le sac pour l’explorer — ou choisis une matière sur les côtés"
+                : "Astuce : la souris devient une main sur le volume — clique sans glisser pour ouvrir"}
+            </p>
+            {focusMaterial != null && (
+              <button
+                type="button"
+                className="mat-reset-bag"
+                onClick={() => setFocusMaterial(null)}
+              >
+                Revoir le sac
+              </button>
+            )}
           </div>
 
-          <div className="mat-scene-info" key={active.id}>
-            <div className="mat-scene-info-top">
-              <span className="mat-tag" style={{ color: active.accent }}>{active.role}</span>
-              <h2 className="mat-scene-name">{active.name}</h2>
-              <p className="mat-scene-desc">{active.description}</p>
-            </div>
-            <dl className="mat-specs">
-              {active.specs.map((s) => (
-                <div key={s.label} className="mat-spec">
-                  <dt>{s.label}</dt>
-                  <dd style={{ color: active.accent }}>{s.value}</dd>
-                </div>
-              ))}
-            </dl>
+          <div className="mat-orb-col mat-orb-col--right">
+            {rightOrbs.map((m, i) => {
+              const idx = i + 2;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`mat-orb ${focusMaterial === idx ? "is-active" : ""}`}
+                  style={{ "--orb": m.accent }}
+                  onClick={() =>
+                    setFocusMaterial((prev) => (prev === idx ? null : idx))
+                  }
+                  aria-pressed={focusMaterial === idx}
+                >
+                  <span className="mat-orb__inner" />
+                  <span className="mat-orb__label">{m.num}</span>
+                  <span className="mat-orb__name">{m.name}</span>
+                </button>
+              );
+            })}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Stats ───────────────────────────────────────────────── */}
-      <section className="mat-stats">
-        {STATS.map((s) => (
-          <div key={s.label} className="mat-stat reveal" ref={reveal}>
-            <Counter value={s.value} suffix={s.suffix} />
-            <span className="mat-stat-label">{s.label}</span>
-          </div>
-        ))}
-      </section>
-
-      {/* ── Process ─────────────────────────────────────────────── */}
-      <section className="mat-process">
-        <div className="mat-process-header reveal" ref={reveal}>
-          <span className="mat-eyebrow">Comment c&apos;est fait</span>
-          <h2>The Process</h2>
-        </div>
-        <div className="mat-process-steps">
-          {PROCESS_STEPS.map((step) => (
-            <div key={step.num} className="mat-step reveal" ref={reveal}>
-              <span className="mat-step-num">{step.num}</span>
-              <h3 className="mat-step-title">{step.title}</h3>
-              <p className="mat-step-body">{step.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Video ───────────────────────────────────────────────── */}
-      <section className="mat-video-section">
-        <div className="mat-video-header reveal" ref={reveal}>
-          <span className="mat-eyebrow">Derrière les coulisses</span>
-          <h2>The Making Of</h2>
-        </div>
-        <div className="mat-video-wrap">
-          <iframe
-            src="https://www.youtube.com/embed/nusOkCRcjlw?rel=0&modestbranding=1"
-            title="Hybrid materials video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allowFullScreen
-          />
-        </div>
-      </section>
-
-      {/* ── Return ──────────────────────────────────────────────── */}
-      <section className="mat-return">
-        <div className="reveal" ref={reveal}>
-          <h2>Retourner à<br /><em>l&apos;essentiel.</em></h2>
-          <Link to="/" className="mat-return-link">
-            <span>Voir le sac</span>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M8 3l5 5-5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        <footer className="mat-footer">
+          <Link to="/" className="mat-footer-link">
+            Retour à l’accueil
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+              <path
+                d="M3 8h10M8 3l5 5-5 5"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
-        </div>
-      </section>
+        </footer>
+      </main>
 
+      <MaterialDetailModal
+        material={MATERIALS[detailIndex]}
+        open={detailOpen}
+        onClose={closeDetail}
+      />
     </div>
   );
 }
