@@ -1,4 +1,5 @@
 @import "./fonts/telma.css";
+@import "./fonts/caligula.css";
 
 * {
   margin: 0;
@@ -127,12 +128,12 @@ body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: #04080f;
+  background: #f0d0dc;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2.8rem;
+  gap: 2.4rem;
   transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -141,71 +142,66 @@ body {
   pointer-events: none;
 }
 
-.loading-logo {
+/* ─── Coral loader (slideshow d'icônes) ──────────────────────────────── */
+.coral-loader-stack {
+  position: relative;
+  width: clamp(90px, 10vw, 130px);
+  height: clamp(90px, 10vw, 130px);
   display: flex;
-  gap: 0.3em;
-}
-
-.loading-letter {
-  font-family: "Telma", Georgia, serif;
-  font-size: clamp(1.6rem, 3.5vw, 2.8rem);
-  font-weight: 300;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: #e8ddd0;
-  opacity: 0;
-  transform: translateY(14px);
-  animation: letterReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-@keyframes letterReveal {
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ─── Shell loader ───────────────────────────────────────────────────── */
-.shell-loader {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1.6rem;
+  justify-content: center;
+  animation: coralFloat 4.5s ease-in-out infinite;
 }
 
-.shell-loader svg {
-  filter:
-    drop-shadow(0 0 22px rgba(70, 130, 220, 0.35))
-    drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+.coral-loader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 28px rgba(45, 28, 48, 0.22))
+    drop-shadow(0 0 24px rgba(167, 134, 153, 0.28));
+  opacity: 0;
+  transform: scale(0.92);
+  transition:
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.shell-wave {
-  animation: waveShift 3.2s ease-in-out infinite;
+.coral-loader.is-active {
+  opacity: 1;
+  transform: scale(1);
 }
 
-.shell-wave--2 {
-  animation: waveShift2 2.6s ease-in-out infinite;
+@keyframes coralFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
 }
 
-@keyframes waveShift {
-  0%, 100% { transform: translateX(0px); }
-  50%       { transform: translateX(-18px); }
-}
-
-@keyframes waveShift2 {
-  0%, 100% { transform: translateX(0px); }
-  50%       { transform: translateX(14px); }
-}
-
-.shell-loader__percent {
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.28em;
-  color: rgba(232, 221, 208, 0.55);
+.loading-text {
+  font-family: "CaligulaDodgy", "Telma", Georgia, serif;
+  font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  color: #5a4452;
   font-variant-numeric: tabular-nums;
+  margin: 0;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
-.shell-loader__percent small {
-  font-size: 0.58em;
-  margin-left: 2px;
-  opacity: 0.65;
+.loading-text__dots {
+  display: inline-block;
+  animation: dotsBlink 1.8s ease-in-out infinite;
+}
+
+@keyframes dotsBlink {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+.loading-text__percent {
+  margin-left: 0.4em;
+  opacity: 0.85;
 }
 
 /* ─── Cinematic intro ────────────────────────────────────────────────── */

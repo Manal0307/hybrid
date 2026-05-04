@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Scene3D, { BOTTLE_SCROLL_VH } from "../components/Scene3D";
-import ShellLoader from "../components/ShellLoader";
+import CoralLoader from "../components/CoralLoader";
 import MenuOverlay from "../components/MenuOverlay";
 
 const B = BOTTLE_SCROLL_VH;
@@ -55,7 +55,6 @@ function getSlideOpacity(index, total, progress) {
   return 1;
 }
 
-const LOGO_LETTERS = "HYBRID".split("");
 const INTRO_LINES = [
   "Where the ocean meets design",
   "Born from nature, shaped by craft",
@@ -177,18 +176,11 @@ export default function Home() {
         <div
           className={`loading-screen ${phase === "intro" ? "fade-out" : ""}`}
         >
-          <ShellLoader percent={loadPercent} />
-          <div className="loading-logo">
-            {LOGO_LETTERS.map((letter, i) => (
-              <span
-                key={i}
-                className="loading-letter"
-                style={{ animationDelay: `${0.15 + i * 0.12}s` }}
-              >
-                {letter}
-              </span>
-            ))}
-          </div>
+          <CoralLoader />
+          <p className="loading-text">
+            Transforming<span className="loading-text__dots">…</span>{" "}
+            <span className="loading-text__percent">{loadPercent}%</span>
+          </p>
         </div>
       )}
 
