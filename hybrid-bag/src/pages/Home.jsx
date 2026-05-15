@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import Scene3D, { BOTTLE_SCROLL_VH } from "../components/Scene3D";
+import Scene3D, { BOTTLE_SCROLL_VH, BAG_START_VH } from "../components/Scene3D";
 import CoralLoader from "../components/CoralLoader";
 import MenuOverlay from "../components/MenuOverlay";
 
@@ -12,10 +12,9 @@ const TEXT_TRACK_VH = 4;
 const FADE_BOTTLE_START = B - 0.5;   // 3.5
 /** Noir complet pendant tout le texte */
 const FADE_BOTTLE_FULL = B + 0.3;    // 4.3
-/** Le voile commence à se lever vers la fin du texte */
-const FADE_OUT_START = B + TEXT_TRACK_VH - 0.8; // 7.2
-/** Transparent exactement quand le sac commence (y=8vh) */
-const FADE_OUT_END = B + TEXT_TRACK_VH;          // 8
+/** Le voile se lève sur une fenêtre plus longue — la scène sac est déjà rendue dessous */
+const FADE_OUT_START = BAG_START_VH - 1.1;
+const FADE_OUT_END = BAG_START_VH + 0.45;
 const PRODUCT_VH = B + TEXT_TRACK_VH + 2.5;      // 10.5
 
 const SPACER1_VH = B; // 4 — juste la bottle scene, texte commence direct après
@@ -23,16 +22,16 @@ const SPACER2_VH = 5.5; // assez de scroll pour que le sac flotte à la fin
 
 const TEXTS = [
   {
-    title: "Hybrid Programmable Bag",
-    body: "Where craftsmanship meets technology.\nA new category of object.",
+    title: "Hybrid Bag — Circular by Design",
+    body: "A carry built for a circular path — recovered matter, refined processes, longer life for what already exists.",
   },
   {
-    title: "Modular by Design",
-    body: "Configure, adapt, transform.\nEvery component is programmable to your lifestyle.",
+    title: "Where Technology Meets Ecology",
+    body: "Programmable structure and living materials side by side.\nNo trade-off between making better and doing less harm.",
   },
   {
-    title: "Crafted with Purpose",
-    body: "Premium materials, innovative structure.\nMade to evolve with you.",
+    title: "Two Worlds, One Object",
+    body: "Industry and ocean. Code and craft.\nThey meet in one bag — Hybrid.",
   },
 ];
 
@@ -55,10 +54,11 @@ function getSlideOpacity(index, total, progress) {
   return 1;
 }
 
+const LOGO_LETTERS = "HYBRID".split("");
 const INTRO_LINES = [
-  "Where the ocean meets design",
-  "Born from nature, shaped by craft",
-  "A new category of object",
+  "Our waters are filling with what we throw away",
+  "Pollution is the footprint of how we design and consume",
+  "Another way forward has to begin somewhere",
 ];
 
 export default function Home() {
@@ -70,6 +70,8 @@ export default function Home() {
   const [textProgress, setTextProgress] = useState(0);
   const [productVisible, setProductVisible] = useState(false);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
+  const [textStickyOpacity, setTextStickyOpacity] = useState(1);
+  const menuOverlayRef = useRef(null);
   const textTrackRef = useRef(null);
 
   useEffect(() => {
@@ -138,6 +140,10 @@ export default function Home() {
         nextFade = 0;
       }
       setFadeOpacity(nextFade);
+
+      setTextStickyOpacity(
+        1 - smoothstep(BAG_START_VH - 0.9, BAG_START_VH + 0.35, yVh),
+      );
 
       const track = textTrackRef.current;
       if (track) {
@@ -211,7 +217,8 @@ export default function Home() {
         </div>
       )}
 
-      <header className="top-nav">
+      {phase !== "loading" && (
+      <header className={`top-nav${menuOpen ? " top-nav--menu-open" : ""}`}>
         <Link to="/" className="brand-mark" aria-label="Hybrid home">
           Hybrid
         </Link>
@@ -232,7 +239,10 @@ export default function Home() {
             type="button"
             className={`menu-button ${menuOpen ? "menu-button--open" : ""}`}
             aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-            onClick={() => setMenuOpen((v) => !v)}
+            onClick={() => {
+              if (menuOpen) menuOverlayRef.current?.requestClose?.();
+              else setMenuOpen(true);
+            }}
           >
             <span />
             <span />
@@ -240,6 +250,7 @@ export default function Home() {
           </button>
         </div>
       </header>
+      )}
 
       {phase !== "loading" && (
         <Scene3D onBottleReady={() => setScenePrimed(true)} />
@@ -271,7 +282,10 @@ export default function Home() {
         className="text-track"
         style={{ height: `${TEXT_TRACK_VH * 100}vh` }}
       >
-        <div className="text-sticky">
+        <div
+          className="text-sticky"
+          style={{ opacity: textStickyOpacity }}
+        >
           {TEXTS.map((t, i) => (
             <div
               key={i}
@@ -307,7 +321,12 @@ export default function Home() {
         Discover Materials
       </Link>
 
-      {menuOpen && <MenuOverlay onClose={() => setMenuOpen(false)} />}
+      {menuOpen && (
+        <MenuOverlay
+          ref={menuOverlayRef}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
     </div>
   );
 }
