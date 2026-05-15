@@ -1,11 +1,42 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 export const BOTTLE_SCROLL_VH = 4;
 
-/** Si le GLB contient une caméra Blender (export : cocher « Cameras »), on la réutilise. */
-const PREFER_GLTF_CAMERA = true;
+const DRACO_DECODER_PATH = "https://www.gstatic.com/draco/v1/decoders/";
+
+/** Compense la conversion Blender → glTF (lumens / candela mal interprétés
+ *  par three.js). Sans ça, l'éclairage Blender est ~50× trop sombre dans le
+ *  navigateur. Ajuste si trop clair / trop sombre. */
+const LIGHT_INTENSITY_BOOST = 50;
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CAMÉRA MANUELLE (saisis tes valeurs Blender ici)
+   ────────────────────────────────────────────────────────────────────────────
+   Dans Blender, sélectionne Camera.001 → panneau N → onglet "Item" pour la
+   Location et Rotation, puis onglet "Object Data Properties" (icône caméra
+   verte dans Properties) → Lens pour le Focal Length / Field of View.
+   ════════════════════════════════════════════════════════════════════════════ */
+const BLENDER_CAMERA = {
+  // Position de la caméra dans Blender (axes Blender : Z = haut)
+  location: { x: -0.23127, y: -1.3755, z: 0.43646 },
+
+  // Rotation Euler XYZ en degrés (panneau N → Rotation)
+  rotation: { x: 101.6, y: -0.000064, z: 2 },
+
+  // Field of View vertical en degrés.
+  //   Calculé depuis : Focal Length 22mm, Sensor Size 34mm (Auto fit, render 16:9)
+  //   → sensor_v = 34 × 9/16 = 19.125mm
+  //   → FOV_v = 2 × atan(19.125 / (2 × 22)) ≈ 47°
+  fov: 47,
+
+  // Distances de clipping (Camera Properties → Lens → Clip Start / End)
+  near: 0.2,
+  far: 1000,
+};
 
 export default function BottleScene({ onReady }) {
   const containerRef = useRef(null);
@@ -19,193 +50,165 @@ export default function BottleScene({ onReady }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.setClearColor(0xd4a96a, 1); // même couleur que la scène → pas de flash
+    renderer.setClearColor(0x000000, 1);
     container.appendChild(renderer.domElement);
 
-    // Gate pour éviter le pop : on ne rend rien tant que la caméra Blender
-    // n'est pas chargée et prête.
     let ready = false;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#d4a96a");
 
-    const defaultCamera = new THREE.PerspectiveCamera(
-      38,
+    // Environnement neutre (Blender n'exporte pas son World en glTF) — sans
+    // ça les matériaux PBR (verre, métal, plastique réfléchissant) sont noirs.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    // Caméra de secours uniquement le temps du chargement.
+    const fallbackCamera = new THREE.PerspectiveCamera(
+      45,
       container.clientWidth / container.clientHeight,
-      0.01,
-      500,
+      0.1,
+      100,
     );
-    defaultCamera.up.set(0, 1, 0);
+    let activeCamera = fallbackCamera;
 
-    let activeCamera = defaultCamera;
     const camInitialPos = new THREE.Vector3();
-    let backAmount = 0; // calculé après chargement (% de la distance cam initiale)
-    const BACK_RATIO = 0.6; // 0.6 = la cam recule de 60% de sa distance initiale
+    let travelAmount = 0;
+    /** Distance à parcourir au scroll, en % de la distance initiale de la
+     *  caméra à l'origine. Positif = la caméra avance vers la scène. Mets
+     *  une valeur négative pour reculer, 0 pour ne pas bouger. */
+    const SCROLL_FORWARD_RATIO = 1.25;
+    /** Plus la valeur est basse, plus le mouvement suit le scroll en douceur
+     *  (plus « fluide », un peu plus de latence). Entre 2 et 8 en général. */
+    const SCROLL_SMOOTH_LAMBDA = 5.5;
+    /** Courbe d'easing appliquée à la progression du scroll. easeOutCubic :
+     *  réactif au début (la caméra bouge dès les premiers pixels de scroll),
+     *  puis ralentit en arrivant à destination. */
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
-    // ─── Éclairage cinématique « fin d'après-midi côtier » ──────────────────
-    //
-    // 1. SKY BOUNCE — hémisphère : simule la lumière du ciel (bleu doux qui
-    //    remonte en bas, blanc chaud qui descend en haut). Donne la teinte
-    //    subtile bleutée des zones à l'ombre sans rien aplatir.
-    const sky = new THREE.HemisphereLight(
-      0xfff1dc, // ciel : blanc légèrement chaud (≈5500K)
-      0x8aa6c2, // sol : bleu-gris froid pour les ombres
-      0.8,
-    );
-    scene.add(sky);
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath(DRACO_DECODER_PATH);
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.setDRACOLoader(dracoLoader);
 
-    // 2. SOLEIL — DirectionalLight rasante depuis le haut-gauche.
-    //    Couleur crème chaude (≈5200K) — pas orange saturé, pour garder
-    //    un rendu « naturel humide » plutôt que « désert sec ».
-    const sun = new THREE.DirectionalLight(0xfff0cc, 3.2);
-    sun.position.set(-5, 6, 3); // haut-gauche, angle d'incidence bas (~50°)
-    sun.castShadow = true;
+    Promise.all([
+      gltfLoader.loadAsync("/models/bottle.glb"),
+      gltfLoader.loadAsync("/models/fruits.glb"),
+    ])
+      .then(([bottleGltf, fruitsGltf]) => {
+        scene.add(bottleGltf.scene);
+        scene.add(fruitsGltf.scene);
 
-    // Ombres douces et lissées :
-    sun.shadow.mapSize.set(4096, 4096); // haute résolution → bords fins
-    sun.shadow.radius = 6; // flou PCF → bords diffus comme à travers l'air humide
-    sun.shadow.blurSamples = 16; // qualité du flou
-    sun.shadow.bias = -0.0003;
-    sun.shadow.normalBias = 0.02;
-    sun.shadow.camera.near = 0.1;
-    sun.shadow.camera.far = 30;
-    sun.shadow.camera.left = -8;
-    sun.shadow.camera.right = 8;
-    sun.shadow.camera.top = 8;
-    sun.shadow.camera.bottom = -8;
-    scene.add(sun);
-
-    // 3. FILL FROID — contre-lumière bleue très douce depuis l'opposé,
-    //    simule la diffusion atmosphérique marine : les ombres ne sont
-    //    jamais vraiment noires, elles prennent une teinte cyan léger.
-    const fill = new THREE.DirectionalLight(0xbcd4e8, 0.6);
-    fill.position.set(4, 3, -3);
-    scene.add(fill);
-
-    // 4. RIM chaud subtil — lèche les crêtes depuis l'arrière, donne
-    //    un léger halo doré qui souligne les reliefs sans dominer.
-    const rim = new THREE.DirectionalLight(0xffe0b8, 0.35);
-    rim.position.set(-2, 2, -5);
-    scene.add(rim);
-
-    // Exposure légèrement boostée pour le look cinématique chaud-doux
-    renderer.toneMappingExposure = 1.15;
-
-    function fitDefaultCameraToSphere(sphere) {
-      const vfov = THREE.MathUtils.degToRad(defaultCamera.fov);
-      const dist = Math.max(
-        (sphere.radius / Math.sin(vfov / 2)) * 1.12,
-        0.15,
-      );
-      const dir = new THREE.Vector3(0.5, 0.38, 0.55).normalize();
-      defaultCamera.position.copy(dir.multiplyScalar(dist));
-      defaultCamera.near = Math.max(dist * 1e-4, 0.005);
-      defaultCamera.far = dist * 20;
-      defaultCamera.lookAt(sphere.center);
-      defaultCamera.updateProjectionMatrix();
-    }
-
-    new GLTFLoader().load(
-      "/models/bottle.glb",
-      (gltf) => {
-        const model = gltf.scene;
-
-        let embeddedCam = null;
-        model.traverse((o) => {
-          if (o.isPerspectiveCamera) embeddedCam = o;
+        // Vire les caméras embarquées dans les GLB pour ne garder que la
+        // caméra manuelle ci-dessous.
+        scene.traverse((o) => {
+          if (o.isPerspectiveCamera) o.removeFromParent();
         });
-        if (!embeddedCam && gltf.cameras?.length) {
-          embeddedCam = gltf.cameras[0];
-        }
 
-        const root = new THREE.Group();
-        root.add(model);
+        scene.updateMatrixWorld(true);
 
-        if (embeddedCam) {
-          embeddedCam.removeFromParent();
-          if (PREFER_GLTF_CAMERA) root.add(embeddedCam);
-        }
+        // ─── Caméra manuelle reconstruite depuis les chiffres Blender ────
+        const manualCam = new THREE.PerspectiveCamera(
+          BLENDER_CAMERA.fov,
+          container.clientWidth / container.clientHeight,
+          BLENDER_CAMERA.near,
+          BLENDER_CAMERA.far,
+        );
 
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+        // Conversion d'axes Blender (Z up) → three.js (Y up, +Y Up glTF export) :
+        //   three.x =  blender.x
+        //   three.y =  blender.z
+        //   three.z = -blender.y
+        manualCam.position.set(
+          BLENDER_CAMERA.location.x,
+          BLENDER_CAMERA.location.z,
+          -BLENDER_CAMERA.location.y,
+        );
 
-        model.position.sub(center);
-        if (embeddedCam && PREFER_GLTF_CAMERA) {
-          embeddedCam.position.sub(center);
-        }
+        // Rotation : on construit dans l'espace Blender puis on bascule.
+        const blenderEuler = new THREE.Euler(
+          THREE.MathUtils.degToRad(BLENDER_CAMERA.rotation.x),
+          THREE.MathUtils.degToRad(BLENDER_CAMERA.rotation.y),
+          THREE.MathUtils.degToRad(BLENDER_CAMERA.rotation.z),
+          "XYZ",
+        );
+        const qBlender = new THREE.Quaternion().setFromEuler(blenderEuler);
+        // Compensation : Blender caméra regarde -Z local, three.js -Z local
+        // aussi, mais Blender place -Z monde où three.js a -Y monde après +Y Up.
+        // Rotation supplémentaire de -90° autour de X pour convertir Z-up → Y-up.
+        const qAxisSwap = new THREE.Quaternion().setFromAxisAngle(
+          new THREE.Vector3(1, 0, 0),
+          -Math.PI / 2,
+        );
+        manualCam.quaternion.copy(qAxisSwap).multiply(qBlender);
 
-        const maxDim = Math.max(size.x, size.y, size.z, 1e-5);
-        const targetSize = 1.35;
-        root.scale.setScalar(targetSize / maxDim);
-        scene.add(root);
-
-        if (embeddedCam && PREFER_GLTF_CAMERA) {
-          embeddedCam.aspect = container.clientWidth / container.clientHeight;
-          embeddedCam.updateProjectionMatrix();
-          embeddedCam.updateMatrixWorld(true);
-          activeCamera = embeddedCam;
-        } else {
-          const sphere = new THREE.Sphere();
-          new THREE.Box3().setFromObject(model).getBoundingSphere(sphere);
-          fitDefaultCameraToSphere(sphere);
-          activeCamera = defaultCamera;
-        }
+        manualCam.updateMatrixWorld(true);
+        activeCamera = manualCam;
+        scene.add(activeCamera);
 
         camInitialPos.copy(activeCamera.position);
-        backAmount = camInitialPos.length() * BACK_RATIO;
+        travelAmount = camInitialPos.length() * SCROLL_FORWARD_RATIO;
 
-        // Premier rendu synchrone avec la bonne caméra AVANT d'annoncer ready
-        activeCamera.updateMatrixWorld(true);
-        renderer.render(scene, activeCamera);
-        ready = true;
-
-        model.traverse((child) => {
+        scene.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
           }
           if (child.isLight) {
-            child.intensity *= 50; // compense la conversion Blender → glTF
-            child.castShadow = true;
+            child.intensity *= LIGHT_INTENSITY_BOOST;
             if (child.shadow) {
+              child.castShadow = true;
               child.shadow.mapSize.set(2048, 2048);
               child.shadow.bias = -0.0005;
             }
           }
         });
 
+        renderer.render(scene, activeCamera);
+        ready = true;
         onReady?.();
-      },
-      undefined,
-      (err) => {
-        console.error("bottle.glb error:", err);
+      })
+      .catch((err) => {
+        console.error("BottleScene load error:", err);
         onReady?.();
-      },
-    );
+      });
 
     let animId;
-    const backVec = new THREE.Vector3();
+    const clock = new THREE.Clock();
+    let smoothScrollProgress = 0;
+    const forwardVec = new THREE.Vector3();
     function animate() {
       animId = requestAnimationFrame(animate);
+      const dt = clock.getDelta();
       const yVh = window.scrollY / window.innerHeight;
-      renderer.domElement.style.display = yVh < BOTTLE_SCROLL_VH ? "block" : "none";
-      if (yVh >= BOTTLE_SCROLL_VH) return;
+      renderer.domElement.style.display =
+        yVh < BOTTLE_SCROLL_VH ? "block" : "none";
       if (!ready) {
-        renderer.clear(); // juste la couleur de fond, pas de caméra pourrie
+        renderer.clear();
         return;
       }
 
-      // Recule la caméra le long de son axe de vue (local +Z = derrière la cam)
+      const rawProgress = Math.min(1, Math.max(0, yVh / BOTTLE_SCROLL_VH));
+      const targetProgress = easeOutCubic(rawProgress);
+      smoothScrollProgress = THREE.MathUtils.damp(
+        smoothScrollProgress,
+        targetProgress,
+        SCROLL_SMOOTH_LAMBDA,
+        dt,
+      );
+      smoothScrollProgress = THREE.MathUtils.clamp(smoothScrollProgress, 0, 1);
+
+      if (yVh >= BOTTLE_SCROLL_VH) return;
+
+      // Avance de la caméra au scroll (effet du site). Axe local -Z = devant
+      // la caméra dans three.js. Le progress est lissé pour éviter les à-coups.
       if (camInitialPos.lengthSq() > 0) {
-        const progress = Math.min(1, yVh / BOTTLE_SCROLL_VH);
-        backVec.set(0, 0, 1).applyQuaternion(activeCamera.quaternion);
+        forwardVec.set(0, 0, -1).applyQuaternion(activeCamera.quaternion);
         activeCamera.position
           .copy(camInitialPos)
-          .addScaledVector(backVec, progress * backAmount);
+          .addScaledVector(forwardVec, smoothScrollProgress * travelAmount);
       }
 
       renderer.render(scene, activeCamera);
@@ -224,6 +227,8 @@ export default function BottleScene({ onReady }) {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", onResize);
+      dracoLoader.dispose();
+      pmrem.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement))
         container.removeChild(renderer.domElement);
