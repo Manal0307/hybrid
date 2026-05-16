@@ -17,7 +17,8 @@ const FADE_OUT_START = BAG_START_VH - 1.1;
 const FADE_OUT_END = BAG_START_VH + 0.45;
 const PRODUCT_VH = B + TEXT_TRACK_VH + 2.5;      // 10.5
 
-const SPACER1_VH = B; // 4 — juste la bottle scene, texte commence direct après
+/** Track des phrases d'intro : occupe toute la zone bottle (sticky sur la scène 3D). */
+const INTRO_TRACK_VH = B; // 4 — couvre exactement la durée de la bottle scene
 const SPACER2_VH = 5.5; // assez de scroll pour que le sac flotte à la fin
 
 const TEXTS = [
@@ -68,6 +69,8 @@ export default function Home() {
   const [loadPercent, setLoadPercent] = useState(0);
   const [fadeOpacity, setFadeOpacity] = useState(0);
   const [textProgress, setTextProgress] = useState(0);
+  const [introProgress, setIntroProgress] = useState(0);
+  const [introOpacity, setIntroOpacity] = useState(1);
   const [productVisible, setProductVisible] = useState(false);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
   const [textStickyOpacity, setTextStickyOpacity] = useState(1);
@@ -88,27 +91,23 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // Loading → loadingExit dès que le compteur est plein ET que la bottle scene est prête.
   useEffect(() => {
-    if (loadPercent < 100) return;
-    const t = setTimeout(() => setPhase("intro"), 800);
-    return () => clearTimeout(t);
-  }, [loadPercent]);
+    if (phase !== "loading") return;
+    if (loadPercent < 100 || !scenePrimed) return;
+    setPhase("loadingExit");
+  }, [phase, loadPercent, scenePrimed]);
 
+  // loadingExit → scene après le temps du fondu (timeout dans un effet séparé
+  // pour éviter qu'il soit annulé par le re-run dû au changement de phase).
   useEffect(() => {
-    if (phase !== "intro") return;
-    const toExit = setTimeout(() => setPhase("introExit"), 9000);
-    return () => clearTimeout(toExit);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase !== "introExit") return;
-    if (!scenePrimed) return;
-    const toScene = setTimeout(() => {
+    if (phase !== "loadingExit") return;
+    const t = setTimeout(() => {
       setPhase("scene");
       window.scrollTo(0, 0);
-    }, 2200);
-    return () => clearTimeout(toScene);
-  }, [phase, scenePrimed]);
+    }, 1100);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== "scene") {
@@ -141,6 +140,10 @@ export default function Home() {
       }
       setFadeOpacity(nextFade);
 
+      // Intro lines : progression et fade-out à l'approche de la fin de la bottle scene.
+      setIntroProgress(Math.min(1, Math.max(0, yVh / B)));
+      setIntroOpacity(1 - smoothstep(B - 0.6, B - 0.05, yVh));
+
       setTextStickyOpacity(
         1 - smoothstep(BAG_START_VH - 0.9, BAG_START_VH + 0.35, yVh),
       );
@@ -170,50 +173,18 @@ export default function Home() {
     });
   }
 
-  function handleSkipIntro() {
-    if (phase !== "intro") return;
-    setPhase("introExit");
-  }
-
   return (
     <div className="app">
       {/* ─── Loading screen ─────────────────────────────────────────────── */}
-      {(phase === "loading" || phase === "intro") && (
+      {(phase === "loading" || phase === "loadingExit") && (
         <div
-          className={`loading-screen ${phase === "intro" ? "fade-out" : ""}`}
+          className={`loading-screen ${phase === "loadingExit" ? "fade-out" : ""}`}
         >
           <CoralLoader />
           <p className="loading-text">
             Transforming<span className="loading-text__dots">…</span>{" "}
             <span className="loading-text__percent">{loadPercent}%</span>
           </p>
-        </div>
-      )}
-
-      {/* ─── Cinematic intro ────────────────────────────────────────────── */}
-      {(phase === "intro" || phase === "introExit") && (
-        <div
-          className={`intro-screen ${phase === "introExit" ? "intro-screen--fade-out" : ""}`}
-        >
-          {INTRO_LINES.map((line, i) => (
-            <p
-              key={i}
-              className="intro-text"
-              style={{ animationDelay: `${i * 3}s` }}
-            >
-              {line}
-            </p>
-          ))}
-          {phase === "intro" && (
-            <button
-              type="button"
-              className="intro-skip"
-              onClick={handleSkipIntro}
-              aria-label="Passer l'introduction"
-            >
-              Passer
-            </button>
-          )}
         </div>
       )}
 
@@ -252,9 +223,9 @@ export default function Home() {
       </header>
       )}
 
-      {phase !== "loading" && (
-        <Scene3D onBottleReady={() => setScenePrimed(true)} />
-      )}
+      {/* Toujours monté : on précharge la bottle scene derrière le loader
+          pour que `scenePrimed` puisse se déclencher avant la transition. */}
+      <Scene3D onBottleReady={() => setScenePrimed(true)} />
       {phase === "scene" && (
         <div className="fade-overlay" style={{ opacity: fadeOpacity }} />
       )}
@@ -267,15 +238,36 @@ export default function Home() {
           aria-label="Scroll down to continue"
         >
           <span className="scroll-down-cta__label">Scroll</span>
-          <span className="scroll-down-cta__line" aria-hidden />
         </button>
       )}
 
+      {/* ─── Intro lines : sticky par-dessus la bottle/fruits scene ─────── */}
       <div
-        className="scroll-spacer"
-        style={{ height: `${SPACER1_VH * 100}vh` }}
-        aria-hidden
-      />
+        className="intro-track"
+        style={{ height: `${INTRO_TRACK_VH * 100}vh` }}
+        aria-hidden={phase !== "scene"}
+      >
+        <div
+          className="intro-track__sticky"
+          style={{ opacity: phase === "scene" ? introOpacity : 0 }}
+        >
+          {INTRO_LINES.map((line, i) => (
+            <p
+              key={i}
+              className="intro-line"
+              style={{
+                opacity: getSlideOpacity(
+                  i,
+                  INTRO_LINES.length,
+                  introProgress,
+                ),
+              }}
+            >
+              {line}
+            </p>
+          ))}
+        </div>
+      </div>
 
       <div
         ref={textTrackRef}

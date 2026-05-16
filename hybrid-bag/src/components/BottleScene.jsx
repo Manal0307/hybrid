@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 export const BOTTLE_SCROLL_VH = 4;
 
@@ -12,6 +11,100 @@ const DRACO_DECODER_PATH = "https://www.gstatic.com/draco/v1/decoders/";
  *  par three.js). Sans ça, l'éclairage Blender est ~50× trop sombre dans le
  *  navigateur. Ajuste si trop clair / trop sombre. */
 const LIGHT_INTENSITY_BOOST = 50;
+
+/**
+ * Ciel équirectangulaire mauve/rose doux : sert à la fois de fond visible et
+ * de carte d'environnement pour les reflets PBR. Palette accordée à la
+ * `BagScene` (mauve nuit + horizon rose chaud) pour un raccord visuel fluide.
+ */
+function createBottleSkyTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 1024;
+  const ctx = canvas.getContext("2d");
+
+  const g = ctx.createLinearGradient(0, 0, 0, 1024);
+  // Dôme mauve doux → halo rose chaud à l'horizon → mauve plus profond en bas
+  g.addColorStop(0.0, "#3a2c3a");
+  g.addColorStop(0.18, "#4e3c4c");
+  g.addColorStop(0.32, "#6a5260");
+  g.addColorStop(0.42, "#967078");
+  g.addColorStop(0.48, "#caa098");
+  g.addColorStop(0.5, "#eac4c0");
+  g.addColorStop(0.52, "#d8a8a8");
+  g.addColorStop(0.6, "#a8848c");
+  g.addColorStop(0.75, "#6e5660");
+  g.addColorStop(0.9, "#48343e");
+  g.addColorStop(1.0, "#2e2230");
+
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 2048, 1024);
+
+  // Léger halo central à l'horizon pour adoucir la transition
+  const halo = ctx.createRadialGradient(1024, 512, 50, 1024, 512, 700);
+  halo.addColorStop(0.0, "rgba(255, 232, 224, 0.18)");
+  halo.addColorStop(0.5, "rgba(255, 220, 210, 0.06)");
+  halo.addColorStop(1.0, "rgba(255, 210, 200, 0)");
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, 2048, 1024);
+
+  // ─── Étoiles dans le dôme mauve ─────────────────────────────────────────
+  // PRNG déterministe → mêmes étoiles à chaque chargement (pas de scintillement).
+  let seed = 73127;
+  const rnd = () => {
+    seed = (seed * 1103515245 + 12345) >>> 0;
+    return seed / 4294967296;
+  };
+
+  // On évite la bande horizon claire (y ∈ ~[420, 600]) pour préserver le halo rose.
+  // Densité plus forte vers le zénith (haut du dôme), plus rare vers la bande basse.
+  const sampleStarY = () => {
+    const r = rnd();
+    if (r < 0.78) return rnd() * 380; // dôme mauve principal
+    return 620 + rnd() * 380; // sous l'horizon (au cas où la caméra plonge)
+  };
+
+  // Étoiles principales : disques doux + halo subtil pour les plus grosses.
+  for (let i = 0; i < 460; i++) {
+    const x = rnd() * 2048;
+    const y = sampleStarY();
+    const r = rnd() * 1.4 + 0.28;
+    // Atténue les étoiles trop proches de la bande horizon pour un fondu naturel.
+    const horizonFade =
+      y < 420 ? Math.min(1, (420 - y) / 80) : Math.min(1, (y - 620) / 80);
+    const alpha = (0.22 + rnd() * 0.55) * horizonFade;
+    ctx.fillStyle = `rgba(255, 248, 246, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Étoiles plus grosses (rares) avec un halo doux.
+    if (r > 1.3 && horizonFade > 0.6) {
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 3.5);
+      glow.addColorStop(0, `rgba(255, 240, 235, ${0.22 * horizonFade})`);
+      glow.addColorStop(1, "rgba(255, 240, 235, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Points très fins : densité « poussière d'étoiles » (1px), uniquement haut du dôme.
+  for (let i = 0; i < 320; i++) {
+    const x = rnd() * 2048;
+    const y = rnd() * 360;
+    ctx.fillStyle = `rgba(250, 240, 245, ${0.1 + rnd() * 0.3})`;
+    ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  return tex;
+}
 
 /* ════════════════════════════════════════════════════════════════════════════
    CAMÉRA MANUELLE (saisis tes valeurs Blender ici)
@@ -50,20 +143,34 @@ export default function BottleScene({ onReady }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // Exposition alignée sur la BagScene → continuité de luminosité au scroll.
+    renderer.toneMappingExposure = 1.08;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.setClearColor(0x000000, 1);
     container.appendChild(renderer.domElement);
 
     let ready = false;
 
     const scene = new THREE.Scene();
 
-    // Environnement neutre (Blender n'exporte pas son World en glTF) — sans
-    // ça les matériaux PBR (verre, métal, plastique réfléchissant) sont noirs.
+    // ─── Ambiance mauve (raccord visuel avec la BagScene) ─────────────────
+    // Le ciel sert à la fois de background et d'environment map : les reflets
+    // PBR (bouteille, fruits) prennent une teinte chaude/mauve cohérente.
     const pmrem = new THREE.PMREMGenerator(renderer);
     pmrem.compileEquirectangularShader();
-    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    const skyTex = createBottleSkyTexture();
+    scene.background = skyTex;
+    scene.environment = pmrem.fromEquirectangular(skyTex).texture;
+    scene.environmentIntensity = 0.48;
+
+    // Brume mauve très subtile → profondeur sans masquer les objets proches.
+    scene.fog = new THREE.FogExp2(0x4a3848, 0.045);
+
+    // Couches d'éclairage douces par-dessus les lampes Blender :
+    //   - HemisphereLight : chaud rosé en haut, mauve frais en bas
+    //   - AmbientLight : lift global discret pour ne pas écraser les contrastes
+    scene.add(new THREE.HemisphereLight(0xf2d8d0, 0x6a4e6a, 0.22));
+    scene.add(new THREE.AmbientLight(0x8a708a, 0.08));
 
     // Caméra de secours uniquement le temps du chargement.
     const fallbackCamera = new THREE.PerspectiveCamera(
@@ -93,6 +200,9 @@ export default function BottleScene({ onReady }) {
     const gltfLoader = new GLTFLoader();
     gltfLoader.setDRACOLoader(dracoLoader);
 
+    // Liste des fruits/légumes animés au scroll (lévitation + bobbing).
+    let fruitNodes = [];
+
     Promise.all([
       gltfLoader.loadAsync("/models/bottle.glb"),
       gltfLoader.loadAsync("/models/fruits.glb"),
@@ -108,6 +218,55 @@ export default function BottleScene({ onReady }) {
         });
 
         scene.updateMatrixWorld(true);
+
+        // ─── Préparation lévitation des fruits ─────────────────────────────
+        // Choisit les « fruits » comme enfants directs du root du GLB ; si le
+        // fichier les enveloppe dans un seul Empty, on descend d'un niveau.
+        let fruitContainer = fruitsGltf.scene;
+        if (
+          fruitContainer.children.length === 1 &&
+          !fruitContainer.children[0].isMesh
+        ) {
+          fruitContainer = fruitContainer.children[0];
+        }
+        fruitContainer.children.forEach((node, i) => {
+          // Phases / amplitudes déterministes (mêmes valeurs à chaque rendu).
+          const phase = (i * 1.91) % (Math.PI * 2);
+          const bobAmp = 0.010 + ((i * 7) % 5) * 0.0035;   // ~0.010 → 0.024
+          const liftAmp = 0.05 + ((i * 13) % 7) * 0.012;   // ~0.05 → 0.12
+          const bobSpeed = 0.85 + ((i * 5) % 4) * 0.18;    // ~0.85 → 1.4
+          fruitNodes.push({
+            node,
+            basePos: node.position.clone(),
+            phase,
+            bobAmp,
+            liftAmp,
+            bobSpeed,
+          });
+        });
+
+        // ─── Boost de pigmentation des fruits/légumes ──────────────────────
+        // Sature légèrement les couleurs et baisse l'influence de l'environment
+        // map mauve : les fruits redeviennent francs sans casser l'ambiance.
+        const _hsl = { h: 0, s: 0, l: 0 };
+        fruitsGltf.scene.traverse((c) => {
+          if (!c.isMesh) return;
+          const mats = Array.isArray(c.material) ? c.material : [c.material];
+          for (const m of mats) {
+            if (!m || !m.color) continue;
+            m.color.getHSL(_hsl);
+            // Saturation +35% (avec un petit plancher pour les couleurs très ternes).
+            _hsl.s = Math.min(1, _hsl.s * 1.35 + 0.05);
+            // Luminosité légèrement abaissée → couleurs plus denses, pas délavées.
+            _hsl.l = Math.max(0, _hsl.l * 0.94);
+            m.color.setHSL(_hsl.h, _hsl.s, _hsl.l);
+            // Réduit l'effet « teint mauve » imposé par l'environment.
+            if (m.envMapIntensity !== undefined) {
+              m.envMapIntensity = Math.min(m.envMapIntensity ?? 1, 0.6);
+            }
+            m.needsUpdate = true;
+          }
+        });
 
         // ─── Caméra manuelle reconstruite depuis les chiffres Blender ────
         const manualCam = new THREE.PerspectiveCamera(
@@ -211,6 +370,18 @@ export default function BottleScene({ onReady }) {
           .addScaledVector(forwardVec, smoothScrollProgress * travelAmount);
       }
 
+      // ─── Lévitation des fruits ────────────────────────────────────────────
+      // Chaque fruit monte progressivement avec le scroll (`liftAmp`) et
+      // ondule légèrement en continu (`bobAmp` * sin) pour suggérer la flottaison.
+      if (fruitNodes.length > 0) {
+        const elapsed = performance.now() * 0.001;
+        for (const f of fruitNodes) {
+          const lift = smoothScrollProgress * f.liftAmp;
+          const bob = Math.sin(elapsed * f.bobSpeed + f.phase) * f.bobAmp;
+          f.node.position.y = f.basePos.y + lift + bob;
+        }
+      }
+
       renderer.render(scene, activeCamera);
     }
     animate();
@@ -229,6 +400,9 @@ export default function BottleScene({ onReady }) {
       window.removeEventListener("resize", onResize);
       dracoLoader.dispose();
       pmrem.dispose();
+      scene.background = null;
+      if (scene.environment) scene.environment.dispose();
+      skyTex.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement))
         container.removeChild(renderer.domElement);
