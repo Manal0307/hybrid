@@ -3,13 +3,23 @@ import { createWaterNormalsTexture } from "./waterNormalsTexture";
 
 const TEXTURE_BASE = "/textures";
 
-/** Une seule texture est utilisée : on essaie les chemins dans l'ordre, le premier qui charge gagne. */
+/**
+ * Bundled with the app (Vite) so water normals always resolve after clone,
+ * even if dev server or paths differ between machines.
+ */
+const MAP_WATERVIVA_URL = new URL(
+  "../map/textures/waterviva.png",
+  import.meta.url,
+).href;
+
+/** Fallbacks in public/textures/ (development / overrides). */
 const TEXTURE_PATHS = [
   "water.jpg",
-  "waterviva.png",
   "waternormals.jpg",
   "waternormal3.jpg",
 ];
+
+const TRY_URLS = [MAP_WATERVIVA_URL, ...TEXTURE_PATHS.map((f) => `${TEXTURE_BASE}/${f}`)];
 
 function applyTexture(texture) {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -20,8 +30,7 @@ function applyTexture(texture) {
 }
 
 /**
- * Charge une seule normal map eau depuis public/textures/.
- * Essaie les fichiers dans l'ordre ; si aucun ne charge, utilise la texture procédurale.
+ * Loads water normal map: bundled asset first, then public/textures/, then procedural.
  */
 export function loadWaterNormals(onLoaded) {
   const loader = new THREE.TextureLoader();
@@ -30,11 +39,11 @@ export function loadWaterNormals(onLoaded) {
   let index = 0;
 
   function tryNext() {
-    if (index >= TEXTURE_PATHS.length) {
+    if (index >= TRY_URLS.length) {
       onLoaded(fallback);
       return;
     }
-    const path = `${TEXTURE_BASE}/${TEXTURE_PATHS[index]}`;
+    const path = TRY_URLS[index];
     index += 1;
     loader.load(
       path,
