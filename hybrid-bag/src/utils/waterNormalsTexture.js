@@ -26,7 +26,7 @@ function smoothNoise(x, y, size) {
  * Normales très douces : fluide et rond, aucune ligne ni trace.
  * Bruit à grande échelle, amplitude faible.
  */
-export function createWaterNormalsTexture(size = 512) {
+export function createWaterNormalsTexture(size = 1024) {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size

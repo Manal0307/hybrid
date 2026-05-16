@@ -7,6 +7,10 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { createWaterNormalsTexture } from "../utils/waterNormalsTexture";
 import { loadWaterNormals } from "../utils/loadWaterNormals";
+import {
+  getWebGLCapabilities,
+  getWaterReflectionSize,
+} from "../utils/webglCapabilities";
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 export const BAG_START_VH = 8; // commence après bottle (4vh) + textes (4vh)
@@ -233,11 +237,8 @@ export default function BagScene() {
     if (!container) return;
 
     // ── Renderer ──────────────────────────────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: false,
-      outputBufferType: THREE.HalfFloatType,
-    });
+    const glCaps = getWebGLCapabilities();
+    const renderer = new THREE.WebGLRenderer(glCaps.rendererOptions);
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -290,11 +291,12 @@ export default function BagScene() {
     const theta = THREE.MathUtils.degToRad(SUN_AZIMUTH);
     const sun = new THREE.Vector3().setFromSphericalCoords(1, phi, theta);
 
+    const waterReflectionSize = getWaterReflectionSize(2048);
     const water = new Water(new THREE.PlaneGeometry(10000, 10000), {
-      textureWidth: 2048,
-      textureHeight: 2048,
+      textureWidth: waterReflectionSize,
+      textureHeight: waterReflectionSize,
       clipBias: 0.002,
-      waterNormals: createWaterNormalsTexture(512),
+      waterNormals: createWaterNormalsTexture(1024),
       sunDirection: sun.clone().normalize(),
       sunColor: 0xffe0d8,
       waterColor: 0x1c3a6e,
