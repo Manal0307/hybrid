@@ -8,8 +8,11 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { createWaterNormalsTexture } from "../utils/waterNormalsTexture";
 import { loadWaterNormals } from "../utils/loadWaterNormals";
 
-// ─── Constantes ──────────────────────────────────────────────────────────────
-export const BAG_START_VH = 8; // commence après bottle (4vh) + textes (4vh)
+import { BOTTLE_SCROLL_VH } from "./BottleScene";
+
+export const TEXT_TRACK_BEFORE_BAG_VH = 4;
+export const BAG_START_VH = BOTTLE_SCROLL_VH + TEXT_TRACK_BEFORE_BAG_VH;
+
 /** RAF + canvas avant BAG_START_VH pour éviter un « pop » quand le voile se lève */
 const BAG_RAF_START_VH = BAG_START_VH - 1.35;
 
@@ -24,6 +27,10 @@ const CAMERA_FOV = 42;
 const EMERGENCE_START = 0.5; // localY en vh
 const EMERGENCE_END = 2.0;
 const EMERGENCE_SPIN_Y = Math.PI * 0.25;
+
+/** Drag sac : dès ~45 % de la montée (souvent en même temps que le CTA « Discover »). */
+const BAG_DRAG_START_LOCAL_VH =
+  EMERGENCE_START + (EMERGENCE_END - EMERGENCE_START) * 0.45;
 
 const PEARL_MODEL_PATH = "/models/pearl.glb";
 const PEARL_REST_EXTRA_DEPTH = 0.045;
@@ -613,7 +620,7 @@ export default function BagScene() {
     // ── Boucle d'animation ────────────────────────────────────────────────────
     const timer = new THREE.Timer();
     let animId;
-    let wasProduct = false;
+    let wasDragEnabled = false;
     let pearlEmergeSmooth = 0;
     let pearlMaterialsReset = false;
 
@@ -698,11 +705,13 @@ export default function BagScene() {
             bagAnim.ySurface + Math.sin(performance.now() * 0.0012) * 0.06;
         }
 
-        const isProduct = localY >= EMERGENCE_END * vh;
-        if (isProduct !== wasProduct) {
-          drag.productPhase = isProduct;
-          wasProduct = isProduct;
+        const canDragBag = localY >= BAG_DRAG_START_LOCAL_VH * vh;
+        if (canDragBag !== wasDragEnabled) {
+          drag.productPhase = canDragBag;
+          wasDragEnabled = canDragBag;
         }
+
+        const isProduct = localY >= EMERGENCE_END * vh;
 
         if (
           drag.productPhase &&

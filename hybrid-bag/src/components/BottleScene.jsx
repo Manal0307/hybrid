@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
-export const BOTTLE_SCROLL_VH = 4;
+export const BOTTLE_SCROLL_VH = 4.5;
 
 const DRACO_DECODER_PATH = "https://www.gstatic.com/draco/v1/decoders/";
 
@@ -28,11 +28,12 @@ function createBottleSkyTexture() {
   g.addColorStop(0.0, "#3a2c3a");
   g.addColorStop(0.18, "#4e3c4c");
   g.addColorStop(0.32, "#6a5260");
-  g.addColorStop(0.42, "#967078");
-  g.addColorStop(0.48, "#caa098");
-  g.addColorStop(0.5, "#eac4c0");
-  g.addColorStop(0.52, "#d8a8a8");
-  g.addColorStop(0.6, "#a8848c");
+  g.addColorStop(0.42, "#9f7882");
+  g.addColorStop(0.46, "#cfa39a");
+  g.addColorStop(0.5, "#f2d2cc");
+  g.addColorStop(0.52, "#e8beb8");
+  g.addColorStop(0.56, "#c9a0a4");
+  g.addColorStop(0.65, "#9e7886");
   g.addColorStop(0.75, "#6e5660");
   g.addColorStop(0.9, "#48343e");
   g.addColorStop(1.0, "#2e2230");
@@ -40,10 +41,11 @@ function createBottleSkyTexture() {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 2048, 1024);
 
-  // Léger halo central à l'horizon pour adoucir la transition
-  const halo = ctx.createRadialGradient(1024, 512, 50, 1024, 512, 700);
-  halo.addColorStop(0.0, "rgba(255, 232, 224, 0.18)");
-  halo.addColorStop(0.5, "rgba(255, 220, 210, 0.06)");
+  // Halo au centre (équateur panoramique) : un peu plus lumineux pour ouvrir le ciel au milieu
+  const halo = ctx.createRadialGradient(1024, 512, 40, 1024, 512, 920);
+  halo.addColorStop(0.0, "rgba(255, 244, 240, 0.38)");
+  halo.addColorStop(0.35, "rgba(255, 230, 226, 0.16)");
+  halo.addColorStop(0.65, "rgba(248, 210, 212, 0.06)");
   halo.addColorStop(1.0, "rgba(255, 210, 200, 0)");
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, 2048, 1024);
@@ -131,6 +133,31 @@ const BLENDER_CAMERA = {
   far: 1000,
 };
 
+/** Décalage de cadrage : ~translation horizontale du viewport (px CSS). */
+const CAMERA_SCREEN_SHIFT_PX = 15;
+
+/**
+ * Recule la caméra latéralement pour ~`pxLeft` pixels de décalage à gauche
+ * sur le viewport (FOV + distance de référence).
+ */
+function applyCameraScreenShiftPx(camera, viewportWidth, viewportHeight, pxLeft) {
+  if (
+    !camera ||
+    !camera.isPerspectiveCamera ||
+    viewportWidth <= 0 ||
+    viewportHeight <= 0
+  ) {
+    return;
+  }
+  const vFov = THREE.MathUtils.degToRad(BLENDER_CAMERA.fov);
+  const aspect = viewportWidth / viewportHeight;
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
+  const refDist = 1.85;
+  const worldPerPixel = (2 * Math.tan(hFov / 2) * refDist) / viewportWidth;
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+  camera.position.addScaledVector(right, -pxLeft * worldPerPixel);
+}
+
 export default function BottleScene({ onReady }) {
   const containerRef = useRef(null);
 
@@ -182,6 +209,7 @@ export default function BottleScene({ onReady }) {
     let activeCamera = fallbackCamera;
 
     const camInitialPos = new THREE.Vector3();
+    const manualCamBasePosition = new THREE.Vector3();
     let travelAmount = 0;
     /** Distance à parcourir au scroll, en % de la distance initiale de la
      *  caméra à l'origine. Positif = la caméra avance vers la scène. Mets
@@ -307,6 +335,14 @@ export default function BottleScene({ onReady }) {
         activeCamera = manualCam;
         scene.add(activeCamera);
 
+        manualCamBasePosition.copy(activeCamera.position);
+        applyCameraScreenShiftPx(
+          activeCamera,
+          container.clientWidth,
+          container.clientHeight,
+          CAMERA_SCREEN_SHIFT_PX,
+        );
+
         camInitialPos.copy(activeCamera.position);
         travelAmount = camInitialPos.length() * SCROLL_FORWARD_RATIO;
 
@@ -392,6 +428,17 @@ export default function BottleScene({ onReady }) {
       activeCamera.aspect = w / h;
       activeCamera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      if (ready && activeCamera !== fallbackCamera) {
+        activeCamera.position.copy(manualCamBasePosition);
+        applyCameraScreenShiftPx(activeCamera, w, h, CAMERA_SCREEN_SHIFT_PX);
+        camInitialPos.copy(activeCamera.position);
+        travelAmount = camInitialPos.length() * SCROLL_FORWARD_RATIO;
+        forwardVec.set(0, 0, -1).applyQuaternion(activeCamera.quaternion);
+        activeCamera.position.addScaledVector(
+          forwardVec,
+          smoothScrollProgress * travelAmount,
+        );
+      }
     }
     window.addEventListener("resize", onResize);
 

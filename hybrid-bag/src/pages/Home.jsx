@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import Scene3D, { BOTTLE_SCROLL_VH, BAG_START_VH } from "../components/Scene3D";
+import Scene3D, {
+  BOTTLE_SCROLL_VH,
+  BAG_START_VH,
+  TEXT_TRACK_BEFORE_BAG_VH,
+} from "../components/Scene3D";
 import CoralLoader from "../components/CoralLoader";
 import MenuOverlay from "../components/MenuOverlay";
 
 const B = BOTTLE_SCROLL_VH;
 
-const TEXT_TRACK_VH = 4;
-// Phase texte : B → B+4 (4vh→8vh). Phase bag : B+4 → fin.
+const TEXT_TRACK_VH = TEXT_TRACK_BEFORE_BAG_VH;
+// Phase texte : B → B+4 (puis BAG_START_VH). Phase bag : B+TEXT_TRACK_VH → fin.
 /** Voile noir s'active juste avant la fin de la bouteille */
 const FADE_BOTTLE_START = B - 0.5;   // 3.5
 /** Noir complet pendant tout le texte */
@@ -17,8 +21,8 @@ const FADE_OUT_START = BAG_START_VH - 1.1;
 const FADE_OUT_END = BAG_START_VH + 0.45;
 const PRODUCT_VH = B + TEXT_TRACK_VH + 2.5;      // 10.5
 
-/** Track des phrases d'intro : occupe toute la zone bottle (sticky sur la scène 3D). */
-const INTRO_TRACK_VH = B; // 4 — couvre exactement la durée de la bottle scene
+/** Track des phrases d'intro : hauteur = zone bottle (`BOTTLE_SCROLL_VH`). */
+const INTRO_TRACK_VH = B;
 const SPACER2_VH = 5.5; // assez de scroll pour que le sac flotte à la fin
 
 const TEXTS = [
@@ -48,6 +52,25 @@ function getSlideOpacity(index, total, progress) {
   const start = index * size;
   const end = start + size;
   const fade = size * 0.42;
+
+  if (progress < start || progress >= end) return 0;
+  if (progress < start + fade) return smoothstep(start, start + fade, progress);
+  if (progress > end - fade) return 1 - smoothstep(end - fade, end, progress);
+  return 1;
+}
+
+/** Phrases d'intro : fondus courts ; la 1ʳᵉ est visible dès l’arrivée (scroll 0). */
+function getIntroSlideOpacity(index, total, progress) {
+  const size = 1 / total;
+  const start = index * size;
+  const end = start + size;
+  const fade = size * 0.2;
+
+  if (index === 0) {
+    if (progress >= end) return 0;
+    if (progress > end - fade) return 1 - smoothstep(end - fade, end, progress);
+    return 1;
+  }
 
   if (progress < start || progress >= end) return 0;
   if (progress < start + fade) return smoothstep(start, start + fade, progress);
@@ -142,7 +165,8 @@ export default function Home() {
 
       // Intro lines : progression et fade-out à l'approche de la fin de la bottle scene.
       setIntroProgress(Math.min(1, Math.max(0, yVh / B)));
-      setIntroOpacity(1 - smoothstep(B - 0.6, B - 0.05, yVh));
+      // Intro lines : fade-out un peu plus tard pour laisser le temps de lire la dernière phrase.
+      setIntroOpacity(1 - smoothstep(B - 0.45, B - 0.02, yVh));
 
       setTextStickyOpacity(
         1 - smoothstep(BAG_START_VH - 0.9, BAG_START_VH + 0.35, yVh),
@@ -237,7 +261,7 @@ export default function Home() {
           onClick={handleScrollDownClick}
           aria-label="Scroll down to continue"
         >
-          <span className="scroll-down-cta__label">Scroll</span>
+          <span className="scroll-down-cta__label">Scroll down</span>
         </button>
       )}
 
@@ -256,7 +280,7 @@ export default function Home() {
               key={i}
               className="intro-line"
               style={{
-                opacity: getSlideOpacity(
+                opacity: getIntroSlideOpacity(
                   i,
                   INTRO_LINES.length,
                   introProgress,
