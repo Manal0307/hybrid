@@ -247,6 +247,7 @@ export default function BagScene() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
     // Caché par défaut — le RAF démarre un peu avant BAG_START_VH (sac déjà rendu sous le voile)
     renderer.domElement.style.display = "none";
     container.style.pointerEvents = "none";
@@ -294,7 +295,7 @@ export default function BagScene() {
       textureWidth: 2048,
       textureHeight: 2048,
       clipBias: 0.002,
-      waterNormals: createWaterNormalsTexture(512),
+      waterNormals: createWaterNormalsTexture(512, maxAnisotropy),
       sunDirection: sun.clone().normalize(),
       sunColor: 0xffe0d8,
       waterColor: 0x1c3a6e,
@@ -323,7 +324,7 @@ export default function BagScene() {
     scene.add(water);
     loadWaterNormals((tex) => {
       water.material.uniforms["normalSampler"].value = tex;
-    });
+    }, maxAnisotropy);
 
     // ── Lumières ─────────────────────────────────────────────────────────────
     // Ambient minimal + hémisphère : ombrage lié aux normales → volume du sac

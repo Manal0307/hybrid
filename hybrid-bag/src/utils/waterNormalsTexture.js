@@ -26,7 +26,7 @@ function smoothNoise(x, y, size) {
  * Normales très douces : fluide et rond, aucune ligne ni trace.
  * Bruit à grande échelle, amplitude faible.
  */
-export function createWaterNormalsTexture(size = 512) {
+export function createWaterNormalsTexture(size = 512, maxAnisotropy = 16) {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
@@ -59,6 +59,9 @@ export function createWaterNormalsTexture(size = 512) {
   texture.repeat.set(3, 3)
   texture.minFilter = THREE.LinearMipmapLinearFilter
   texture.magFilter = THREE.LinearFilter
+  texture.colorSpace = THREE.NoColorSpace
+  texture.anisotropy = maxAnisotropy
+  texture.generateMipmaps = true
   texture.needsUpdate = true
   return texture
 }
