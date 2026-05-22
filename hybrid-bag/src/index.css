@@ -57,12 +57,38 @@ body {
 }
 
 .brand-mark {
-  color: #f6eee3;
+  color: #3a2c28;
   text-decoration: none;
   font-family: "CaligulaDodgy", "Telma", Georgia, serif;
   font-size: clamp(1.2rem, 2vw, 1.6rem);
   letter-spacing: 0.22em;
   text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(255, 248, 242, 0.28);
+  transition: color 0.6s ease, text-shadow 0.6s ease;
+}
+
+.top-nav--bag-scene .brand-mark {
+  color: #ffffff;
+  text-shadow: 0 0 22px rgba(0, 0, 0, 0.45);
+}
+
+/* Pill buttons — brun glass plat (sans relief 3D) */
+.menu-button,
+.sound-button,
+.scroll-down-cta,
+.cta-button {
+  border: 1px solid rgba(176, 163, 159, 0.28);
+  border-radius: 999px;
+  background: rgba(58, 44, 40, 0.38);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f5e8d8;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.menu-button,
+.sound-button {
+  cursor: pointer;
 }
 
 .menu-button {
@@ -73,13 +99,6 @@ body {
   justify-content: center;
   align-items: center;
   gap: 5px;
-  border: 1px solid rgba(176, 163, 159, 0.55);
-  border-radius: 999px;
-  background: rgba(58, 44, 40, 0.28);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  cursor: pointer;
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 
 .sound-button {
@@ -88,39 +107,38 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(176, 163, 159, 0.55);
-  border-radius: 999px;
-  background: rgba(58, 44, 40, 0.28);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  cursor: pointer;
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 
 .sound-button svg {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   fill: none;
-  stroke: #f6eee3;
-  stroke-width: 1.6;
+  stroke: #f5e8d8;
+  stroke-width: 1.25;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.sound-button__mute-line {
+  stroke: #f5e8d8;
+  stroke-width: 1.35;
 }
 
 .menu-button span {
   display: block;
   width: 18px;
   height: 1px;
-  background: #f6eee3;
+  background: #f5e8d8;
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s;
   transform-origin: center;
 }
 
 .sound-button:hover,
-.menu-button:hover {
-  background: rgba(245, 232, 216, 0.18);
-  border-color: rgba(176, 163, 159, 0.85);
-  transform: translateY(-1px);
+.menu-button:hover,
+.scroll-down-cta:hover,
+.cta-button:hover {
+  background: rgba(58, 44, 40, 0.48);
+  border-color: rgba(176, 163, 159, 0.42);
 }
 
 /* Header au-dessus du menu clair : lisible sur fond rose/mauve */
@@ -130,22 +148,23 @@ body {
 
 .top-nav--menu-open .menu-button,
 .top-nav--menu-open .sound-button {
-  border-color: rgba(90, 62, 82, 0.22);
-  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(176, 163, 159, 0.35);
+  background: rgba(255, 248, 242, 0.5);
 }
 
 .top-nav--menu-open .menu-button span {
   background: #4a3346;
 }
 
-.top-nav--menu-open .sound-button svg {
+.top-nav--menu-open .sound-button svg,
+.top-nav--menu-open .sound-button__mute-line {
   stroke: #4a3346;
 }
 
 .top-nav--menu-open .sound-button:hover,
 .top-nav--menu-open .menu-button:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(167, 134, 153, 0.45);
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(176, 163, 159, 0.45);
 }
 
 /* ─── Loading screen ─────────────────────────────────────────────────── */
@@ -153,12 +172,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: linear-gradient(
-    180deg,
-    #cdb8c8 0%,
-    #c0aaa5 55%,
-    #b0a39f 100%
-  );
+  background: #cdb8c8;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -426,7 +440,7 @@ body {
 .fade-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 10;
   pointer-events: none;
   will-change: opacity;
   background: #cdb8c8;
@@ -441,18 +455,16 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.4em 0.2em;
-  border: none;
-  background: none;
+  padding: 0.75rem 1.6rem;
   cursor: pointer;
-  color: #faf4ec;
   opacity: 0;
   transform: translateX(-50%) translateY(8px);
   pointer-events: none;
   transition:
     opacity 0.7s ease,
     transform 0.7s ease,
-    color 0.3s ease;
+    border-color 0.3s ease,
+    background 0.3s ease;
 }
 
 .scroll-down-cta--visible {
@@ -462,42 +474,20 @@ body {
 }
 
 .scroll-down-cta__label {
-  /* Gras net : Figtree gère bien le 700 ; Caligula en secours. */
-  font-family: "Figtree", "CaligulaDodgy", sans-serif;
-  font-size: clamp(0.82rem, 1.8vw, 0.95rem);
-  font-weight: 700;
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
+  font-size: clamp(0.78rem, 1.6vw, 0.9rem);
+  font-weight: 400;
   font-style: normal;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  /* Pas de noir : seulement halo clair / rosé pour se détacher du fond 3D */
-  text-shadow:
-    0 0 18px rgba(255, 248, 242, 0.55),
-    0 0 36px rgba(250, 232, 242, 0.35),
-    0 0 56px rgba(245, 220, 235, 0.2);
   -webkit-font-smoothing: antialiased;
-  text-indent: 0.22em;
-  animation: scrollPulse 3.6s ease-in-out infinite;
-}
-
-@keyframes scrollPulse {
-  0%, 100% { opacity: 0.94; filter: brightness(1); }
-  50%      { opacity: 1; filter: brightness(1.05); }
-}
-
-.scroll-down-cta:hover .scroll-down-cta__label {
-  color: #ffffff;
-  animation-play-state: paused;
-  opacity: 1;
-  filter: brightness(1.08);
+  text-indent: 0.18em;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scroll-down-cta__label {
-    animation: none;
-    opacity: 1;
-    filter: none;
+  .scroll-down-cta {
+    transition: opacity 0.25s ease;
   }
-  .scroll-down-cta { transition: opacity 0.25s ease; }
 }
 
 /* ─── Scroll spacers ──────────────────────────────────────────────────── */
@@ -511,7 +501,13 @@ body {
 /* ─── Text track (sticky ; fond assuré par .fade-overlay) ───────────── */
 .text-track {
   position: relative;
-  z-index: 3;
+  z-index: 12;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.text-track--primed {
+  visibility: visible;
 }
 
 .text-sticky {
@@ -573,19 +569,17 @@ body {
   z-index: 10;
   display: inline-block;
   padding: 1rem 3rem;
-  border: 1px solid rgba(176, 163, 159, 0.6);
-  border-radius: 40px;
-  color: #f5e8d8;
   text-decoration: none;
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
   font-size: 0.95rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  background: rgba(58, 44, 40, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 1s ease 0.3s, transform 1s ease 0.3s, background 0.3s,
+  transition:
+    opacity 1s ease 0.3s,
+    transform 1s ease 0.3s,
+    background 0.3s,
     border-color 0.3s;
 }
 
@@ -593,11 +587,6 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
   pointer-events: auto;
-}
-
-.cta-button:hover {
-  background: rgba(176, 163, 159, 0.32);
-  border-color: rgba(176, 163, 159, 0.95);
 }
 
 @media (max-width: 640px) {

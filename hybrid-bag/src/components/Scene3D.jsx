@@ -5,6 +5,6 @@ import BagScene, {
 
 export { BAG_START_VH, TEXT_TRACK_BEFORE_BAG_VH };
 
-export default function Scene3D({ onBagReady }) {
-  return <BagScene onReady={onBagReady} />;
+export default function Scene3D({ onBagReady, phase }) {
+  return <BagScene onReady={onBagReady} phase={phase} />;
 }

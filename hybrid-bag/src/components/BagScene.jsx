@@ -207,11 +207,13 @@ function createBagSkyEnvironmentTexture() {
 }
 
 // ─── Composant ───────────────────────────────────────────────────────────────
-export default function BagScene({ onReady }) {
+export default function BagScene({ onReady, phase = "loading" }) {
   const containerRef = useRef(null);
   const hotspotRefs = useRef([]);
   const onReadyRef = useRef(onReady);
+  const phaseRef = useRef(phase);
   onReadyRef.current = onReady;
+  phaseRef.current = phase;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -285,19 +287,29 @@ export default function BagScene({ onReady }) {
       waterNormals: createWaterNormalsTexture(512, maxAnisotropy),
       sunDirection: sun.clone().normalize(),
       sunColor: 0xffe0d8,
-      waterColor: 0x1c3a6e,
-      distortionScale: 0.26,
+      waterColor: 0x142a52,
+      distortionScale: 0.14,
       alpha: 1.0,
       fog: false,
     });
     water.rotation.x = -Math.PI / 2;
     water.material.uniforms["alpha"].value = 1.0;
-    water.material.uniforms["size"].value = 165;
+    // Motif de vagues plus large (= moins détaillé, plus smooth)
+    water.material.uniforms["size"].value = 90;
     water.material.transparent = true;
     water.material.onBeforeCompile = (shader) => {
       shader.fragmentShader = shader.fragmentShader.replace(
         "noise.xzy * vec3( 1.5, 1.0, 1.5 )",
-        "noise.xzy * vec3( 1.4, 1.0, 1.4 )",
+        "noise.xzy * vec3( 1.15, 1.0, 1.15 )",
+      );
+      // Plus de spiegel : Fresnel renforcé, scatter atténué, reflets plus nets.
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "float reflectance = rf0 + ( 1.0 - rf0 ) * pow( ( 1.0 - theta ), 5.0 );",
+        "float reflectance = rf0 + ( 1.0 - rf0 ) * pow( ( 1.0 - theta ), 2.8 ); reflectance = min( reflectance * 1.22 + 0.12, 1.0 );",
+      );
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "vec3 albedo = mix( ( sunColor * diffuseLight * 0.3 + scatter ) * getShadowMask(), reflectionSample + specularLight, reflectance );",
+        "vec3 albedo = mix( ( sunColor * diffuseLight * 0.12 + scatter * 0.4 ) * getShadowMask(), reflectionSample + specularLight * 1.15, reflectance );",
       );
       shader.fragmentShader = shader.fragmentShader.replace(
         "gl_FragColor = vec4( outgoingLight, alpha );",
@@ -406,8 +418,9 @@ export default function BagScene({ onReady }) {
         });
         bagGroup.add(model);
         bagAnim.yBottom = -(size.y * s + 0.5);
-        // ~15px plus bas (15 / ~280 px par unité monde à la distance du sac).
-        bagAnim.ySurface = -0.005;
+        // Légèrement au-dessus de l’eau : le sac flotte sans toucher la surface
+        // (amplitude de lévitation = 0.06 → bas de l’oscillation reste à ~0.02 > 0).
+        bagAnim.ySurface = 0.08;
         bagAnim.loaded = true;
         bagGroup.rotation.y = BAG_FRONT_ROTATION_Y;
         onReadyRef.current?.();
@@ -555,6 +568,14 @@ export default function BagScene({ onReady }) {
     function animate() {
       animId = requestAnimationFrame(animate);
       timer.update(performance.now());
+
+      const introLocked = phaseRef.current !== "scene";
+      if (introLocked) {
+        renderer.domElement.style.display = "none";
+        container.style.pointerEvents = "none";
+        hideAllHotspots();
+        return;
+      }
 
       const yVh = window.scrollY / window.innerHeight;
       const active = yVh >= BAG_RAF_START_VH;
@@ -739,6 +760,7 @@ export default function BagScene({ onReady }) {
   return (
     <>
       <div ref={containerRef} className="scene-container" />
+      {phase === "scene" && (
       <div className="product-hotspots-layer">
         {BAG_HOTSPOTS.map((spot, i) => (
           <div
@@ -760,6 +782,7 @@ export default function BagScene({ onReady }) {
           </div>
         ))}
       </div>
+      )}
     </>
   );
 }

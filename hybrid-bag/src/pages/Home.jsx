@@ -65,6 +65,8 @@ export default function Home() {
   const [textProgress, setTextProgress] = useState(0);
   const [productVisible, setProductVisible] = useState(false);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
+  const [bagSceneVisible, setBagSceneVisible] = useState(false);
+  const [soundMuted, setSoundMuted] = useState(false);
   const menuOverlayRef = useRef(null);
   const textTrackRef = useRef(null);
 
@@ -93,7 +95,7 @@ export default function Home() {
     const t = setTimeout(() => {
       setPhase("scene");
       window.scrollTo(0, 0);
-    }, 1100);
+    }, 950);
     return () => clearTimeout(t);
   }, [phase]);
 
@@ -104,7 +106,7 @@ export default function Home() {
     }
     document.body.style.overflow = "";
     window.scrollTo(0, 0);
-    setScrollHintVisible(false);
+    setScrollHintVisible(true);
   }, [phase]);
 
   useEffect(() => {
@@ -134,9 +136,9 @@ export default function Home() {
       }
 
       setProductVisible(y >= PRODUCT_VH * vh);
-      setScrollHintVisible(
-        yVh >= FADE_OUT_START && yVh < BAG_START_VH + 1.0,
-      );
+      setBagSceneVisible(yVh >= FADE_OUT_START);
+      // Visible pendant les textes (mauve) et jusqu’à l’arrivée de la bag scene.
+      setScrollHintVisible(yVh < BAG_START_VH + 0.5);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
@@ -165,21 +167,32 @@ export default function Home() {
         </div>
       )}
 
-      {phase !== "loading" && (
-        <header className={`top-nav${menuOpen ? " top-nav--menu-open" : ""}`}>
+      {phase === "scene" && (
+        <header
+          className={`top-nav${bagSceneVisible ? " top-nav--bag-scene" : ""}${menuOpen ? " top-nav--menu-open" : ""}`}
+        >
           <Link to="/" className="brand-mark" aria-label="Hybrid home">
             Hybrid
           </Link>
           <div className="nav-actions">
             <button
               type="button"
-              className="sound-button"
-              aria-label="Sound control"
+              className={`sound-button${soundMuted ? " sound-button--muted" : ""}`}
+              aria-label={soundMuted ? "Unmute ambient sound" : "Mute ambient sound"}
+              aria-pressed={soundMuted}
+              onClick={() => setSoundMuted((muted) => !muted)}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 14.5V9.5H8.1L12 6.2V17.8L8.1 14.5H5Z" />
-                <path d="M15.2 9.2C16.3 10.1 16.9 11 16.9 12C16.9 13 16.3 13.9 15.2 14.8" />
-                <path d="M17.6 6.9C19.5 8.3 20.5 10 20.5 12C20.5 14 19.5 15.7 17.6 17.1" />
+                {!soundMuted && (
+                  <>
+                    <path d="M15.2 9.2C16.3 10.1 16.9 11 16.9 12C16.9 13 16.3 13.9 15.2 14.8" />
+                    <path d="M17.6 6.9C19.5 8.3 20.5 10 20.5 12C20.5 14 19.5 15.7 17.6 17.1" />
+                  </>
+                )}
+                {soundMuted && (
+                  <line className="sound-button__mute-line" x1="5" y1="5" x2="19" y2="19" />
+                )}
               </svg>
             </button>
 
@@ -200,11 +213,14 @@ export default function Home() {
         </header>
       )}
 
-      <Scene3D onBagReady={() => setScenePrimed(true)} />
+      <Scene3D phase={phase} onBagReady={() => setScenePrimed(true)} />
 
-      {phase === "scene" && (
-        <div className="fade-overlay" style={{ opacity: fadeOpacity }} />
-      )}
+      {/* Overlay mauve : présent dès le départ pour masquer la 3D pendant la transition
+          loading → texte (sinon flash de la bag scene derrière le fondu du loading). */}
+      <div
+        className="fade-overlay"
+        style={{ opacity: phase === "scene" ? fadeOpacity : 1 }}
+      />
 
       {phase === "scene" && (
         <button
@@ -219,15 +235,23 @@ export default function Home() {
 
       <div
         ref={textTrackRef}
-        className="text-track"
+        className={`text-track${phase !== "loading" ? " text-track--primed" : ""}`}
         style={{ height: `${TEXT_TRACK_VH * 100}vh` }}
+        aria-hidden={phase === "loading"}
       >
         <div className="text-sticky">
           {TEXTS.map((t, i) => (
             <div
               key={i}
               className="text-slide"
-              style={{ opacity: getSlideOpacity(i, TEXTS.length, textProgress) }}
+              style={{
+                opacity:
+                  phase === "loading"
+                    ? i === 0
+                      ? 1
+                      : 0
+                    : getSlideOpacity(i, TEXTS.length, textProgress),
+              }}
             >
               <h2>{t.title}</h2>
               <p>

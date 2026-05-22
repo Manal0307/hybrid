@@ -56,7 +56,7 @@ export function createWaterNormalsTexture(size = 512, maxAnisotropy = 16) {
   const texture = new THREE.CanvasTexture(canvas)
   texture.wrapS = THREE.RepeatWrapping
   texture.wrapT = THREE.RepeatWrapping
-  texture.repeat.set(3, 3)
+  texture.repeat.set(2, 2)
   texture.minFilter = THREE.LinearFilter
   texture.magFilter = THREE.LinearFilter
   texture.generateMipmaps = false
