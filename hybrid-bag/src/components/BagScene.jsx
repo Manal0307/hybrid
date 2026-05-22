@@ -8,10 +8,10 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { createWaterNormalsTexture } from "../utils/waterNormalsTexture";
 import { loadWaterNormals } from "../utils/loadWaterNormals";
 
-import { BOTTLE_SCROLL_VH } from "./BottleScene";
-
+/** Durée (en vh) du track de textes affichés sur fond mauve avant l’apparition du sac. */
 export const TEXT_TRACK_BEFORE_BAG_VH = 4;
-export const BAG_START_VH = BOTTLE_SCROLL_VH + TEXT_TRACK_BEFORE_BAG_VH;
+/** Scroll (en vh) auquel le sac commence à émerger. */
+export const BAG_START_VH = TEXT_TRACK_BEFORE_BAG_VH;
 
 /** RAF + canvas avant BAG_START_VH pour éviter un « pop » quand le voile se lève */
 const BAG_RAF_START_VH = BAG_START_VH - 1.35;
@@ -30,6 +30,7 @@ const EMERGENCE_SPIN_Y = Math.PI * 0.25;
 
 /**
  * Taille du render target miroir (pixels), alignée sur le drawing buffer WebGL.
+ * Plafonnée pour la perf; sinon la réflexion peut être trop basse ou ne pas correspondre au rendu final.
  */
 function getWaterMirrorBufferSize(renderer, maxDimension = 4096) {
   const buf = new THREE.Vector2();
@@ -47,46 +48,29 @@ function getWaterMirrorBufferSize(renderer, maxDimension = 4096) {
 const BAG_DRAG_START_LOCAL_VH =
   EMERGENCE_START + (EMERGENCE_END - EMERGENCE_START) * 0.45;
 
-const PEARL_MODEL_PATH = "/models/pearl.glb";
-const PEARL_REST_EXTRA_DEPTH = 0.045;
-const PEARL_EMERGE_MAX_STEP = 0.012;
-const PEARL_HIDDEN_EXTRA_DEPTH = 0.14;
-const PEARL_COUNT = 9;
-
-// normal = direction outward de la surface en espace LOCAL du bagGroup.
-// Avec rotation.y = PI (vue front par défaut) :
-//   local (0,0,-1) → world (0,0,+1) = face caméra  ✓
-//   local (-1,0,0) → world (+1,0,0) = côté droit    visible en tournant
-//   local (0,1,0)  → world (0,1,+0) = dessus         toujours visible
-//   local (0,-1,0) → world (0,-1,0) = dessous         visible en tournant
+// Hotspots placés AUTOUR du sac (pas dessus) — `offset` en espace MONDE,
+// ajouté à la position du sac (donc indépendant de la rotation au drag).
+// 2 à gauche, 2 à droite, à deux hauteurs différentes.
 const BAG_HOTSPOTS = [
   {
-    title: "Anse & structure",
-    body: "Structure légère et renforcée pour une portée confortable au quotidien.",
-    local: { x: 0, y: 0.52, z: 0.0 },
-    // Dessus / embouchure — point le plus haut
-    normal: new THREE.Vector3(0, 1, 0),
+    title: "3D-printed structure",
+    body: "Outer shell printed from a filament made of recycled oyster shells.",
+    offset: new THREE.Vector3(-0.85, 0.95, 0),
   },
   {
-    title: "Façade avant",
-    body: "Accès rapide aux essentiels et volumes pensés pour la modularité.",
-    local: { x: 0.11, y: 0.32, z: 0.24 },
-    // Face avant, zone haute–moyenne (vue caméra)
-    normal: new THREE.Vector3(0, 0, -1),
+    title: "Bioplastic inner lining",
+    body: "Inner bag crafted from an eco-friendly bioplastic made of flowers and cauliflower.",
+    offset: new THREE.Vector3(-0.85, 0.55, 0),
   },
   {
-    title: "Panneau latéral",
-    body: "Zone de personnalisation et détails techniques du programme Hybrid.",
-    local: { x: -0.29, y: 0.22, z: 0.05 },
-    // Côté gauche, hauteur milieu de corps (plus lisible que collé à la base)
-    normal: new THREE.Vector3(-1, 0, 0),
+    title: "Recycled fabric trims",
+    body: "Decorative details made from upcycled fabric and bioplastic.",
+    offset: new THREE.Vector3(0.85, 0.95, 0),
   },
   {
-    title: "Base & finitions",
-    body: "Stabilité au posé et protection des contenus par une base soignée.",
-    local: { x: 0.02, y: 0.06, z: 0.22 },
-    // Bas de la silhouette mais sur la façade — évite les plots sous le sac au niveau de l’eau
-    normal: new THREE.Vector3(0, 0, -1),
+    title: "Coral-inspired design",
+    body: "Organic shapes echoing the silhouettes of corals and other marine forms.",
+    offset: new THREE.Vector3(0.85, 0.55, 0),
   },
 ];
 
@@ -109,27 +93,6 @@ function createRandom(seed) {
     t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-function buildPearlLayout() {
-  const rnd = createRandom(7421);
-  const layout = [];
-  const minDist = 0.48;
-  const bagExcl = 0.92;
-  for (let i = 0; i < PEARL_COUNT; i++) {
-    let x = 0,
-      zz = 0,
-      ok = false;
-    for (let attempt = 0; attempt < 220; attempt++) {
-      x = -3.25 + rnd() * 6.5;
-      zz = -1.05 + rnd() * 3.55;
-      if (Math.hypot(x, zz + 0.35) <= bagExcl) continue;
-      ok = layout.every((p) => Math.hypot(p.x - x, p.z - zz) > minDist);
-      if (ok) break;
-    }
-    layout.push({ x, z: zz, size: 0.03 + rnd() * 0.028 });
-  }
-  return layout;
 }
 
 /** Ciel équirect : bande rose pâle à l'horizon (milieu) ; mauve au zénith et partout hors horizon. */
@@ -243,12 +206,12 @@ function createBagSkyEnvironmentTexture() {
   return tex;
 }
 
-const PEARL_LAYOUT = buildPearlLayout();
-
 // ─── Composant ───────────────────────────────────────────────────────────────
-export default function BagScene() {
+export default function BagScene({ onReady }) {
   const containerRef = useRef(null);
   const hotspotRefs = useRef([]);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -409,7 +372,7 @@ export default function BagScene() {
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
-        const s = 1.5 / maxDim;
+        const s = 1.45 / maxDim;
         model.scale.setScalar(s);
         model.position.set(
           -center.x * s,
@@ -443,73 +406,17 @@ export default function BagScene() {
         });
         bagGroup.add(model);
         bagAnim.yBottom = -(size.y * s + 0.5);
-        bagAnim.ySurface = 0.05;
+        // ~15px plus bas (15 / ~280 px par unité monde à la distance du sac).
+        bagAnim.ySurface = -0.005;
         bagAnim.loaded = true;
         bagGroup.rotation.y = BAG_FRONT_ROTATION_Y;
+        onReadyRef.current?.();
       },
       undefined,
-      (err) => console.error("codebag.glb error:", err),
-    );
-
-    // ── Perles ────────────────────────────────────────────────────────────────
-    const pearlGroup = new THREE.Group();
-    pearlGroup.renderOrder = 2;
-    pearlGroup.visible = false;
-    scene.add(pearlGroup);
-
-    const pearlGeo = new THREE.SphereGeometry(1, 40, 40);
-    const pearlMat = new THREE.MeshPhysicalMaterial({
-      color: 0xf8f1ea,
-      roughness: 0.12,
-      metalness: 0.02,
-      clearcoat: 1,
-      clearcoatRoughness: 0.08,
-      reflectivity: 0.9,
-      envMapIntensity: 1.5,
-    });
-
-    const rndDrift = createRandom(1229);
-    const pearlData = PEARL_LAYOUT.map((layout) => {
-      const mesh = new THREE.Mesh(pearlGeo, pearlMat);
-      mesh.scale.setScalar(layout.size);
-      pearlGroup.add(mesh);
-      return {
-        node: mesh,
-        size: layout.size,
-        baseX: layout.x,
-        baseZ: bagGroup.position.z + layout.z,
-        driftPhase: rndDrift() * Math.PI * 2,
-        surfaceOffset: (rndDrift() - 0.5) * 0.002,
-      };
-    });
-
-    // Optionnel : remplace les sphères par le pearl.glb si disponible
-    new GLTFLoader().load(
-      PEARL_MODEL_PATH,
-      (gltf) => {
-        const proto = gltf.scene;
-        const box = new THREE.Box3().setFromObject(proto);
-        const sz = box.getSize(new THREE.Vector3());
-        const ct = box.getCenter(new THREE.Vector3());
-        const md = Math.max(sz.x, sz.y, sz.z) || 1;
-        proto.scale.setScalar(1 / md);
-        proto.position.set(-ct.x / md, -ct.y / md, -ct.z / md);
-        proto.traverse((c) => {
-          if (c.isMesh) {
-            c.castShadow = false;
-            c.receiveShadow = false;
-          }
-        });
-        for (const pearl of pearlData) {
-          pearlGroup.remove(pearl.node);
-          const clone = proto.clone(true);
-          clone.scale.setScalar(pearl.size * 1.2);
-          pearlGroup.add(clone);
-          pearl.node = clone;
-        }
+      (err) => {
+        console.error("codebag.glb error:", err);
+        onReadyRef.current?.();
       },
-      undefined,
-      () => console.warn("pearl.glb introuvable — fallback sphères"),
     );
 
     // ── Sakura flottants ──────────────────────────────────────────────────────
@@ -607,11 +514,6 @@ export default function BagScene() {
     // ── Drag to rotate ────────────────────────────────────────────────────────
     const drag = { active: false, prevX: 0, velocityY: 0, productPhase: false };
     const worldHotspot = new THREE.Vector3();
-    const localHotspot = new THREE.Vector3();
-    const toPointVec = new THREE.Vector3();
-    const camDir = new THREE.Vector3();
-    const worldNormal = new THREE.Vector3();
-    const toCamVec = new THREE.Vector3();
 
     function onPointerDown(e) {
       if (!drag.productPhase) return;
@@ -638,8 +540,17 @@ export default function BagScene() {
     const timer = new THREE.Timer();
     let animId;
     let wasDragEnabled = false;
-    let pearlEmergeSmooth = 0;
-    let pearlMaterialsReset = false;
+
+    function hideAllHotspots() {
+      for (let i = 0; i < BAG_HOTSPOTS.length; i++) {
+        const el = hotspotRefs.current[i];
+        if (!el) continue;
+        el.style.opacity = "0";
+        el.style.visibility = "hidden";
+        el.style.pointerEvents = "none";
+        el.setAttribute("aria-hidden", "true");
+      }
+    }
 
     function animate() {
       animId = requestAnimationFrame(animate);
@@ -650,7 +561,10 @@ export default function BagScene() {
 
       renderer.domElement.style.display = active ? "block" : "none";
       container.style.pointerEvents = yVh >= BAG_START_VH ? "auto" : "none";
-      if (!active) return;
+      if (!active) {
+        hideAllHotspots();
+        return;
+      }
 
       const elapsed = timer.getElapsed();
       const vh = window.innerHeight;
@@ -739,11 +653,10 @@ export default function BagScene() {
           drag.velocityY *= 0.95;
         }
 
-        // Hotspots
-        bagGroup.updateMatrixWorld(true);
+        // Hotspots — ancrés à la position du sac (sans sa rotation), donc fixes
+        // autour de lui même quand on le fait tourner au drag.
         const w = container.clientWidth;
         const h = container.clientHeight;
-        camera.getWorldDirection(camDir);
 
         BAG_HOTSPOTS.forEach((spot, i) => {
           const el = hotspotRefs.current[i];
@@ -761,20 +674,11 @@ export default function BagScene() {
             return;
           }
 
-          // Position monde du hotspot
-          localHotspot.set(spot.local.x, spot.local.y, spot.local.z);
-          worldHotspot.copy(localHotspot).applyMatrix4(bagGroup.matrixWorld);
-
-          // Culling par normale : transforme la normale locale en espace monde
-          worldNormal.copy(spot.normal).applyQuaternion(bagGroup.quaternion);
-          toCamVec.copy(camera.position).sub(worldHotspot).normalize();
-          // Si la surface est dos à la caméra → cacher
-          if (worldNormal.dot(toCamVec) < 0.15) {
-            hide();
-            return;
-          }
-
-          // Projection écran
+          worldHotspot.set(
+            bagGroup.position.x + spot.offset.x,
+            bagGroup.position.y + spot.offset.y,
+            bagGroup.position.z + spot.offset.z,
+          );
           worldHotspot.project(camera);
           if (
             worldHotspot.z < -1 ||
@@ -794,59 +698,6 @@ export default function BagScene() {
           el.setAttribute("aria-hidden", "false");
         });
 
-        // Perles
-        const inScene2 = localY >= EMERGENCE_START * vh;
-        if (!inScene2) {
-          pearlGroup.visible = false;
-          pearlEmergeSmooth = 0;
-          pearlMaterialsReset = false;
-        } else {
-          pearlGroup.visible = true;
-          const emergeTarget = THREE.MathUtils.clamp(
-            (localY - EMERGENCE_START * vh) /
-              ((EMERGENCE_END - EMERGENCE_START) * vh),
-            0,
-            1,
-          );
-          pearlEmergeSmooth =
-            emergeTarget > pearlEmergeSmooth
-              ? Math.min(
-                  pearlEmergeSmooth + PEARL_EMERGE_MAX_STEP,
-                  emergeTarget,
-                )
-              : emergeTarget;
-
-          for (const pearl of pearlData) {
-            pearl.node.visible = true;
-            if (!pearlMaterialsReset) {
-              pearl.node.traverse((child) => {
-                if (!child.isMesh || !child.material) return;
-                const mats = Array.isArray(child.material)
-                  ? child.material
-                  : [child.material];
-                for (const m of mats) {
-                  m.transparent = false;
-                  m.opacity = 1;
-                  m.depthWrite = true;
-                }
-              });
-            }
-            const bobY = Math.sin(elapsed * 0.8 + pearl.driftPhase) * 0.0032;
-            const yDeep = -pearl.size * 0.5 - PEARL_HIDDEN_EXTRA_DEPTH;
-            const yFloat =
-              -pearl.size * 0.5 -
-              PEARL_REST_EXTRA_DEPTH +
-              pearl.surfaceOffset +
-              bobY;
-            pearl.node.position.set(
-              pearl.baseX + Math.sin(elapsed * 0.5 + pearl.driftPhase) * 0.012,
-              THREE.MathUtils.lerp(yDeep, yFloat, pearlEmergeSmooth),
-              pearl.baseZ + Math.cos(elapsed * 0.4 + pearl.driftPhase) * 0.008,
-            );
-            pearl.node.rotation.y = elapsed * 0.4;
-          }
-          pearlMaterialsReset = true;
-        }
       }
 
       composer.render();
@@ -878,8 +729,6 @@ export default function BagScene() {
       skyTex.dispose();
       water.disposeMirrorRenderTarget();
       pmrem.dispose();
-      pearlGeo.dispose();
-      pearlMat.dispose();
       composer.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement))
