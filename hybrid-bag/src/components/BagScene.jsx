@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { Water } from "three/examples/jsm/objects/Water.js";
+import { Water } from "../lib/Water.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -27,6 +27,21 @@ const CAMERA_FOV = 42;
 const EMERGENCE_START = 0.5; // localY en vh
 const EMERGENCE_END = 2.0;
 const EMERGENCE_SPIN_Y = Math.PI * 0.25;
+
+/**
+ * Taille du render target miroir (pixels), alignée sur le drawing buffer WebGL.
+ */
+function getWaterMirrorBufferSize(renderer, maxDimension = 4096) {
+  const buf = new THREE.Vector2();
+  renderer.getDrawingBufferSize(buf);
+  let w = Math.floor(buf.x);
+  let h = Math.floor(buf.y);
+  const m = Math.max(w, h);
+  const scale = m > maxDimension ? maxDimension / m : 1;
+  w = Math.max(256, Math.floor(w * scale));
+  h = Math.max(256, Math.floor(h * scale));
+  return { w, h };
+}
 
 /** Drag sac : dès ~45 % de la montée (souvent en même temps que le CTA « Discover »). */
 const BAG_DRAG_START_LOCAL_VH =
@@ -298,9 +313,11 @@ export default function BagScene() {
     const theta = THREE.MathUtils.degToRad(SUN_AZIMUTH);
     const sun = new THREE.Vector3().setFromSphericalCoords(1, phi, theta);
 
+    const mirrorBuf = getWaterMirrorBufferSize(renderer);
+
     const water = new Water(new THREE.PlaneGeometry(10000, 10000), {
-      textureWidth: 2048,
-      textureHeight: 2048,
+      textureWidth: mirrorBuf.w,
+      textureHeight: mirrorBuf.h,
       clipBias: 0.002,
       waterNormals: createWaterNormalsTexture(512, maxAnisotropy),
       sunDirection: sun.clone().normalize(),
@@ -844,6 +861,8 @@ export default function BagScene() {
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
       composer.setSize(w, h);
+      const mb = getWaterMirrorBufferSize(renderer);
+      water.setMirrorRenderTargetSize(mb.w, mb.h);
     }
     window.addEventListener("resize", onResize);
 
@@ -857,6 +876,7 @@ export default function BagScene() {
       scene.background = null;
       if (scene.environment) scene.environment.dispose();
       skyTex.dispose();
+      water.disposeMirrorRenderTarget();
       pmrem.dispose();
       pearlGeo.dispose();
       pearlMat.dispose();

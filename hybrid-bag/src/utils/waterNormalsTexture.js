@@ -57,11 +57,11 @@ export function createWaterNormalsTexture(size = 512, maxAnisotropy = 16) {
   texture.wrapS = THREE.RepeatWrapping
   texture.wrapT = THREE.RepeatWrapping
   texture.repeat.set(3, 3)
-  texture.minFilter = THREE.LinearMipmapLinearFilter
+  texture.minFilter = THREE.LinearFilter
   texture.magFilter = THREE.LinearFilter
+  texture.generateMipmaps = false
   texture.colorSpace = THREE.NoColorSpace
   texture.anisotropy = maxAnisotropy
-  texture.generateMipmaps = true
   texture.needsUpdate = true
   return texture
 }

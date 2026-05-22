@@ -23,13 +23,14 @@ const TRY_URLS = [MAP_WATERVIVA_URL, ...TEXTURE_PATHS.map((f) => `${TEXTURE_BASE
 
 function applyTexture(texture, maxAnisotropy) {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 4);
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.repeat.set(3, 3);
+  // Pas de mipmaps sur une normal map utilisée ainsi : les niveaux mip créent des blocs visibles.
+  texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
   // Données de normale : pas d’espace couleur (évite déformations / grille sur Retina).
   texture.colorSpace = THREE.NoColorSpace;
   texture.anisotropy = maxAnisotropy;
-  texture.generateMipmaps = true;
   texture.needsUpdate = true;
 }
 
