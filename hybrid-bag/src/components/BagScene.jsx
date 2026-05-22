@@ -48,31 +48,46 @@ function getWaterMirrorBufferSize(renderer, maxDimension = 4096) {
 const BAG_DRAG_START_LOCAL_VH =
   EMERGENCE_START + (EMERGENCE_END - EMERGENCE_START) * 0.45;
 
-// Hotspots placés AUTOUR du sac (pas dessus) — `offset` en espace MONDE,
-// ajouté à la position du sac (donc indépendant de la rotation au drag).
-// 2 à gauche, 2 à droite, à deux hauteurs différentes.
+// Hotspots autour du sac — `side` ±1, `heightT` 0→bas / 1→haut.
+// Position calculée depuis la bbox du modèle pour épouser la silhouette (arc, pas colonne droite).
 const BAG_HOTSPOTS = [
   {
     title: "3D-printed structure",
     body: "Outer shell printed from a filament made of recycled oyster shells.",
-    offset: new THREE.Vector3(-0.85, 0.95, 0),
+    side: -1,
+    heightT: 0.9,
   },
   {
     title: "Bioplastic inner lining",
     body: "Inner bag crafted from an eco-friendly bioplastic made of flowers and cauliflower.",
-    offset: new THREE.Vector3(-0.85, 0.55, 0),
+    side: -1,
+    heightT: 0.38,
+    screenOffset: { x: -5, y: 0 },
   },
   {
     title: "Recycled fabric trims",
     body: "Decorative details made from upcycled fabric and bioplastic.",
-    offset: new THREE.Vector3(0.85, 0.95, 0),
+    side: 1,
+    heightT: 0.9,
   },
   {
     title: "Coral-inspired design",
     body: "Organic shapes echoing the silhouettes of corals and other marine forms.",
-    offset: new THREE.Vector3(0.85, 0.55, 0),
+    side: 1,
+    heightT: 0.38,
+    screenOffset: { x: 5, y: 0 },
   },
 ];
+
+/** Offset local (espace sac) : arc — haut serré, bas légèrement plus ouvert. */
+function computeHotspotLocalOffset(side, heightT, halfW, bagH) {
+  const yLocal = bagH * THREE.MathUtils.lerp(0.18, 0.86, heightT);
+  const curve = Math.pow(1 - heightT, 1.28);
+  const margin = 0.008 + curve * 0.17;
+  const xLocal = side * (halfW + margin);
+  const zLocal = 0.008 + curve * 0.04;
+  return new THREE.Vector3(xLocal, yLocal, zLocal);
+}
 
 // ─── Utilitaires ─────────────────────────────────────────────────────────────
 /** Émergence souple : monte vite, petit dépassement, se stabilise */
@@ -374,7 +389,13 @@ export default function BagScene({ onReady, phase = "loading" }) {
     bagGroup.visible = false;
     scene.add(bagGroup);
 
-    const bagAnim = { yBottom: -1.8, ySurface: 0.05, loaded: false };
+    const bagAnim = {
+      yBottom: -1.8,
+      ySurface: 0.05,
+      loaded: false,
+      halfW: 0.42,
+      height: 1.2,
+    };
 
     new GLTFLoader().load(
       "/models/codebag.glb",
@@ -417,6 +438,8 @@ export default function BagScene({ onReady, phase = "loading" }) {
           }
         });
         bagGroup.add(model);
+        bagAnim.halfW = (size.x * s) / 2;
+        bagAnim.height = size.y * s;
         bagAnim.yBottom = -(size.y * s + 0.5);
         // Légèrement au-dessus de l’eau : le sac flotte sans toucher la surface
         // (amplitude de lévitation = 0.06 → bas de l’oscillation reste à ~0.02 > 0).
@@ -695,11 +718,17 @@ export default function BagScene({ onReady, phase = "loading" }) {
             return;
           }
 
-          worldHotspot.set(
-            bagGroup.position.x + spot.offset.x,
-            bagGroup.position.y + spot.offset.y,
-            bagGroup.position.z + spot.offset.z,
+          worldHotspot.copy(
+            computeHotspotLocalOffset(
+              spot.side,
+              spot.heightT,
+              bagAnim.halfW,
+              bagAnim.height,
+            ),
           );
+          worldHotspot.x += bagGroup.position.x;
+          worldHotspot.y += bagGroup.position.y;
+          worldHotspot.z += bagGroup.position.z;
           worldHotspot.project(camera);
           if (
             worldHotspot.z < -1 ||
@@ -711,8 +740,10 @@ export default function BagScene({ onReady, phase = "loading" }) {
             return;
           }
 
-          el.style.left = `${(worldHotspot.x * 0.5 + 0.5) * w}px`;
-          el.style.top = `${(-worldHotspot.y * 0.5 + 0.5) * h}px`;
+          const sx = spot.screenOffset?.x ?? 0;
+          const sy = spot.screenOffset?.y ?? 0;
+          el.style.left = `${(worldHotspot.x * 0.5 + 0.5) * w + sx}px`;
+          el.style.top = `${(-worldHotspot.y * 0.5 + 0.5) * h + sy}px`;
           el.style.opacity = "1";
           el.style.visibility = "visible";
           el.style.pointerEvents = "auto";
