@@ -67,6 +67,9 @@ export default function Home() {
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
   const [bagSceneVisible, setBagSceneVisible] = useState(false);
   const [soundMuted, setSoundMuted] = useState(false);
+  const [textRevealing, setTextRevealing] = useState(false);
+  const [navVisible, setNavVisible] = useState(false);
+  const [uiIntroReady, setUiIntroReady] = useState(false);
   const menuOverlayRef = useRef(null);
   const textTrackRef = useRef(null);
 
@@ -92,21 +95,38 @@ export default function Home() {
 
   useEffect(() => {
     if (phase !== "loadingExit") return;
-    const t = setTimeout(() => {
+    let revealFrame;
+    const revealTimer = setTimeout(() => {
+      revealFrame = requestAnimationFrame(() => setTextRevealing(true));
+    }, 120);
+    const sceneTimer = setTimeout(() => {
       setPhase("scene");
       window.scrollTo(0, 0);
-    }, 950);
-    return () => clearTimeout(t);
+    }, 1500);
+    return () => {
+      clearTimeout(revealTimer);
+      clearTimeout(sceneTimer);
+      if (revealFrame) cancelAnimationFrame(revealFrame);
+    };
   }, [phase]);
 
   useEffect(() => {
     if (phase !== "scene") {
       setScrollHintVisible(false);
+      setNavVisible(false);
+      setUiIntroReady(false);
       return;
     }
     document.body.style.overflow = "";
     window.scrollTo(0, 0);
-    setScrollHintVisible(true);
+    const navTimer = setTimeout(() => setNavVisible(true), 500);
+    const uiTimer = setTimeout(() => setUiIntroReady(true), 850);
+    const hintTimer = setTimeout(() => setScrollHintVisible(true), 950);
+    return () => {
+      clearTimeout(navTimer);
+      clearTimeout(uiTimer);
+      clearTimeout(hintTimer);
+    };
   }, [phase]);
 
   useEffect(() => {
@@ -137,13 +157,14 @@ export default function Home() {
 
       setProductVisible(y >= PRODUCT_VH * vh);
       setBagSceneVisible(yVh >= FADE_OUT_START);
-      // Visible pendant les textes (mauve) et jusqu’à l’arrivée de la bag scene.
-      setScrollHintVisible(yVh < BAG_START_VH + 0.5);
+      if (uiIntroReady) {
+        setScrollHintVisible(yVh < BAG_START_VH + 0.5);
+      }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
-  }, [phase]);
+  }, [phase, uiIntroReady]);
 
   function handleScrollDownClick() {
     const step = Math.min(window.innerHeight * 0.45, 520);
@@ -169,7 +190,7 @@ export default function Home() {
 
       {phase === "scene" && (
         <header
-          className={`top-nav${bagSceneVisible ? " top-nav--bag-scene" : ""}${menuOpen ? " top-nav--menu-open" : ""}`}
+          className={`top-nav${navVisible ? " top-nav--visible" : ""}${bagSceneVisible ? " top-nav--bag-scene" : ""}${menuOpen ? " top-nav--menu-open" : ""}`}
         >
           <Link to="/" className="brand-mark" aria-label="Hybrid home">
             Hybrid
@@ -178,7 +199,9 @@ export default function Home() {
             <button
               type="button"
               className={`sound-button${soundMuted ? " sound-button--muted" : ""}`}
-              aria-label={soundMuted ? "Unmute ambient sound" : "Mute ambient sound"}
+              aria-label={
+                soundMuted ? "Unmute ambient sound" : "Mute ambient sound"
+              }
               aria-pressed={soundMuted}
               onClick={() => setSoundMuted((muted) => !muted)}
             >
@@ -191,7 +214,13 @@ export default function Home() {
                   </>
                 )}
                 {soundMuted && (
-                  <line className="sound-button__mute-line" x1="5" y1="5" x2="19" y2="19" />
+                  <line
+                    className="sound-button__mute-line"
+                    x1="5"
+                    y1="5"
+                    x2="19"
+                    y2="19"
+                  />
                 )}
               </svg>
             </button>
@@ -235,7 +264,7 @@ export default function Home() {
 
       <div
         ref={textTrackRef}
-        className={`text-track${phase !== "loading" ? " text-track--primed" : ""}`}
+        className={`text-track${phase !== "loading" ? " text-track--primed" : ""}${textRevealing ? " text-track--revealing" : ""}`}
         style={{ height: `${TEXT_TRACK_VH * 100}vh` }}
         aria-hidden={phase === "loading"}
       >
@@ -247,9 +276,7 @@ export default function Home() {
               style={{
                 opacity:
                   phase === "loading"
-                    ? i === 0
-                      ? 1
-                      : 0
+                    ? 0
                     : getSlideOpacity(i, TEXTS.length, textProgress),
               }}
             >
@@ -283,10 +310,7 @@ export default function Home() {
       </Link>
 
       {menuOpen && (
-        <MenuOverlay
-          ref={menuOverlayRef}
-          onClose={() => setMenuOpen(false)}
-        />
+        <MenuOverlay ref={menuOverlayRef} onClose={() => setMenuOpen(false)} />
       )}
     </div>
   );

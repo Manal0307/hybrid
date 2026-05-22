@@ -188,29 +188,45 @@ function createBagSkyEnvironmentTexture() {
   ctx.fillStyle = horizonBand;
   ctx.fillRect(0, 0, 2048, 1024);
 
+  /* Particules / étoiles sur tout le dôme — plus visibles sur le mauve, plus discrètes sur l'horizon. */
   let seed = 90210;
   const rnd = () => {
     seed = (seed * 1103515245 + 12345) >>> 0;
     return seed / 4294967296;
   };
-  /* Étoiles sur le dôme mauve uniquement — évite la bande claire horizon (y ~ 400–630 px). */
-  const starY = () => (rnd() < 0.72 ? rnd() * 395 : 635 + rnd() * 389);
+  const particleAlpha = (y) => {
+    const dist = Math.abs(y - 512) / 512;
+    return 0.12 + dist * 0.68;
+  };
 
-  for (let i = 0; i < 1650; i++) {
+  for (let i = 0; i < 1500; i++) {
     const x = rnd() * 2048;
-    const y = starY();
+    const y = rnd() * 1024;
     const r = rnd() * 1.35 + 0.22;
-    ctx.fillStyle = `rgba(255,252,255,${0.22 + rnd() * 0.58})`;
+    const a = particleAlpha(y) * (0.48 + rnd() * 0.52);
+    ctx.fillStyle = `rgba(255,252,255,${a})`;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
-  /* Points très fins pour densité « voie lactée » légère */
-  for (let i = 0; i < 920; i++) {
+
+  for (let i = 0; i < 1100; i++) {
     const x = rnd() * 2048;
-    const y = rnd() < 0.78 ? rnd() * 380 : 640 + rnd() * 384;
-    ctx.fillStyle = `rgba(252,248,255,${0.1 + rnd() * 0.3})`;
+    const y = rnd() * 1024;
+    const a = particleAlpha(y) * (0.32 + rnd() * 0.55);
+    ctx.fillStyle = `rgba(252,246,255,${a})`;
     ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
+  }
+
+  for (let i = 0; i < 55; i++) {
+    const x = rnd() * 2048;
+    const y = rnd() * 1024;
+    const r = rnd() * 1.05 + 0.62;
+    const a = particleAlpha(y) * (0.62 + rnd() * 0.38);
+    ctx.fillStyle = `rgba(255,250,255,${a})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -462,20 +478,22 @@ export default function BagScene({ onReady, phase = "loading" }) {
     scene.add(sakuraGroup);
 
     const sakuraData = []; // rempli après chargement du GLB
-    // 10 fleurs : 5 à gauche du sac (x négatif), 5 à droite (x positif)
+    // Caméra en (0, 0.28, 2.35) → look (0, 0.52, -1.85), FOV 42°.
+    // |x| max visible : ~0.9 à z=+0.5 ; ~1.6 à z=0 ; ~2.6 à z=-1.5 ; ~3.3 à z=-2.5.
+    // 5 à gauche, 5 à droite, tailles & profondeurs variées, toutes dans le frustum.
     const SAKURA_LAYOUT = [
-      // Gauche
-      { x: -2.6, z: -2.4 },
-      { x: -1.8, z: -1.0 },
-      { x: -2.9, z: 0.4 },
-      { x: -1.5, z: 1.2 },
-      { x: -2.3, z: 2.3 },
-      // Droite
-      { x: 2.6, z: -2.4 },
-      { x: 1.8, z: -1.0 },
-      { x: 2.9, z: 0.4 },
-      { x: 1.5, z: 1.2 },
-      { x: 2.3, z: 2.3 },
+      // ── Gauche ──
+      { x: -3.15, z: -3.05, size: 3.4 },
+      { x: -0.85, z: -2.05, size: 2.4 },
+      { x: -2.55, z: -0.55, size: 2.8 },
+      { x: -0.48, z: 0.58, size: 2.0 },
+      { x: -0.88, z: 0.75, size: 1.7 },
+      // ── Droite ──
+      { x: 3.05, z: -2.95, size: 3.1 },
+      { x: 0.82, z: -1.95, size: 2.3 },
+      { x: 2.5, z: -0.45, size: 2.9 },
+      { x: 0.45, z: 0.62, size: 2.0 },
+      { x: 0.85, z: 0.78, size: 1.7 },
     ];
 
     new GLTFLoader().load(
@@ -497,19 +515,16 @@ export default function BagScene({ onReady, phase = "loading" }) {
         });
 
         const rndS = createRandom(9981);
-        // Chaque côté reçoit ses propres delays (de 0 à ~0.7) pour un effet en cascade
-        const sideStaggers = { left: 0, right: 0 };
-        SAKURA_LAYOUT.forEach((pos) => {
+        SAKURA_LAYOUT.forEach((pos, i) => {
           const wrapper = new THREE.Group();
-          const baseX = pos.x + (rndS() - 0.5) * 0.4;
-          const baseZ = bagGroup.position.z + pos.z + (rndS() - 0.5) * 0.4;
+          const baseX = pos.x + (rndS() - 0.5) * 0.22;
+          const baseZ = pos.z + (rndS() - 0.5) * 0.18;
           wrapper.position.set(baseX, 0.08, baseZ);
           wrapper.rotation.y = rndS() * Math.PI * 2;
 
           const inst = proto.clone(true);
-          // Taille très grande — fleurs bien visibles à la surface
-          const size = 3.0 + rndS() * 1.0;
-          inst.scale.setScalar(size);
+          const sizeJitter = 0.82 + rndS() * 0.36;
+          inst.scale.setScalar(pos.size * sizeJitter);
           // Render order pour passer par-dessus l'eau
           inst.traverse((c) => {
             if (c.isMesh) {
@@ -524,9 +539,7 @@ export default function BagScene({ onReady, phase = "loading" }) {
           sakuraGroup.add(wrapper);
 
           // Delay propre à chaque fleur pour qu'elles n'arrivent pas toutes ensemble
-          const sideKey = baseX < 0 ? "left" : "right";
-          const enterDelay = sideStaggers[sideKey];
-          sideStaggers[sideKey] += 0.14 + rndS() * 0.06;
+          const enterDelay = (i % 7) * 0.035 + rndS() * 0.02;
 
           sakuraData.push({
             node: wrapper,
