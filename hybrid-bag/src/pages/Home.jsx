@@ -1,42 +1,33 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Scene3D, {
-  BOTTLE_SCROLL_VH,
   BAG_START_VH,
   TEXT_TRACK_BEFORE_BAG_VH,
 } from "../components/Scene3D";
 import CoralLoader from "../components/CoralLoader";
 import MenuOverlay from "../components/MenuOverlay";
 
-const B = BOTTLE_SCROLL_VH;
-
 const TEXT_TRACK_VH = TEXT_TRACK_BEFORE_BAG_VH;
-// Phase texte : B → B+4 (puis BAG_START_VH). Phase bag : B+TEXT_TRACK_VH → fin.
-/** Voile noir s'active juste avant la fin de la bouteille */
-const FADE_BOTTLE_START = B - 0.5;   // 3.5
-/** Noir complet pendant tout le texte */
-const FADE_BOTTLE_FULL = B + 0.3;    // 4.3
-/** Le voile se lève sur une fenêtre plus longue — la scène sac est déjà rendue dessous */
-const FADE_OUT_START = BAG_START_VH - 1.1;
-const FADE_OUT_END = BAG_START_VH + 0.45;
-const PRODUCT_VH = B + TEXT_TRACK_VH + 2.5;      // 10.5
 
-/** Track des phrases d'intro : hauteur = zone bottle (`BOTTLE_SCROLL_VH`). */
-const INTRO_TRACK_VH = B;
-const SPACER2_VH = 5.5; // assez de scroll pour que le sac flotte à la fin
+/** L’overlay mauve commence à se lever juste avant la fin du dernier texte. */
+const FADE_OUT_START = TEXT_TRACK_VH - 0.6;
+const FADE_OUT_END = BAG_START_VH + 0.4;
+
+const SPACER2_VH = 5.5;
+const PRODUCT_VH = BAG_START_VH + 2.5;
 
 const TEXTS = [
   {
-    title: "Hybrid Bag — Circular by Design",
-    body: "A carry built for a circular path — recovered matter, refined processes, longer life for what already exists.",
+    title: "Where technology meets ecology",
+    body: "Hybrid is a bag designed to prove that tech and nature can shape the same object.",
   },
   {
-    title: "Where Technology Meets Ecology",
-    body: "Programmable structure and living materials side by side.\nNo trade-off between making better and doing less harm.",
+    title: "Giving life back to what we called finished",
+    body: "Reclaimed matter, second chances — turned into something to carry every day.",
   },
   {
-    title: "Two Worlds, One Object",
-    body: "Industry and ocean. Code and craft.\nThey meet in one bag — Hybrid.",
+    title: "A fashion accessory, engineered differently",
+    body: "Built with 3D printing, biomaterials and recycled parts. Contemporary, and circular by design.",
   },
 ];
 
@@ -51,20 +42,7 @@ function getSlideOpacity(index, total, progress) {
   const size = 1 / total;
   const start = index * size;
   const end = start + size;
-  const fade = size * 0.42;
-
-  if (progress < start || progress >= end) return 0;
-  if (progress < start + fade) return smoothstep(start, start + fade, progress);
-  if (progress > end - fade) return 1 - smoothstep(end - fade, end, progress);
-  return 1;
-}
-
-/** Phrases d'intro : fondus courts ; la 1ʳᵉ est visible dès l’arrivée (scroll 0). */
-function getIntroSlideOpacity(index, total, progress) {
-  const size = 1 / total;
-  const start = index * size;
-  const end = start + size;
-  const fade = size * 0.2;
+  const fade = size * 0.3;
 
   if (index === 0) {
     if (progress >= end) return 0;
@@ -78,25 +56,15 @@ function getIntroSlideOpacity(index, total, progress) {
   return 1;
 }
 
-const LOGO_LETTERS = "HYBRID".split("");
-const INTRO_LINES = [
-  "Our waters are filling with what we throw away",
-  "Pollution is the footprint of how we design and consume",
-  "Another way forward has to begin somewhere",
-];
-
 export default function Home() {
   const [phase, setPhase] = useState("loading");
   const [menuOpen, setMenuOpen] = useState(false);
   const [scenePrimed, setScenePrimed] = useState(false);
   const [loadPercent, setLoadPercent] = useState(0);
-  const [fadeOpacity, setFadeOpacity] = useState(0);
+  const [fadeOpacity, setFadeOpacity] = useState(1);
   const [textProgress, setTextProgress] = useState(0);
-  const [introProgress, setIntroProgress] = useState(0);
-  const [introOpacity, setIntroOpacity] = useState(1);
   const [productVisible, setProductVisible] = useState(false);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
-  const [textStickyOpacity, setTextStickyOpacity] = useState(1);
   const menuOverlayRef = useRef(null);
   const textTrackRef = useRef(null);
 
@@ -114,15 +82,12 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // Loading → loadingExit dès que le compteur est plein ET que la bottle scene est prête.
   useEffect(() => {
     if (phase !== "loading") return;
     if (loadPercent < 100 || !scenePrimed) return;
     setPhase("loadingExit");
   }, [phase, loadPercent, scenePrimed]);
 
-  // loadingExit → scene après le temps du fondu (timeout dans un effet séparé
-  // pour éviter qu'il soit annulé par le re-run dû au changement de phase).
   useEffect(() => {
     if (phase !== "loadingExit") return;
     const t = setTimeout(() => {
@@ -137,9 +102,9 @@ export default function Home() {
       setScrollHintVisible(false);
       return;
     }
-    document.body.style.overflow = ""; // relâche le lock posé pendant le loading
+    document.body.style.overflow = "";
     window.scrollTo(0, 0);
-    setScrollHintVisible(true);
+    setScrollHintVisible(false);
   }, [phase]);
 
   useEffect(() => {
@@ -147,14 +112,10 @@ export default function Home() {
     function onScroll() {
       const vh = window.innerHeight;
       const y = window.scrollY;
-
       const yVh = y / vh;
-      let nextFade = 0;
-      if (yVh < FADE_BOTTLE_START) {
-        nextFade = 0;
-      } else if (yVh < FADE_BOTTLE_FULL) {
-        nextFade = smoothstep(FADE_BOTTLE_START, FADE_BOTTLE_FULL, yVh);
-      } else if (yVh <= FADE_OUT_START) {
+
+      let nextFade;
+      if (yVh <= FADE_OUT_START) {
         nextFade = 1;
       } else if (yVh < FADE_OUT_END) {
         nextFade = 1 - smoothstep(FADE_OUT_START, FADE_OUT_END, yVh);
@@ -162,15 +123,6 @@ export default function Home() {
         nextFade = 0;
       }
       setFadeOpacity(nextFade);
-
-      // Intro lines : progression et fade-out à l'approche de la fin de la bottle scene.
-      setIntroProgress(Math.min(1, Math.max(0, yVh / B)));
-      // Intro lines : fade-out un peu plus tard pour laisser le temps de lire la dernière phrase.
-      setIntroOpacity(1 - smoothstep(B - 0.45, B - 0.02, yVh));
-
-      setTextStickyOpacity(
-        1 - smoothstep(BAG_START_VH - 0.9, BAG_START_VH + 0.35, yVh),
-      );
 
       const track = textTrackRef.current;
       if (track) {
@@ -182,7 +134,9 @@ export default function Home() {
       }
 
       setProductVisible(y >= PRODUCT_VH * vh);
-      setScrollHintVisible(y < B * vh);
+      setScrollHintVisible(
+        yVh >= FADE_OUT_START && yVh < BAG_START_VH + 1.0,
+      );
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
@@ -199,7 +153,6 @@ export default function Home() {
 
   return (
     <div className="app">
-      {/* ─── Loading screen ─────────────────────────────────────────────── */}
       {(phase === "loading" || phase === "loadingExit") && (
         <div
           className={`loading-screen ${phase === "loadingExit" ? "fade-out" : ""}`}
@@ -213,43 +166,42 @@ export default function Home() {
       )}
 
       {phase !== "loading" && (
-      <header className={`top-nav${menuOpen ? " top-nav--menu-open" : ""}`}>
-        <Link to="/" className="brand-mark" aria-label="Hybrid home">
-          Hybrid
-        </Link>
-        <div className="nav-actions">
-          <button
-            type="button"
-            className="sound-button"
-            aria-label="Sound control"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 14.5V9.5H8.1L12 6.2V17.8L8.1 14.5H5Z" />
-              <path d="M15.2 9.2C16.3 10.1 16.9 11 16.9 12C16.9 13 16.3 13.9 15.2 14.8" />
-              <path d="M17.6 6.9C19.5 8.3 20.5 10 20.5 12C20.5 14 19.5 15.7 17.6 17.1" />
-            </svg>
-          </button>
+        <header className={`top-nav${menuOpen ? " top-nav--menu-open" : ""}`}>
+          <Link to="/" className="brand-mark" aria-label="Hybrid home">
+            Hybrid
+          </Link>
+          <div className="nav-actions">
+            <button
+              type="button"
+              className="sound-button"
+              aria-label="Sound control"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 14.5V9.5H8.1L12 6.2V17.8L8.1 14.5H5Z" />
+                <path d="M15.2 9.2C16.3 10.1 16.9 11 16.9 12C16.9 13 16.3 13.9 15.2 14.8" />
+                <path d="M17.6 6.9C19.5 8.3 20.5 10 20.5 12C20.5 14 19.5 15.7 17.6 17.1" />
+              </svg>
+            </button>
 
-          <button
-            type="button"
-            className={`menu-button ${menuOpen ? "menu-button--open" : ""}`}
-            aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-            onClick={() => {
-              if (menuOpen) menuOverlayRef.current?.requestClose?.();
-              else setMenuOpen(true);
-            }}
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-        </div>
-      </header>
+            <button
+              type="button"
+              className={`menu-button ${menuOpen ? "menu-button--open" : ""}`}
+              aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              onClick={() => {
+                if (menuOpen) menuOverlayRef.current?.requestClose?.();
+                else setMenuOpen(true);
+              }}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
+        </header>
       )}
 
-      {/* Toujours monté : on précharge la bottle scene derrière le loader
-          pour que `scenePrimed` puisse se déclencher avant la transition. */}
-      <Scene3D onBottleReady={() => setScenePrimed(true)} />
+      <Scene3D onBagReady={() => setScenePrimed(true)} />
+
       {phase === "scene" && (
         <div className="fade-overlay" style={{ opacity: fadeOpacity }} />
       )}
@@ -265,43 +217,12 @@ export default function Home() {
         </button>
       )}
 
-      {/* ─── Intro lines : sticky par-dessus la bottle/fruits scene ─────── */}
-      <div
-        className="intro-track"
-        style={{ height: `${INTRO_TRACK_VH * 100}vh` }}
-        aria-hidden={phase !== "scene"}
-      >
-        <div
-          className="intro-track__sticky"
-          style={{ opacity: phase === "scene" ? introOpacity : 0 }}
-        >
-          {INTRO_LINES.map((line, i) => (
-            <p
-              key={i}
-              className="intro-line"
-              style={{
-                opacity: getIntroSlideOpacity(
-                  i,
-                  INTRO_LINES.length,
-                  introProgress,
-                ),
-              }}
-            >
-              {line}
-            </p>
-          ))}
-        </div>
-      </div>
-
       <div
         ref={textTrackRef}
         className="text-track"
         style={{ height: `${TEXT_TRACK_VH * 100}vh` }}
       >
-        <div
-          className="text-sticky"
-          style={{ opacity: textStickyOpacity }}
-        >
+        <div className="text-sticky">
           {TEXTS.map((t, i) => (
             <div
               key={i}

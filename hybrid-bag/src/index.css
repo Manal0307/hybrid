@@ -21,7 +21,7 @@ body,
 body {
   overflow-x: hidden;
   overflow-y: auto;
-  background: #000;
+  background: #cdb8c8;
   font-family: "CaligulaDodgy", "Figtree", sans-serif;
   font-weight: 400;
 }
@@ -422,23 +422,14 @@ body {
   }
 }
 
-/* ─── Overlay plein écran (phase textes après la bouteille) : rose / mauve — le scroll pilote l’opacité */
+/* ─── Overlay plein écran (phase textes) : fond mauve clair uni ─────────── */
 .fade-overlay {
   position: fixed;
   inset: 0;
   z-index: 1;
   pointer-events: none;
   will-change: opacity;
-  background: linear-gradient(
-    168deg,
-    #1e141d 0%,
-    #2d1f2a 18%,
-    #3d2838 38%,
-    #5c3d4e 58%,
-    #7a4f62 72%,
-    #5a3a4c 88%,
-    #35242f 100%
-  );
+  background: #cdb8c8;
 }
 
 /* ─── Scroll down CTA (première vue) ──────────────────────────────────── */
@@ -514,6 +505,7 @@ body {
   position: relative;
   z-index: 2;
   width: 100%;
+  pointer-events: none;
 }
 
 /* ─── Text track (sticky ; fond assuré par .fade-overlay) ───────────── */
@@ -535,35 +527,33 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, calc(-50% - 4.5vh));
+  transform: translate(-50%, -50%);
   text-align: center;
-  width: min(92vw, 880px);
-  max-width: 880px;
-  padding: 2rem clamp(1rem, 4vw, 2.5rem);
+  width: min(86vw, 720px);
+  max-width: 720px;
+  padding: 1rem clamp(1rem, 4vw, 2.2rem);
   will-change: opacity;
 }
 
 .text-slide h2 {
   font-family: "CaligulaDodgy", "Figtree", sans-serif;
-  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
   font-weight: 300;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.1rem;
   color: #fffbfa;
-  line-height: 1.2;
-  text-shadow:
-    0 1px 2px rgba(20, 10, 24, 0.45),
-    0 2px 24px rgba(25, 12, 28, 0.35);
+  line-height: 1.25;
 }
 
 .text-slide p {
-  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
-  line-height: 2;
+  font-size: clamp(0.92rem, 1.4vw, 1.05rem);
+  line-height: 1.7;
   color: #faf6f8;
   opacity: 0.92;
-  letter-spacing: 0.04em;
-  text-shadow: 0 1px 3px rgba(18, 8, 22, 0.4);
+  letter-spacing: 0.03em;
+  max-width: 56ch;
+  margin: 0 auto;
 }
 
 /* ─── Section produit (transparente, 3D visible derrière) ─────────────── */
