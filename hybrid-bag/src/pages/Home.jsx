@@ -1,11 +1,17 @@
-import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Link, useLocation } from "react-router-dom";
 import Scene3D, {
+  BAG_SCENE_FULL_VH,
   BAG_START_VH,
   TEXT_TRACK_BEFORE_BAG_VH,
 } from "../components/Scene3D";
 import CoralLoader from "../components/CoralLoader";
 import MenuOverlay from "../components/MenuOverlay";
+import {
+  homeBagLink,
+  markHomeIntroDone,
+  shouldSkipHomeIntro,
+} from "../utils/homeNav";
 
 const TEXT_TRACK_VH = TEXT_TRACK_BEFORE_BAG_VH;
 
@@ -57,23 +63,48 @@ function getSlideOpacity(index, total, progress) {
 }
 
 export default function Home() {
-  const [phase, setPhase] = useState("loading");
+  const location = useLocation();
+  const skipIntro = useMemo(
+    () => shouldSkipHomeIntro(location),
+    [location.state?.skipIntro],
+  );
+
+  const [phase, setPhase] = useState(() => (skipIntro ? "scene" : "loading"));
   const [menuOpen, setMenuOpen] = useState(false);
   const [scenePrimed, setScenePrimed] = useState(false);
   const [loadPercent, setLoadPercent] = useState(0);
-  const [fadeOpacity, setFadeOpacity] = useState(1);
-  const [textProgress, setTextProgress] = useState(0);
-  const [productVisible, setProductVisible] = useState(false);
+  const [fadeOpacity, setFadeOpacity] = useState(() => (skipIntro ? 0 : 1));
+  const [textProgress, setTextProgress] = useState(() => (skipIntro ? 1 : 0));
+  const [productVisible, setProductVisible] = useState(() => skipIntro);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
-  const [bagSceneVisible, setBagSceneVisible] = useState(false);
+  const [bagSceneVisible, setBagSceneVisible] = useState(() => skipIntro);
   const [soundMuted, setSoundMuted] = useState(false);
-  const [textRevealing, setTextRevealing] = useState(false);
-  const [navVisible, setNavVisible] = useState(false);
-  const [uiIntroReady, setUiIntroReady] = useState(false);
+  const [textRevealing, setTextRevealing] = useState(() => skipIntro);
+  const [navVisible, setNavVisible] = useState(() => skipIntro);
+  const [uiIntroReady, setUiIntroReady] = useState(() => skipIntro);
   const menuOverlayRef = useRef(null);
   const textTrackRef = useRef(null);
 
   useEffect(() => {
+    if (!skipIntro) return;
+    markHomeIntroDone();
+    document.body.style.overflow = "";
+    const scrollToBag = () => {
+      window.scrollTo(0, BAG_SCENE_FULL_VH * window.innerHeight);
+    };
+    scrollToBag();
+    requestAnimationFrame(scrollToBag);
+    const retry = window.setTimeout(scrollToBag, 80);
+    return () => window.clearTimeout(retry);
+  }, [skipIntro]);
+
+  useEffect(() => {
+    if (phase !== "scene") return;
+    markHomeIntroDone();
+  }, [phase]);
+
+  useEffect(() => {
+    if (skipIntro) return;
     document.body.style.overflow = "hidden";
     const interval = setInterval(() => {
       setLoadPercent((prev) => {
@@ -85,7 +116,7 @@ export default function Home() {
       });
     }, 28);
     return () => clearInterval(interval);
-  }, []);
+  }, [skipIntro]);
 
   useEffect(() => {
     if (phase !== "loading") return;
@@ -118,16 +149,21 @@ export default function Home() {
       return;
     }
     document.body.style.overflow = "";
-    window.scrollTo(0, 0);
-    const navTimer = setTimeout(() => setNavVisible(true), 500);
-    const uiTimer = setTimeout(() => setUiIntroReady(true), 850);
-    const hintTimer = setTimeout(() => setScrollHintVisible(true), 950);
+    if (!skipIntro) {
+      window.scrollTo(0, 0);
+    }
+    const navTimer = setTimeout(() => setNavVisible(true), skipIntro ? 0 : 500);
+    const uiTimer = setTimeout(() => setUiIntroReady(true), skipIntro ? 0 : 850);
+    const hintTimer = setTimeout(
+      () => setScrollHintVisible(!skipIntro),
+      skipIntro ? 0 : 950,
+    );
     return () => {
       clearTimeout(navTimer);
       clearTimeout(uiTimer);
       clearTimeout(hintTimer);
     };
-  }, [phase]);
+  }, [phase, skipIntro]);
 
   useEffect(() => {
     if (phase !== "scene") return;
@@ -192,7 +228,12 @@ export default function Home() {
         <header
           className={`top-nav${navVisible ? " top-nav--visible" : ""}${bagSceneVisible ? " top-nav--bag-scene" : ""}${menuOpen ? " top-nav--menu-open" : ""}`}
         >
-          <Link to="/" className="brand-mark" aria-label="Hybrid home">
+          <Link
+            to={homeBagLink.pathname}
+            state={homeBagLink.state}
+            className="brand-mark"
+            aria-label="Hybrid home"
+          >
             Hybrid
           </Link>
           <div className="nav-actions">
@@ -242,7 +283,11 @@ export default function Home() {
         </header>
       )}
 
-      <Scene3D phase={phase} onBagReady={() => setScenePrimed(true)} />
+      <Scene3D
+        phase={phase}
+        snapToProduct={skipIntro}
+        onBagReady={() => setScenePrimed(true)}
+      />
 
       {/* Overlay mauve : présent dès le départ pour masquer la 3D pendant la transition
           loading → texte (sinon flash de la bag scene derrière le fondu du loading). */}

@@ -28,6 +28,9 @@ const EMERGENCE_START = 0.5; // localY en vh
 const EMERGENCE_END = 2.0;
 const EMERGENCE_SPIN_Y = Math.PI * 0.25;
 
+/** Scroll absolu (vh) : voile levé, sac en surface, fleurs en place */
+export const BAG_SCENE_FULL_VH = BAG_START_VH + EMERGENCE_END + 1.2;
+
 /**
  * Taille du render target miroir (pixels), alignée sur le drawing buffer WebGL.
  * Plafonnée pour la perf; sinon la réflexion peut être trop basse ou ne pas correspondre au rendu final.
@@ -238,13 +241,15 @@ function createBagSkyEnvironmentTexture() {
 }
 
 // ─── Composant ───────────────────────────────────────────────────────────────
-export default function BagScene({ onReady, phase = "loading" }) {
+export default function BagScene({ onReady, phase = "loading", snapToProduct = false }) {
   const containerRef = useRef(null);
   const hotspotRefs = useRef([]);
   const onReadyRef = useRef(onReady);
   const phaseRef = useRef(phase);
+  const snapRef = useRef(snapToProduct);
   onReadyRef.current = onReady;
   phaseRef.current = phase;
+  snapRef.current = snapToProduct;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -614,10 +619,12 @@ export default function BagScene({ onReady, phase = "loading" }) {
       }
 
       const yVh = window.scrollY / window.innerHeight;
-      const active = yVh >= BAG_RAF_START_VH;
+      const snapped = snapRef.current;
+      const active = snapped || yVh >= BAG_RAF_START_VH;
 
       renderer.domElement.style.display = active ? "block" : "none";
-      container.style.pointerEvents = yVh >= BAG_START_VH ? "auto" : "none";
+      container.style.pointerEvents =
+        snapped || yVh >= BAG_START_VH ? "auto" : "none";
       if (!active) {
         hideAllHotspots();
         return;
@@ -625,7 +632,11 @@ export default function BagScene({ onReady, phase = "loading" }) {
 
       const elapsed = timer.getElapsed();
       const vh = window.innerHeight;
-      const localY = window.scrollY - BAG_START_VH * vh;
+      const scrollLocalY = window.scrollY - BAG_START_VH * vh;
+      const snapLocalY = (EMERGENCE_END + 1.2) * vh;
+      const localY = snapRef.current
+        ? Math.max(scrollLocalY, snapLocalY)
+        : scrollLocalY;
 
       water.material.uniforms["time"].value = elapsed * 0.25;
 
