@@ -2,55 +2,72 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-const EXIT_MS = 420;
+const EXIT_MS = 480;
 
 /* Accents glow — palette proche du ciel sac (mauve A78699, rose pâle, lavande) */
 const ITEMS = [
   {
-    num: "01", label: "Materials", sub: "Les matières du sac",
-    to: "/materials", color: "#c9a0b8",
+    num: "01",
+    label: "Home",
+    sub: "The bag experience",
+    to: "/",
+    color: "#c9a0b8",
   },
   {
-    num: "02", label: "Contact", sub: "Nous écrire",
-    to: "#contact", color: "#b8a8dc",
+    num: "02",
+    label: "About",
+    sub: "Mission & contact",
+    to: "/about",
+    color: "#b8a8dc",
   },
   {
-    num: "03", label: "Process", sub: "How it's made",
-    to: "/process", color: "#dba8c4",
+    num: "03",
+    label: "Process",
+    sub: "How it's made",
+    to: "/process",
+    color: "#dba8c4",
   },
   {
-    num: "04", label: "À Propos", sub: "Notre mission",
-    to: "#about", color: "#a894cc",
-  },
-  {
-    num: "05", label: "FAQ", sub: "Questions fréquentes",
-    to: "#faq", color: "#9b8ac4",
-  },
-  {
-    num: "06", label: "Mentions\nlégales", sub: "Confidentialité",
-    to: "#legal", color: "#8f7eb0",
+    num: "04",
+    label: "Materials",
+    sub: "What it's made of",
+    to: "/materials",
+    color: "#a894cc",
   },
 ];
 
 const MenuOverlay = forwardRef(function MenuOverlay({ onClose }, ref) {
   const [exiting, setExiting] = useState(false);
+  const pendingNav = useRef(null);
+  const navigate = useNavigate();
 
-  const beginClose = useCallback(() => {
-    setExiting((v) => (v ? v : true));
+  const beginClose = useCallback((to) => {
+    setExiting((v) => {
+      if (v) return v;
+      if (to) pendingNav.current = to;
+      return true;
+    });
   }, []);
 
-  useImperativeHandle(ref, () => ({ requestClose: beginClose }), [beginClose]);
+  useImperativeHandle(ref, () => ({ requestClose: () => beginClose() }), [beginClose]);
 
   useEffect(() => {
     if (!exiting) return;
-    const id = window.setTimeout(() => onClose(), EXIT_MS);
+    const id = window.setTimeout(() => {
+      if (pendingNav.current) {
+        navigate(pendingNav.current);
+        pendingNav.current = null;
+      }
+      onClose();
+    }, EXIT_MS);
     return () => clearTimeout(id);
-  }, [exiting, onClose]);
+  }, [exiting, onClose, navigate]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -76,7 +93,7 @@ const MenuOverlay = forwardRef(function MenuOverlay({ onClose }, ref) {
       <div className="mo-backdrop" onClick={beginClose} />
 
       <div className="mo-panel">
-        {/* Grid 3×2 */}
+        {/* Grid 3 col — 4 cartes */}
         <div className="mo-grid">
           {ITEMS.map((item, i) => (
             <Link
@@ -84,7 +101,10 @@ const MenuOverlay = forwardRef(function MenuOverlay({ onClose }, ref) {
               to={item.to}
               className="mo-card"
               style={{ "--c": item.color, animationDelay: `${0.04 + i * 0.055}s` }}
-              onClick={beginClose}
+              onClick={(e) => {
+                e.preventDefault();
+                beginClose(item.to);
+              }}
             >
               <span className="mo-card-num">{item.num}</span>
               <div className="mo-card-body">
@@ -100,7 +120,7 @@ const MenuOverlay = forwardRef(function MenuOverlay({ onClose }, ref) {
         </div>
 
         {/* Footer */}
-        <p className="mo-footer">© 2025 Hybrid — Bruxelles</p>
+        <p className="mo-footer">© 2026 Hybrid — Bruxelles</p>
       </div>
     </div>
   );

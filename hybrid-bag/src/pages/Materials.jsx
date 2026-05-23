@@ -698,10 +698,8 @@ export default function Materials() {
           <p className="mat-intro__eyebrow">Hybrid bag</p>
           <h1 className="mat-intro__title">What it&apos;s made of</h1>
           <p className="mat-lead">
-            Hybrid was built from reclaimed matter and bio-based materials — 3D
-            printing, floral bioplastic, recycled fabric, and forms inspired by
-            marine life. Select a material to explore it in 3D, then click the
-            shape for the full sheet.
+            Reclaimed matter and bio-based materials, shaped into one bag.
+            Pick a material to explore it in 3D.
           </p>
         </header>
 
@@ -755,8 +753,8 @@ export default function Materials() {
               className={`mat-viewer-hint${focusMaterial != null ? " mat-viewer-hint--detail" : ""}`}
             >
               {focusMaterial == null
-                ? "Drag to rotate the bag — or pick a material on the sides"
-                : "Tip: cursor becomes a pointer on the shape — click without dragging to open"}
+                ? "Drag to rotate the bag, or pick a material on the sides"
+                : "Click the shape without dragging to open the full sheet"}
             </p>
             {focusMaterial != null && (
               <button

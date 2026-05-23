@@ -1,0 +1,330 @@
+.about-page {
+  --about-brown: #9a8070;
+  --about-brown-dark: #3e2c24;
+  --about-brown-mid: #634839;
+  --about-brown-soft: rgba(99, 72, 57, 0.78);
+  --about-line: rgba(154, 128, 112, 0.16);
+
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(
+    168deg,
+    #fffefb 0%,
+    #fdf6f9 35%,
+    #f0e4ee 72%,
+    #e5dae8 100%
+  );
+  color: var(--about-brown-dark);
+  overflow-x: hidden;
+}
+
+.about-page .top-nav {
+  opacity: 1;
+}
+
+.about-page .top-nav .brand-mark {
+  color: var(--about-brown-dark);
+  text-shadow: none;
+}
+
+.about-main {
+  padding: 5.5rem 1.5rem 3rem;
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.about-me .about-block__text strong {
+  font-weight: 600;
+  color: var(--about-brown-dark);
+}
+
+/* ─── Gallery carousel ───────────────────────────────────────────────────── */
+.about-gallery {
+  margin-top: 2.75rem;
+  padding-top: 2.75rem;
+  border-top: 1px solid var(--about-line);
+}
+
+.about-gallery__head {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.about-gallery__eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--about-brown);
+  margin-bottom: 0.5rem;
+}
+
+.about-gallery__frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.about-gallery__viewport {
+  flex: 1;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--about-line);
+  box-shadow: 0 12px 36px rgba(62, 44, 36, 0.08);
+  background: rgba(255, 254, 252, 0.6);
+}
+
+.about-gallery__track {
+  display: flex;
+  transition: transform 0.55s cubic-bezier(0.32, 1, 0.36, 1);
+}
+
+.about-gallery__slide {
+  margin: 0;
+  flex: 0 0 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.about-gallery__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.about-gallery__placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    145deg,
+    #fdf6f9 0%,
+    #f0e4ee 45%,
+    #e5dae8 100%
+  );
+}
+
+.about-gallery__nav {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--about-line);
+  border-radius: 50%;
+  background: rgba(255, 254, 252, 0.92);
+  color: var(--about-brown-dark);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.about-gallery__nav:hover {
+  background: #fff;
+  border-color: rgba(154, 128, 112, 0.35);
+}
+
+.about-gallery__nav:active {
+  transform: scale(0.96);
+}
+
+.about-gallery__caption {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--about-brown);
+}
+
+.about-gallery__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.about-gallery__dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(154, 128, 112, 0.28);
+  cursor: pointer;
+  transition: background 0.25s, transform 0.25s;
+}
+
+.about-gallery__dot.is-active {
+  background: var(--about-brown);
+  transform: scale(1.25);
+}
+
+@media (max-width: 520px) {
+  .about-gallery__nav {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .about-gallery__frame {
+    gap: 0.4rem;
+  }
+}
+
+.about-intro {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.about-intro__eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--about-brown);
+  margin-bottom: 0.65rem;
+}
+
+.about-intro__title {
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
+  font-size: clamp(1.5rem, 3.2vw, 2.15rem);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.about-intro__lead {
+  font-size: clamp(0.85rem, 1.25vw, 0.98rem);
+  line-height: 1.75;
+  letter-spacing: 0.04em;
+  color: var(--about-brown-mid);
+}
+
+.about-block,
+.about-faq,
+.about-contact {
+  margin-top: 2.75rem;
+  padding-top: 2.75rem;
+  border-top: 1px solid var(--about-line);
+}
+
+.about-block__title {
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1.1rem;
+}
+
+.about-block__text {
+  font-size: 0.92rem;
+  line-height: 1.8;
+  letter-spacing: 0.03em;
+  color: var(--about-brown-mid);
+  margin: 0 0 1rem;
+}
+
+.about-faq__list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.about-faq__item dt {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--about-brown);
+  margin-bottom: 0.45rem;
+}
+
+.about-faq__item dd {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--about-brown-mid);
+}
+
+.about-contact__link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--about-brown-dark);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(154, 128, 112, 0.45);
+  padding-bottom: 0.2rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.about-contact__link:hover {
+  color: var(--about-brown);
+  border-color: var(--about-brown);
+}
+
+.about-contact__social {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 1.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-contact__social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 50%;
+  border: 1px solid var(--about-line);
+  background: rgba(255, 254, 252, 0.92);
+  color: var(--about-brown-dark);
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    transform 0.15s ease;
+}
+
+.about-contact__social-link:hover {
+  background: #fff;
+  border-color: rgba(154, 128, 112, 0.4);
+  color: var(--about-brown);
+  transform: translateY(-2px);
+}
+
+.about-contact__social-link:active {
+  transform: translateY(0);
+}
+
+.about-contact__place {
+  margin: 1.25rem 0 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--about-brown-soft);
+}
+
+.about-footer {
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--about-line);
+  text-align: center;
+}
+
+.about-footer__legal {
+  margin: 0;
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(154, 128, 112, 0.75);
+}

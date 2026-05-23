@@ -47,7 +47,7 @@
 }
 
 .mat-intro {
-  max-width: 40rem;
+  max-width: 48rem;
   margin: 0 auto 2rem;
   text-align: center;
 }
@@ -73,10 +73,11 @@
 
 .mat-lead {
   margin: 0 auto;
+  max-width: 44rem;
   text-align: center;
-  font-size: clamp(0.85rem, 1.25vw, 0.98rem);
-  line-height: 1.75;
-  letter-spacing: 0.04em;
+  font-size: clamp(0.88rem, 1.3vw, 1.02rem);
+  line-height: 1.8;
+  letter-spacing: 0.045em;
   color: var(--mat-brown-mid);
 }
 
@@ -451,7 +452,7 @@
   gap: 0.55rem;
   padding: 0.65rem 1.2rem;
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--mat-brown-dark);
@@ -681,7 +682,7 @@
 
 .mat-modal__sheet-label {
   font-size: 0.58rem;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--mat-brown);
