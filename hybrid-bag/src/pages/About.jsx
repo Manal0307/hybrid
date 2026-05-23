@@ -86,7 +86,17 @@ const GALLERY = [
   { src: "/about/04.jpg", caption: "Studio & process" },
 ];
 
-function AboutCarousel({ slides }) {
+function revealCls(id, revealed, ...extra) {
+  return [
+    "about-reveal",
+    revealed.has(id) && "is-visible",
+    ...extra.filter(Boolean),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function AboutCarousel({ slides, revealed }) {
   const [index, setIndex] = useState(0);
   const [broken, setBroken] = useState(() => new Set());
 
@@ -113,7 +123,11 @@ function AboutCarousel({ slides }) {
   const slide = slides[index];
 
   return (
-    <section className="about-gallery" aria-label="Project gallery">
+    <section
+      data-reveal="gallery"
+      className={revealCls("gallery", revealed, "about-gallery")}
+      aria-label="Project gallery"
+    >
       <header className="about-gallery__head">
         <p className="about-gallery__eyebrow">Gallery</p>
         <h2 className="about-block__title">The bag in pictures</h2>
@@ -202,10 +216,117 @@ function AboutCarousel({ slides }) {
   );
 }
 
+function AboutFaqAccordion({ items, revealed }) {
+  const [openIndex, setOpenIndex] = useState(null);
+
+  return (
+    <div className="about-faq__list">
+      {items.map((item, i) => {
+        const isOpen = openIndex === i;
+        const panelId = `about-faq-panel-${i}`;
+        const btnId = `about-faq-btn-${i}`;
+
+        return (
+          <div
+            key={item.q}
+            data-reveal={`faq-${i}`}
+            className={revealCls(`faq-${i}`, revealed, "about-faq__item", isOpen && "is-open")}
+          >
+            <button
+              type="button"
+              id={btnId}
+              className="about-faq__trigger"
+              aria-expanded={isOpen}
+              aria-controls={panelId}
+              onClick={() => setOpenIndex(isOpen ? null : i)}
+            >
+              <span className="about-faq__question">{item.q}</span>
+              <span className="about-faq__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="14" height="14">
+                  <path
+                    d="M8 3v10M3 8h10"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </button>
+            <div
+              id={panelId}
+              className="about-faq__panel"
+              role="region"
+              aria-labelledby={btnId}
+            >
+              <div className="about-faq__panel-inner">
+                <p>{item.a}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function useScrollReveal(containerRef) {
+  const [revealed, setRevealed] = useState(() => new Set());
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const items = root.querySelectorAll("[data-reveal]");
+    if (!items.length) return;
+
+    const revealAll = () => {
+      const keys = new Set();
+      items.forEach((el) => {
+        if (el.dataset.reveal) keys.add(el.dataset.reveal);
+      });
+      setRevealed(keys);
+    };
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      revealAll();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const key = entry.target.dataset.reveal;
+          if (key) {
+            setRevealed((prev) => {
+              if (prev.has(key)) return prev;
+              const next = new Set(prev);
+              next.add(key);
+              return next;
+            });
+          }
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -6% 0px" },
+    );
+
+    items.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  return revealed;
+}
+
 export default function About() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [soundMuted, setSoundMuted] = useState(false);
   const menuOverlayRef = useRef(null);
+  const mainRef = useRef(null);
+
+  const revealed = useScrollReveal(mainRef);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -216,7 +337,7 @@ export default function About() {
       <header
         className={`top-nav top-nav--visible${menuOpen ? " top-nav--menu-open" : ""}`}
       >
-        <Link to={homeBagLink.pathname} className="brand-mark" aria-label="Hybrid home">
+        <Link to={homeBagLink.pathname} state={homeBagLink.state} className="brand-mark" aria-label="Hybrid home">
           Hybrid
         </Link>
         <div className="nav-actions">
@@ -257,78 +378,123 @@ export default function About() {
         </div>
       </header>
 
-      <main className="about-main">
+      <main className="about-main" ref={mainRef}>
         <header className="about-intro">
-          <p className="about-intro__eyebrow">Hybrid</p>
-          <h1 className="about-intro__title">About the project</h1>
-          <p className="about-intro__lead">
+          <p
+            data-reveal="intro-eyebrow"
+            className={revealCls("intro-eyebrow", revealed, "about-intro__eyebrow")}
+          >
+            Hybrid
+          </p>
+          <h1
+            data-reveal="intro-title"
+            className={revealCls("intro-title", revealed, "about-intro__title", "about-reveal--d1")}
+          >
+            About the project
+          </h1>
+          <p
+            data-reveal="intro-lead"
+            className={revealCls("intro-lead", revealed, "about-intro__lead", "about-reveal--d2")}
+          >
             Hybrid is a fashion accessory engineered differently, where reclaimed
             matter, biomaterials and 3D printing meet in a single everyday object.
           </p>
         </header>
 
-        <section className="about-block about-me" aria-labelledby="about-me-head">
+        <section
+          data-reveal="about-me"
+          className={revealCls("about-me", revealed, "about-block", "about-me")}
+          aria-labelledby="about-me-head"
+        >
           <h2 id="about-me-head" className="about-block__title">
             About me
           </h2>
-          <p className="about-block__text">
+          <p
+            data-reveal="about-me-p1"
+            className={revealCls("about-me-p1", revealed, "about-block__text", "about-reveal--d1")}
+          >
             I&apos;m <strong>Manal Boulahya</strong>, a student in{" "}
             <strong>Multimedia &amp; Creative Technology</strong> at Erasmus
             Hogeschool Brussel. I&apos;m passionate about aesthetics in every
             form, and I love mixing different techniques: 3D, craft, code,
             material research, visual storytelling.
           </p>
-          <p className="about-block__text">
+          <p
+            data-reveal="about-me-p2"
+            className={revealCls("about-me-p2", revealed, "about-block__text", "about-reveal--d2")}
+          >
             Hybrid is where that curiosity comes together: a real object, built
             by hand and machine, and this site to tell its story.
           </p>
         </section>
 
-        <AboutCarousel slides={GALLERY} />
+        <AboutCarousel slides={GALLERY} revealed={revealed} />
 
-        <section className="about-block" aria-labelledby="about-mission">
+        <section
+          data-reveal="mission"
+          className={revealCls("mission", revealed, "about-block")}
+          aria-labelledby="about-mission"
+        >
           <h2 id="about-mission" className="about-block__title">
             Our mission
           </h2>
-          <p className="about-block__text">
+          <p
+            data-reveal="mission-p1"
+            className={revealCls("mission-p1", revealed, "about-block__text", "about-reveal--d1")}
+          >
             We believe waste is not an endpoint. Oyster shells, floral bioplastics,
             recycled fabrics. Each material tells a story of second chances. Hybrid
             proves that a contemporary bag can be beautiful, functional and circular
             by design.
           </p>
-          <p className="about-block__text">
+          <p
+            data-reveal="mission-p2"
+            className={revealCls("mission-p2", revealed, "about-block__text", "about-reveal--d2")}
+          >
             Born in Brussels, the project sits at the crossroads of fashion, material
             research and digital fabrication, a small lab experiment turned into
             something you can carry every day.
           </p>
         </section>
 
-        <section className="about-faq" aria-labelledby="about-faq-head">
+        <section
+          data-reveal="faq"
+          className={revealCls("faq", revealed, "about-faq")}
+          aria-labelledby="about-faq-head"
+        >
           <h2 id="about-faq-head" className="about-block__title">
             Questions
           </h2>
-          <dl className="about-faq__list">
-            {FAQ.map((item) => (
-              <div key={item.q} className="about-faq__item">
-                <dt>{item.q}</dt>
-                <dd>{item.a}</dd>
-              </div>
-            ))}
-          </dl>
+          <AboutFaqAccordion items={FAQ} revealed={revealed} />
         </section>
 
-        <section className="about-contact" aria-labelledby="about-contact-head">
+        <section
+          data-reveal="contact"
+          className={revealCls("contact", revealed, "about-contact")}
+          aria-labelledby="about-contact-head"
+        >
           <h2 id="about-contact-head" className="about-block__title">
             Contact
           </h2>
-          <p className="about-block__text">
+          <p
+            data-reveal="contact-text"
+            className={revealCls("contact-text", revealed, "about-block__text", "about-reveal--d1")}
+          >
             For collaborations, press or questions about the project, reach out at
           </p>
-          <a href="mailto:hello@hybrid-bag.be" className="about-contact__link">
-            hello@hybrid-bag.be
+          <a
+            data-reveal="contact-email"
+            href="mailto:manal.boulahya@student.ehb.be"
+            className={revealCls("contact-email", revealed, "about-contact__link", "about-reveal--d2")}
+          >
+            manal.boulahya@student.ehb.be
           </a>
 
-          <ul className="about-contact__social" aria-label="Social media">
+          <ul
+            data-reveal="contact-social"
+            className={revealCls("contact-social", revealed, "about-contact__social", "about-reveal--d3")}
+            aria-label="Social media"
+          >
             {SOCIAL_LINKS.map((item) => (
               <li key={item.id}>
                 <a
@@ -346,7 +512,10 @@ export default function About() {
 
         </section>
 
-        <footer className="about-footer">
+        <footer
+          data-reveal="footer"
+          className={revealCls("footer", revealed, "about-footer")}
+        >
           <p className="about-footer__legal">© 2026 Hybrid</p>
         </footer>
       </main>

@@ -4,6 +4,9 @@ import Scene3D, {
   BAG_SCENE_FULL_VH,
   BAG_START_VH,
   TEXT_TRACK_BEFORE_BAG_VH,
+  EMERGENCE_START,
+  EMERGENCE_END,
+  PRODUCT_REVEAL_VH,
 } from "../components/Scene3D";
 import CoralLoader from "../components/CoralLoader";
 import MenuOverlay from "../components/MenuOverlay";
@@ -19,8 +22,11 @@ const TEXT_TRACK_VH = TEXT_TRACK_BEFORE_BAG_VH;
 const FADE_OUT_START = TEXT_TRACK_VH - 0.6;
 const FADE_OUT_END = BAG_START_VH + 0.4;
 
-const SPACER2_VH = 5.5;
-const PRODUCT_VH = BAG_START_VH + 2.5;
+const SPACER2_VH = 3.5;
+
+/** Titre « Hybrid Handbag » : visible sur l’eau, disparaît quand le sac émerge. */
+const BAG_EMERGENCE_START_VH = BAG_START_VH + EMERGENCE_START;
+const BAG_EMERGENCE_END_VH = BAG_START_VH + EMERGENCE_END;
 
 const TEXTS = [
   {
@@ -62,11 +68,23 @@ function getSlideOpacity(index, total, progress) {
   return 1;
 }
 
+/** Opacité minimale du titre une fois le sac sorti (reste en filigrane). */
+const HERO_TITLE_MIN_OPACITY = 0.1;
+
+function getHybridHeroOpacity(yVh) {
+  if (yVh < FADE_OUT_START) return 0;
+  const fadeIn = smoothstep(FADE_OUT_START, FADE_OUT_END, yVh);
+  const emerge = smoothstep(BAG_EMERGENCE_START_VH, BAG_EMERGENCE_END_VH, yVh);
+  const fadeOut =
+    HERO_TITLE_MIN_OPACITY + (1 - HERO_TITLE_MIN_OPACITY) * (1 - emerge);
+  return fadeIn * fadeOut;
+}
+
 export default function Home() {
   const location = useLocation();
   const skipIntro = useMemo(
     () => shouldSkipHomeIntro(location),
-    [location.state?.skipIntro],
+    [location.state?.skipIntro, location.key],
   );
 
   const [phase, setPhase] = useState(() => (skipIntro ? "scene" : "loading"));
@@ -82,6 +100,7 @@ export default function Home() {
   const [textRevealing, setTextRevealing] = useState(() => skipIntro);
   const [navVisible, setNavVisible] = useState(() => skipIntro);
   const [uiIntroReady, setUiIntroReady] = useState(() => skipIntro);
+  const [hybridHeroOpacity, setHybridHeroOpacity] = useState(0);
   const menuOverlayRef = useRef(null);
   const textTrackRef = useRef(null);
 
@@ -182,16 +201,20 @@ export default function Home() {
       }
       setFadeOpacity(nextFade);
 
+      let progress = textProgress;
       const track = textTrackRef.current;
       if (track) {
         const rect = track.getBoundingClientRect();
         const stickyRange = track.clientHeight - vh;
         if (stickyRange > 0) {
-          setTextProgress(Math.min(1, Math.max(0, -rect.top / stickyRange)));
+          progress = Math.min(1, Math.max(0, -rect.top / stickyRange));
+          setTextProgress(progress);
         }
       }
 
-      setProductVisible(y >= PRODUCT_VH * vh);
+      setHybridHeroOpacity(skipIntro ? 0 : getHybridHeroOpacity(yVh));
+
+      setProductVisible(y >= PRODUCT_REVEAL_VH * vh);
       setBagSceneVisible(yVh >= FADE_OUT_START);
       if (uiIntroReady) {
         setScrollHintVisible(yVh < BAG_START_VH + 0.5);
@@ -200,7 +223,7 @@ export default function Home() {
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
-  }, [phase, uiIntroReady]);
+  }, [phase, uiIntroReady, skipIntro]);
 
   function handleScrollDownClick() {
     const step = Math.min(window.innerHeight * 0.45, 520);
@@ -286,6 +309,7 @@ export default function Home() {
       <Scene3D
         phase={phase}
         snapToProduct={skipIntro}
+        heroTitleOpacity={hybridHeroOpacity}
         onBagReady={() => setScenePrimed(true)}
       />
 

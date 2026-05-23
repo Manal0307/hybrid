@@ -7,6 +7,7 @@ import {
   useImperativeHandle,
 } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { homeBagLink } from "../utils/homeNav";
 
 const EXIT_MS = 480;
 
@@ -61,7 +62,11 @@ const MenuOverlay = forwardRef(function MenuOverlay({ onClose }, ref) {
     if (!exiting) return;
     const id = window.setTimeout(() => {
       if (pendingNav.current) {
-        navigate(pendingNav.current);
+        if (pendingNav.current === homeBagLink.pathname) {
+          navigate(homeBagLink.pathname, { state: homeBagLink.state });
+        } else {
+          navigate(pendingNav.current);
+        }
         pendingNav.current = null;
       }
       onClose();

@@ -24,12 +24,19 @@ const CAMERA_POS = new THREE.Vector3(0, 0.28, 2.35);
 const CAMERA_LOOK = new THREE.Vector3(0, 0.52, -1.85);
 const CAMERA_FOV = 42;
 
-const EMERGENCE_START = 0.5; // localY en vh
-const EMERGENCE_END = 2.0;
-const EMERGENCE_SPIN_Y = Math.PI * 0.25;
+const EMERGENCE_START = 0.35; // localY en vh
+const EMERGENCE_END = 1.05;
+const EMERGENCE_SPIN_Y = 0;
+/** Scroll local après l’émergence (fleurs, snap produit). */
+const BAG_SCENE_TAIL_VH = 0.45;
 
 /** Scroll absolu (vh) : voile levé, sac en surface, fleurs en place */
-export const BAG_SCENE_FULL_VH = BAG_START_VH + EMERGENCE_END + 1.2;
+export const BAG_SCENE_FULL_VH = BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH;
+/** Scroll absolu où le CTA « Discover Materials » apparaît. */
+export const PRODUCT_REVEAL_VH =
+  BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH + 0.75;
+
+export { EMERGENCE_START, EMERGENCE_END };
 
 /**
  * Taille du render target miroir (pixels), alignée sur le drawing buffer WebGL.
@@ -202,7 +209,7 @@ function createBagSkyEnvironmentTexture() {
     return 0.12 + dist * 0.68;
   };
 
-  for (let i = 0; i < 1500; i++) {
+  for (let i = 0; i < 900; i++) {
     const x = rnd() * 2048;
     const y = rnd() * 1024;
     const r = rnd() * 1.35 + 0.22;
@@ -213,7 +220,7 @@ function createBagSkyEnvironmentTexture() {
     ctx.fill();
   }
 
-  for (let i = 0; i < 1100; i++) {
+  for (let i = 0; i < 680; i++) {
     const x = rnd() * 2048;
     const y = rnd() * 1024;
     const a = particleAlpha(y) * (0.32 + rnd() * 0.55);
@@ -221,7 +228,7 @@ function createBagSkyEnvironmentTexture() {
     ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
   }
 
-  for (let i = 0; i < 55; i++) {
+  for (let i = 0; i < 36; i++) {
     const x = rnd() * 2048;
     const y = rnd() * 1024;
     const r = rnd() * 1.05 + 0.62;
@@ -240,16 +247,83 @@ function createBagSkyEnvironmentTexture() {
   return tex;
 }
 
+const HERO_TITLE_TEXT = "Hybrid Handbag";
+const HERO_TITLE_VIEW_MARGIN = 0.04;
+const HERO_TITLE_SCALE = 1.16;
+
+function createHeroTitleMesh() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 4096;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  const textureAspect = canvas.width / canvas.height;
+
+  function draw() {
+    const padding = 96;
+    const maxWidth = canvas.width - padding * 2;
+    const upper = HERO_TITLE_TEXT.toUpperCase();
+    let fontSize = 300;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#ebe6e1";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    do {
+      ctx.font = `300 ${fontSize}px CaligulaDodgy, Telma, Georgia, serif`;
+      fontSize -= 4;
+    } while (fontSize > 24 && ctx.measureText(upper).width > maxWidth);
+    ctx.font = `300 ${fontSize + 4}px CaligulaDodgy, Telma, Georgia, serif`;
+    ctx.fillText(upper, canvas.width / 2, canvas.height / 2);
+  }
+
+  draw();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    depthTest: true,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+  // Derrière le sac (bagGroup z ≈ -1.2), face caméra
+  mesh.position.set(0, 0.52, -1.88);
+  mesh.renderOrder = 1;
+
+  function fitToView(camera, viewWidth, viewHeight) {
+    const dist = camera.position.distanceTo(mesh.position);
+    const vFov = THREE.MathUtils.degToRad(camera.fov);
+    const frustumHeight = 2 * Math.tan(vFov / 2) * dist;
+    const frustumWidth = frustumHeight * (viewWidth / viewHeight);
+    const targetWidth = frustumWidth * (1 - HERO_TITLE_VIEW_MARGIN * 2) * HERO_TITLE_SCALE;
+    const targetHeight = targetWidth / textureAspect;
+    mesh.scale.set(targetWidth, targetHeight, 1);
+  }
+
+  return { mesh, texture, draw, fitToView };
+}
+
 // ─── Composant ───────────────────────────────────────────────────────────────
-export default function BagScene({ onReady, phase = "loading", snapToProduct = false }) {
+export default function BagScene({
+  onReady,
+  phase = "loading",
+  snapToProduct = false,
+  heroTitleOpacity = 0,
+}) {
   const containerRef = useRef(null);
   const hotspotRefs = useRef([]);
   const onReadyRef = useRef(onReady);
   const phaseRef = useRef(phase);
   const snapRef = useRef(snapToProduct);
+  const heroTitleOpacityRef = useRef(heroTitleOpacity);
   onReadyRef.current = onReady;
   phaseRef.current = phase;
   snapRef.current = snapToProduct;
+  heroTitleOpacityRef.current = heroTitleOpacity;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -296,6 +370,14 @@ export default function BagScene({ onReady, phase = "loading", snapToProduct = f
     );
     camera.position.copy(CAMERA_POS);
     camera.lookAt(CAMERA_LOOK);
+
+    const heroTitle = createHeroTitleMesh();
+    scene.add(heroTitle.mesh);
+    heroTitle.fitToView(camera, container.clientWidth, container.clientHeight);
+    document.fonts?.ready?.then(() => {
+      heroTitle.draw();
+      heroTitle.texture.needsUpdate = true;
+    });
 
     // ── Post-processing ───────────────────────────────────────────────────────
     const composer = new EffectComposer(renderer);
@@ -407,6 +489,7 @@ export default function BagScene({ onReady, phase = "loading", snapToProduct = f
     // ── Sac GLB ───────────────────────────────────────────────────────────────
     const bagGroup = new THREE.Group();
     bagGroup.position.z = -1.2;
+    bagGroup.renderOrder = 10;
     bagGroup.visible = false;
     scene.add(bagGroup);
 
@@ -633,7 +716,7 @@ export default function BagScene({ onReady, phase = "loading", snapToProduct = f
       const elapsed = timer.getElapsed();
       const vh = window.innerHeight;
       const scrollLocalY = window.scrollY - BAG_START_VH * vh;
-      const snapLocalY = (EMERGENCE_END + 1.2) * vh;
+      const snapLocalY = (EMERGENCE_END + BAG_SCENE_TAIL_VH) * vh;
       const localY = snapRef.current
         ? Math.max(scrollLocalY, snapLocalY)
         : scrollLocalY;
@@ -643,7 +726,7 @@ export default function BagScene({ onReady, phase = "loading", snapToProduct = f
       // Sakura flottants — entrée latérale en cascade pendant le scroll
       // Phase d'entrée pilotée par le scroll : les fleurs glissent depuis les côtés
       const SAKURA_ENTER_START = EMERGENCE_START; // début entrée
-      const SAKURA_ENTER_END = EMERGENCE_END + 1.2; // fin entrée (toutes en place)
+      const SAKURA_ENTER_END = EMERGENCE_END + BAG_SCENE_TAIL_VH;
       const FLOWER_DURATION = 0.42; // durée d'arrivée d'une fleur
       const enterT = THREE.MathUtils.clamp(
         (localY / vh - SAKURA_ENTER_START) /
@@ -776,6 +859,10 @@ export default function BagScene({ onReady, phase = "loading", snapToProduct = f
 
       }
 
+      const heroOp = heroTitleOpacityRef.current;
+      heroTitle.mesh.visible = heroOp > 0.02;
+      heroTitle.mesh.material.opacity = heroOp;
+
       composer.render();
     }
 
@@ -790,6 +877,9 @@ export default function BagScene({ onReady, phase = "loading", snapToProduct = f
       composer.setSize(w, h);
       const mb = getWaterMirrorBufferSize(renderer);
       water.setMirrorRenderTargetSize(mb.w, mb.h);
+      heroTitle.draw();
+      heroTitle.texture.needsUpdate = true;
+      heroTitle.fitToView(camera, w, h);
     }
     window.addEventListener("resize", onResize);
 
@@ -803,6 +893,9 @@ export default function BagScene({ onReady, phase = "loading", snapToProduct = f
       scene.background = null;
       if (scene.environment) scene.environment.dispose();
       skyTex.dispose();
+      heroTitle.texture.dispose();
+      heroTitle.mesh.geometry.dispose();
+      heroTitle.mesh.material.dispose();
       water.disposeMirrorRenderTarget();
       pmrem.dispose();
       composer.dispose();
