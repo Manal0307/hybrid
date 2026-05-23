@@ -1,0 +1,544 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Process — biomaterials & recycled filaments lab
+   Palette cohérente avec /materials : blanc / rosé / mauve doux
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.proc-page {
+  --proc-ink: #3d3542;
+  --proc-ink-soft: rgba(61, 53, 66, 0.6);
+  --proc-mauve: #8f7a90;
+  --proc-rose: #e8d0dc;
+  --proc-blush: #fdf6f9;
+  --proc-line: rgba(143, 122, 144, 0.22);
+
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(
+    168deg,
+    #fffefb 0%,
+    #fdf6f9 35%,
+    #f0e4ee 72%,
+    #e5dae8 100%
+  );
+  color: var(--proc-ink);
+  overflow-x: hidden;
+}
+
+/* Nav réutilise les classes globales .top-nav (visibles immédiatement) */
+.proc-page .top-nav {
+  opacity: 1;
+}
+
+/* ─── Main ─────────────────────────────────────────────────────────────── */
+.proc-main {
+  padding: 5.5rem 1.5rem 3rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ─── Intro ────────────────────────────────────────────────────────────── */
+.proc-intro {
+  max-width: 40rem;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+
+.proc-intro__eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--proc-mauve);
+  margin-bottom: 0.65rem;
+}
+
+.proc-intro__title {
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
+  font-size: clamp(1.5rem, 3.2vw, 2.15rem);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--proc-ink);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.proc-intro__lead {
+  font-size: clamp(0.85rem, 1.25vw, 0.98rem);
+  line-height: 1.75;
+  letter-spacing: 0.04em;
+  color: var(--proc-ink-soft);
+}
+
+/* ─── Section heads ────────────────────────────────────────────────────── */
+.proc-section {
+  margin-top: 5rem;
+}
+
+.proc-section--alt {
+  margin-top: 6rem;
+}
+
+.proc-section__head {
+  max-width: 40rem;
+  margin: 0 auto 2.5rem;
+  text-align: center;
+}
+
+.proc-section__eyebrow {
+  font-size: 0.66rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--proc-mauve);
+  margin-bottom: 0.55rem;
+}
+
+.proc-section__title {
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
+  font-size: clamp(1.4rem, 2.8vw, 1.95rem);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--proc-ink);
+  line-height: 1.2;
+  margin-bottom: 0.9rem;
+}
+
+.proc-section__lead {
+  font-size: clamp(0.85rem, 1.2vw, 0.95rem);
+  line-height: 1.75;
+  letter-spacing: 0.04em;
+  color: var(--proc-ink-soft);
+}
+
+/* ─── Sample tiles grid ────────────────────────────────────────────────── */
+.proc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: clamp(0.85rem, 1.6vw, 1.25rem);
+}
+
+.proc-tile {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 1px solid var(--proc-line);
+  border-radius: 1rem;
+  background: rgba(255, 254, 252, 0.7);
+  cursor: pointer;
+  overflow: hidden;
+  font: inherit;
+  color: inherit;
+  box-shadow: 0 8px 24px rgba(61, 53, 66, 0.05);
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s,
+    border-color 0.25s,
+    background 0.25s;
+}
+
+.proc-tile:hover,
+.proc-tile:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent, var(--proc-mauve)) 55%, transparent);
+  box-shadow: 0 14px 36px rgba(61, 53, 66, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  outline: none;
+}
+
+.proc-tile:focus-visible {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent, var(--proc-mauve)) 60%, transparent),
+    0 14px 36px rgba(61, 53, 66, 0.1);
+}
+
+.proc-tile__media {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: linear-gradient(
+    138deg,
+    color-mix(in srgb, var(--accent, #c9a0b8) 20%, #fffdfe) 0%,
+    color-mix(in srgb, var(--accent, #c9a0b8) 38%, #f4e6ee) 70%,
+    color-mix(in srgb, var(--accent, #c9a0b8) 26%, #e8d4e2) 100%
+  );
+}
+
+.proc-tile__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.proc-tile__family {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.7rem;
+  z-index: 2;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--proc-ink);
+  background: rgba(255, 254, 252, 0.92);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+.proc-tile__caption {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  margin: 0;
+  padding: 2.5rem 0.85rem 0.85rem;
+  background: linear-gradient(
+    to top,
+    rgba(62, 44, 36, 0.42) 0%,
+    rgba(62, 44, 36, 0.16) 42%,
+    rgba(62, 44, 36, 0.04) 68%,
+    transparent 100%
+  );
+}
+
+.proc-tile__name {
+  display: block;
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* ─── Video section ────────────────────────────────────────────────────── */
+.proc-video {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.proc-video__frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 1.1rem;
+  overflow: hidden;
+  background: radial-gradient(
+    ellipse 90% 80% at 50% 45%,
+    #fffdfe 0%,
+    var(--proc-blush) 35%,
+    var(--proc-rose) 75%,
+    color-mix(in srgb, var(--proc-mauve) 35%, #fff) 100%
+  );
+  border: 1px solid var(--proc-line);
+  box-shadow:
+    0 22px 56px rgba(61, 53, 66, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.proc-video__media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+.proc-video__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--proc-mauve);
+  pointer-events: none;
+}
+
+.proc-video__placeholder p {
+  font-size: 0.7rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--proc-ink-soft);
+  margin: 0;
+}
+
+/* Si la vidéo se charge, on cache le placeholder en surimpression */
+.proc-video__frame:has(video:not([style*="display: none"])) .proc-video__placeholder {
+  display: none;
+}
+
+/* ─── Footer ───────────────────────────────────────────────────────────── */
+.proc-footer {
+  margin-top: 6rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--proc-line);
+  text-align: center;
+}
+
+.proc-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--proc-mauve);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(143, 122, 144, 0.35);
+  padding-bottom: 0.35rem;
+  transition: gap 0.25s, color 0.25s;
+}
+
+.proc-footer__link:hover {
+  gap: 1rem;
+  color: var(--proc-ink);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Modal — Recette du sample
+   ═══════════════════════════════════════════════════════════════════════ */
+.proc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(90, 72, 92, 0.32);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: procFadeIn 0.35s ease both;
+}
+
+@keyframes procFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.proc-modal {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: min(88vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.1rem;
+  background: linear-gradient(
+    168deg,
+    #fffdfe 0%,
+    #faf4f8 50%,
+    #f3e8f0 100%
+  );
+  border: 1px solid var(--proc-line);
+  box-shadow:
+    0 28px 64px rgba(61, 53, 66, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  animation: procModalUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes procModalUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.proc-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  padding: 0.95rem 0.85rem 0.95rem 1.35rem;
+  border-bottom: 1px solid var(--proc-line);
+  background: rgba(255, 253, 254, 0.92);
+}
+
+.proc-modal__family {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--accent, var(--proc-mauve));
+}
+
+.proc-modal__close {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--proc-line);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--proc-ink);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s ease, border-color 0.2s;
+}
+
+.proc-modal__close:hover {
+  background: #fff;
+  transform: scale(1.05);
+  border-color: color-mix(in srgb, var(--accent, var(--proc-mauve)) 40%, #fff);
+}
+
+.proc-modal__body {
+  overflow-y: auto;
+  padding: 0 1.6rem 1.85rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.proc-modal__media {
+  margin: 1.35rem -1.6rem 1.5rem;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(
+    138deg,
+    color-mix(in srgb, var(--accent, #c9a0b8) 22%, #fffdfe) 0%,
+    color-mix(in srgb, var(--accent, #c9a0b8) 40%, #f4e6ee) 65%,
+    color-mix(in srgb, var(--accent, #c9a0b8) 28%, #e8d4e2) 100%
+  );
+  border-block: 1px solid var(--proc-line);
+  overflow: hidden;
+}
+
+.proc-modal__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.proc-modal__title {
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin: 0 0 0.45rem;
+  color: var(--proc-ink);
+}
+
+.proc-modal__short {
+  margin: 0 0 1.1rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--accent, var(--proc-mauve));
+}
+
+.proc-modal__desc {
+  margin: 0 0 1.5rem;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  color: var(--proc-ink-soft);
+}
+
+.proc-modal__section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--proc-line);
+}
+
+.proc-modal__section-title {
+  margin: 0 0 0.85rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent, var(--proc-mauve));
+}
+
+.proc-modal__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.proc-modal__list li {
+  position: relative;
+  padding-left: 1.25rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--proc-ink);
+}
+
+.proc-modal__list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, var(--proc-mauve));
+  opacity: 0.75;
+}
+
+.proc-modal__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  counter-reset: step;
+}
+
+.proc-modal__steps li {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--proc-ink);
+}
+
+.proc-modal__step-num {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  padding: 0 0.5rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, var(--proc-mauve)) 20%, #fff);
+  color: var(--proc-ink);
+  border: 1px solid color-mix(in srgb, var(--accent, var(--proc-mauve)) 35%, transparent);
+}
+
+/* ─── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .proc-main {
+    padding-top: 5rem;
+  }
+
+  .proc-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .proc-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .proc-modal__media {
+    margin: 1rem -1.6rem 1.25rem;
+  }
+}

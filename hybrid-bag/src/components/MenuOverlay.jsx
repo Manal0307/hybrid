@@ -20,8 +20,8 @@ const ITEMS = [
     to: "#contact", color: "#b8a8dc",
   },
   {
-    num: "03", label: "Process", sub: "Comment c'est fait",
-    to: "#process", color: "#dba8c4",
+    num: "03", label: "Process", sub: "How it's made",
+    to: "/process", color: "#dba8c4",
   },
   {
     num: "04", label: "À Propos", sub: "Notre mission",
