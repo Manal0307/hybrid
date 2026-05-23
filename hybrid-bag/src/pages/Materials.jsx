@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import MenuOverlay from "../components/MenuOverlay";
+import { homeBagLink } from "../utils/homeNav";
 import "./Materials.css";
 
 const HDRI_PATH = new URL(
@@ -18,60 +20,60 @@ const MATERIALS = [
   {
     id: "oyster-filament",
     num: "01",
-    name: "Filament d'Huître",
-    role: "Structure du sac",
+    name: "Recycled oyster shell",
+    role: "3D-printed structure",
     description:
-      "Les coquilles d'huîtres récupérées sont broyées puis extrudées en filaments calcaires ultra-résistants. Naturellement rigides, ils forment l'ossature structurelle du sac sans recourir à aucun polymère synthétique.",
+      "The outer shell is 3D-printed from a filament made of crushed oyster shells recovered from coastal waste. Naturally rigid and lightweight, it forms the bag’s structural frame without virgin plastic.",
     specs: [
-      { label: "Provenance", value: "Bretagne, FR" },
-      { label: "Résistance", value: "+340%" },
-      { label: "Poids", value: "Très léger" },
-      { label: "Fin de vie", value: "Compostable" },
+      { label: "Source", value: "Oyster shells" },
+      { label: "Process", value: "3D printing" },
+      { label: "Weight", value: "Ultra-light" },
+      { label: "End of life", value: "Circular" },
     ],
     accent: "#d4c4a0",
   },
   {
-    id: "algae-bio",
+    id: "bioplastic-lining",
     num: "02",
-    name: "Biomaterial Algue",
-    role: "Corps du sac",
+    name: "Floral bioplastic",
+    role: "Inner lining",
     description:
-      "Extrait d'algues brunes cultivées sans pesticides en bassins fermés, ce biomatériau souple remplace le cuir traditionnel. Sa texture naturelle évolue légèrement avec le temps — comme un être vivant.",
+      "The inner bag is crafted from an eco-friendly bioplastic made of flowers and cauliflower — a soft, plant-based alternative to conventional synthetic liners.",
     specs: [
-      { label: "Source", value: "Algue brune" },
-      { label: "Eau utilisée", value: "−92%" },
-      { label: "Texture", value: "Cuir végétal" },
-      { label: "Biodégradable", value: "Oui" },
+      { label: "Source", value: "Flowers & cauliflower" },
+      { label: "Type", value: "Bioplastic" },
+      { label: "Feel", value: "Soft, flexible" },
+      { label: "Biodegradable", value: "Yes" },
     ],
     accent: "#3aaa60",
   },
   {
-    id: "recycled-net",
+    id: "recycled-fabric",
     num: "03",
-    name: "Filet Recyclé",
-    role: "Décoration extérieure",
+    name: "Recycled fabric trims",
+    role: "Surface details",
     description:
-      "Filets de pêche récupérés dans les océans, nettoyés et retissés à la main dans notre atelier. Chaque filet est unique. Appliqué en surface, il crée un motif organique irréproductible.",
+      "Decorative details are made from upcycled fabric offcuts and bioplastic, applied to the surface for texture and character — each piece carries its own pattern.",
     specs: [
-      { label: "Origine", value: "Plastique marin" },
-      { label: "Recyclage", value: "100%" },
-      { label: "Pattern", value: "Unique" },
-      { label: "Lavable", value: "Oui" },
+      { label: "Origin", value: "Textile waste" },
+      { label: "Recycled", value: "100%" },
+      { label: "Finish", value: "Hand-applied" },
+      { label: "Care", value: "Spot clean" },
     ],
     accent: "#2a9adf",
   },
   {
-    id: "recycled-textile",
+    id: "coral-form",
     num: "04",
-    name: "Textile Recyclé",
-    role: "Pochette intérieure",
+    name: "Coral-inspired design",
+    role: "Organic form",
     description:
-      "Les poches intérieures sont doublées d'un textile doux issu de bouteilles PET recyclées. Résistant à l'abrasion, facile d'entretien, il protège vos affaires tout en fermant la boucle du plastique.",
+      "The bag’s silhouette echoes corals and other marine forms — porous structures, soft curves, and textures drawn from underwater life, shaped through digital craft.",
     specs: [
-      { label: "Source", value: "Bouteilles PET" },
-      { label: "Douceur", value: "Grade A" },
-      { label: "Entretien", value: "Machine 30°" },
-      { label: "Durée de vie", value: "20 ans" },
+      { label: "Inspiration", value: "Marine corals" },
+      { label: "Method", value: "Digital craft" },
+      { label: "Texture", value: "Organic" },
+      { label: "Uniqueness", value: "One of a kind" },
     ],
     accent: "#c4956a",
   },
@@ -561,13 +563,13 @@ function MaterialDetailModal({ material, open, onClose }) {
       >
         <header className="mat-modal__head">
           <span className="mat-modal__sheet-label" id="mat-modal-sheet-label">
-            Fiche matériau
+            Material sheet
           </span>
           <button
             ref={closeRef}
             type="button"
             className="mat-modal-close"
-            aria-label="Fermer la fiche"
+            aria-label="Close sheet"
             onClick={onClose}
           >
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
@@ -594,7 +596,7 @@ function MaterialDetailModal({ material, open, onClose }) {
             {material.specs.map((s) => (
               <div key={s.label} className="mat-modal-spec">
                 <dt>{s.label}</dt>
-                <dd style={{ color: material.accent }}>{s.value}</dd>
+                <dd>{s.value}</dd>
               </div>
             ))}
           </dl>
@@ -609,6 +611,9 @@ export default function Materials() {
   const [focusMaterial, setFocusMaterial] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailIndex, setDetailIndex] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [soundMuted, setSoundMuted] = useState(false);
+  const menuOverlayRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -631,29 +636,76 @@ export default function Materials() {
         "--accent": focusMaterial != null ? MATERIALS[focusMaterial].accent : "#c9a0b8",
       }}
     >
-      <header className="mat-nav">
-        <Link to="/" className="mat-nav-back">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <path
-              d="M10 3L5 8l5 5"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+      <header
+        className={`top-nav top-nav--visible${menuOpen ? " top-nav--menu-open" : ""}`}
+      >
+        <Link
+          to={homeBagLink.pathname}
+          state={homeBagLink.state}
+          className="brand-mark"
+          aria-label="Hybrid home"
+        >
           Hybrid
         </Link>
-        <span className="mat-nav-title">Materials</span>
+        <div className="nav-actions">
+          <button
+            type="button"
+            className={`sound-button${soundMuted ? " sound-button--muted" : ""}`}
+            aria-label={
+              soundMuted ? "Unmute ambient sound" : "Mute ambient sound"
+            }
+            aria-pressed={soundMuted}
+            onClick={() => setSoundMuted((muted) => !muted)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 14.5V9.5H8.1L12 6.2V17.8L8.1 14.5H5Z" />
+              {!soundMuted && (
+                <>
+                  <path d="M15.2 9.2C16.3 10.1 16.9 11 16.9 12C16.9 13 16.3 13.9 15.2 14.8" />
+                  <path d="M17.6 6.9C19.5 8.3 20.5 10 20.5 12C20.5 14 19.5 15.7 17.6 17.1" />
+                </>
+              )}
+              {soundMuted && (
+                <line
+                  className="sound-button__mute-line"
+                  x1="5"
+                  y1="5"
+                  x2="19"
+                  y2="19"
+                />
+              )}
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            className={`menu-button ${menuOpen ? "menu-button--open" : ""}`}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => {
+              if (menuOpen) menuOverlayRef.current?.requestClose?.();
+              else setMenuOpen(true);
+            }}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
       </header>
 
       <main className="mat-main">
-        <p className="mat-lead">
-          Les quatre matières du sac : choisis une sphère pour la voir en 3D, puis clique la forme pour
-          les détails.
-        </p>
+        <header className="mat-intro">
+          <p className="mat-intro__eyebrow">Hybrid bag</p>
+          <h1 className="mat-intro__title">What it&apos;s made of</h1>
+          <p className="mat-lead">
+            Hybrid was built from reclaimed matter and bio-based materials — 3D
+            printing, floral bioplastic, recycled fabric, and forms inspired by
+            marine life. Select a material to explore it in 3D, then click the
+            shape for the full sheet.
+          </p>
+        </header>
 
-        <section className="mat-stage" aria-label="Sélecteur matériaux">
+        <section className="mat-stage" aria-label="Material selector">
           <div className="mat-orb-col mat-orb-col--left">
             {leftOrbs.map((m, i) => {
               const idx = i;
@@ -696,15 +748,15 @@ export default function Materials() {
                   <path d="M15 15l-2 5L9 9l11 4-5 2z" />
                   <path d="M9 9V6a3 3 0 016 0v3" opacity="0.55" />
                 </svg>
-                <span>Clique sur le modèle 3D pour la fiche détaillée</span>
+                <span>Click the 3D shape for the full material sheet</span>
               </div>
             )}
             <p
               className={`mat-viewer-hint${focusMaterial != null ? " mat-viewer-hint--detail" : ""}`}
             >
               {focusMaterial == null
-                ? "Tourne le sac pour l’explorer — ou choisis une matière sur les côtés"
-                : "Astuce : la souris devient une main sur le volume — clique sans glisser pour ouvrir"}
+                ? "Drag to rotate the bag — or pick a material on the sides"
+                : "Tip: cursor becomes a pointer on the shape — click without dragging to open"}
             </p>
             {focusMaterial != null && (
               <button
@@ -712,7 +764,7 @@ export default function Materials() {
                 className="mat-reset-bag"
                 onClick={() => setFocusMaterial(null)}
               >
-                Revoir le sac
+                Back to bag view
               </button>
             )}
           </div>
@@ -740,9 +792,131 @@ export default function Materials() {
           </div>
         </section>
 
+        <section className="mat-showcase" aria-label="Material details">
+          <header className="mat-section-head">
+            <p className="mat-section-eyebrow">Up close</p>
+            <h2 className="mat-section-title">Each material, in detail</h2>
+          </header>
+
+          <div className="mat-showcase__grid">
+            {MATERIALS.map((m, i) => (
+              <article
+                key={m.id}
+                className={`mat-showcase__card${i % 2 === 1 ? " mat-showcase__card--flip" : ""}`}
+                style={{ "--accent": m.accent }}
+              >
+                <figure className="mat-showcase__media">
+                  <img
+                    src={`/materials/${m.id}.jpg`}
+                    alt={`${m.name} — ${m.role}`}
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                  <span className="mat-showcase__media-tag">{m.num}</span>
+                </figure>
+                <div className="mat-showcase__text">
+                  <p className="mat-showcase__role">{m.role}</p>
+                  <h3 className="mat-showcase__name">{m.name}</h3>
+                  <p className="mat-showcase__desc">{m.description}</p>
+                  <button
+                    type="button"
+                    className="mat-showcase__cta"
+                    onClick={() => openDetail(i)}
+                  >
+                    Open material sheet
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      aria-hidden
+                    >
+                      <path
+                        d="M3 8h10M8 3l5 5-5 5"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mat-process" aria-label="Behind the scenes">
+          <header className="mat-section-head">
+            <p className="mat-section-eyebrow">Behind the scenes</p>
+            <h2 className="mat-section-title">From matter to bag</h2>
+            <p className="mat-section-lead">
+              From sourcing reclaimed shells to printing the outer shell, every
+              step of Hybrid was designed to keep waste, water and energy to a
+              minimum.
+            </p>
+          </header>
+
+          <div className="mat-process__grid">
+            {[
+              { num: "01", title: "Sourcing", caption: "Reclaimed oyster shells and floral waste collected from local producers." },
+              { num: "02", title: "3D printing", caption: "The structural shell is printed layer by layer, no virgin plastic involved." },
+              { num: "03", title: "Hand-finishing", caption: "Bioplastic lining, recycled trims and coral-like details applied by hand." },
+            ].map((step) => (
+              <article key={step.num} className="mat-process__card">
+                <figure className="mat-process__media">
+                  <img
+                    src={`/materials/process-${step.num}.jpg`}
+                    alt={step.title}
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </figure>
+                <div className="mat-process__text">
+                  <p className="mat-process__num">{step.num}</p>
+                  <h3 className="mat-process__title">{step.title}</h3>
+                  <p className="mat-process__caption">{step.caption}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mat-final" aria-label="The final piece">
+          <div className="mat-final__inner">
+            <div className="mat-final__media">
+              <img
+                src="/materials/bag-final.jpg"
+                alt="The finished Hybrid bag"
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
+            <div className="mat-final__text">
+              <p className="mat-section-eyebrow">The result</p>
+              <h2 className="mat-section-title">A bag that carries its story</h2>
+              <p className="mat-section-lead">
+                Every Hybrid bag is one of a kind — its texture, its trims, its
+                tones change with the matter it&apos;s made of. Built to be used,
+                designed to come back to the earth.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <footer className="mat-footer">
-          <Link to="/" className="mat-footer-link">
-            Retour à l’accueil
+          <Link
+            to={homeBagLink.pathname}
+            state={homeBagLink.state}
+            className="mat-footer-link"
+          >
+            Back to home
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
               <path
                 d="M3 8h10M8 3l5 5-5 5"
@@ -761,6 +935,13 @@ export default function Materials() {
         open={detailOpen}
         onClose={closeDetail}
       />
+
+      {menuOpen && (
+        <MenuOverlay
+          ref={menuOverlayRef}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
     </div>
   );
 }

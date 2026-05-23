@@ -641,6 +641,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: calc(3.5rem + 5px);
   animation: moFadeIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -837,9 +838,14 @@ body {
 }
 
 @media (max-width: 700px) {
+  .mo-overlay {
+    padding-top: calc(3rem + 5px);
+  }
+
   .mo-grid {
     grid-template-columns: 1fr 1fr;
   }
+
   .mo-card {
     aspect-ratio: 3 / 2;
   }
