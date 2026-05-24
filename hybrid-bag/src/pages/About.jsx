@@ -432,7 +432,7 @@ export default function About() {
             data-reveal="mission-p2"
             className={revealCls("mission-p2", revealed, "about-block__text", "about-reveal--d2")}
           >
-            Born in Brussels, the project sits at the crossroads of fashion, material
+            The project sits at the crossroads of fashion, material
             research and digital fabrication, a small lab experiment turned into
             something you can carry every day.
           </p>

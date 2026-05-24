@@ -31,18 +31,18 @@ const SPACER2_VH = Math.max(0, SCROLL_LOCK_VH - TEXT_TRACK_VH);
 const BAG_EMERGENCE_START_VH = BAG_START_VH + EMERGENCE_START;
 const BAG_EMERGENCE_END_VH = BAG_START_VH + EMERGENCE_END;
 
-const TEXTS = [
+const INTRO_SLIDES = [
   {
-    title: "Where technology meets ecology",
-    body: "Hybrid is a bag designed to prove that tech and nature can shape the same object.",
+    title: "They called it waste",
+    body: "Oyster shells, flower waste, reclaimed parts the world had already left behind.",
   },
   {
-    title: "Giving life back to what we called finished",
-    body: "Reclaimed matter, second chances — turned into something to carry every day.",
+    title: "We gave it a second life",
+    body: "Hybrid is a handbag made from that discarded matter. Rebuilt to be carried, not thrown away.",
   },
   {
-    title: "A fashion accessory, engineered differently",
-    body: "Built with 3D printing, biomaterials and recycled parts. Contemporary, and circular by design.",
+    title: "Technology meets ecology",
+    body: "3D-printed in oyster shell filament. Lined with red cabbage bioplastics and recycled fabric.",
   },
 ];
 
@@ -340,26 +340,19 @@ export default function Home() {
         aria-hidden={phase === "loading"}
       >
         <div className="text-sticky">
-          {TEXTS.map((t, i) => (
+          {INTRO_SLIDES.map((slide, i) => (
             <div
-              key={i}
+              key={slide.title}
               className="text-slide"
               style={{
                 opacity:
                   phase === "loading"
                     ? 0
-                    : getSlideOpacity(i, TEXTS.length, textProgress),
+                    : getSlideOpacity(i, INTRO_SLIDES.length, textProgress),
               }}
             >
-              <h2>{t.title}</h2>
-              <p>
-                {t.body.split("\n").map((line, j) => (
-                  <span key={j}>
-                    {line}
-                    {j < t.body.split("\n").length - 1 && <br />}
-                  </span>
-                ))}
-              </p>
+              <h2>{slide.title}</h2>
+              <p>{slide.body}</p>
             </div>
           ))}
         </div>

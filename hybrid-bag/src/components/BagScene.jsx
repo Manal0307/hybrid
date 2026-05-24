@@ -71,35 +71,37 @@ const BAG_HOTSPOTS = [
     title: "3D-printed structure",
     body: "Outer shell printed from a filament made of recycled oyster shells.",
     side: -1,
-    heightT: 0.9,
+    heightT: 0.97,
+    radialIn: 0.11,
   },
   {
     title: "Bioplastic inner lining",
     body: "Inner bag crafted from an eco-friendly bioplastic made of flowers and red cabbage.",
     side: -1,
-    heightT: 0.38,
-    screenOffset: { x: -5, y: 0 },
+    heightT: 0.50,
+    screenOffset: { x: -5, y: -18 },
   },
   {
     title: "Recycled fabric trims",
     body: "Decorative details made from upcycled fabric and bioplastic.",
     side: 1,
-    heightT: 0.9,
+    heightT: 0.97,
+    radialIn: 0.11,
   },
   {
     title: "Coral-inspired design",
     body: "Organic shapes echoing the silhouettes of corals and other marine forms.",
     side: 1,
-    heightT: 0.38,
-    screenOffset: { x: 5, y: 0 },
+    heightT: 0.50,
+    screenOffset: { x: 5, y: -18 },
   },
 ];
 
 /** Offset local (espace sac) : arc — haut serré, bas légèrement plus ouvert. */
-function computeHotspotLocalOffset(side, heightT, halfW, bagH) {
-  const yLocal = bagH * THREE.MathUtils.lerp(0.18, 0.86, heightT);
+function computeHotspotLocalOffset(side, heightT, halfW, bagH, radialIn = 0) {
+  const yLocal = bagH * THREE.MathUtils.lerp(0.30, 0.95, heightT);
   const curve = Math.pow(1 - heightT, 1.28);
-  const margin = 0.008 + curve * 0.17;
+  const margin = Math.max(0.002, 0.008 + curve * 0.17 - radialIn);
   const xLocal = side * (halfW + margin);
   const zLocal = 0.008 + curve * 0.04;
   return new THREE.Vector3(xLocal, yLocal, zLocal);
@@ -633,7 +635,7 @@ export default function BagScene({
           sakuraGroup.add(wrapper);
 
           // Delay propre à chaque fleur pour qu'elles n'arrivent pas toutes ensemble
-          const enterDelay = (i % 7) * 0.035 + rndS() * 0.02;
+          const enterDelay = (i % 7) * 0.05 + rndS() * 0.028;
 
           sakuraData.push({
             node: wrapper,
@@ -731,10 +733,9 @@ export default function BagScene({
       water.material.uniforms["time"].value = elapsed * 0.25;
 
       // Sakura flottants — entrée latérale en cascade pendant le scroll
-      // Phase d'entrée pilotée par le scroll : les fleurs glissent depuis les côtés
-      const SAKURA_ENTER_START = EMERGENCE_START; // début entrée
-      const SAKURA_ENTER_END = EMERGENCE_END + BAG_SCENE_TAIL_VH;
-      const FLOWER_DURATION = 0.42; // durée d'arrivée d'une fleur
+      const SAKURA_ENTER_START = EMERGENCE_START;
+      const SAKURA_ENTER_END = EMERGENCE_END + BAG_SCENE_TAIL_VH + 0.55;
+      const FLOWER_DURATION = 0.58;
       const enterT = THREE.MathUtils.clamp(
         (localY / vh - SAKURA_ENTER_START) /
           (SAKURA_ENTER_END - SAKURA_ENTER_START),
@@ -856,6 +857,7 @@ export default function BagScene({
               spot.heightT,
               bagAnim.halfW,
               bagAnim.height,
+              spot.radialIn ?? 0,
             ),
           );
           worldHotspot.x += bagGroup.position.x;

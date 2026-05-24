@@ -54,7 +54,7 @@ const MATERIALS = [
     name: "Recycled fabric trims",
     role: "Surface details",
     description:
-      "Decorative details are made from upcycled fabric offcuts and bioplastic, applied to the surface for texture and character — each piece carries its own pattern.",
+      "Decorative details are made from upcycled fabric offcuts and bioplastic, applied to the surface for texture and character. Each piece carries its own pattern.",
     specs: [
       { label: "Origin", value: "Textile waste" },
       { label: "Recycled", value: "100%" },
@@ -69,7 +69,7 @@ const MATERIALS = [
     name: "Coral-inspired design",
     role: "Organic form",
     description:
-      "The bag’s silhouette echoes corals and other marine forms — porous structures, soft curves, and textures drawn from underwater life, shaped through digital craft.",
+      "The bag’s silhouette echoes corals and other marine forms: porous structures, soft curves, and textures drawn from underwater life, shaped through digital craft.",
     specs: [
       { label: "Inspiration", value: "Marine corals" },
       { label: "Method", value: "Digital craft" },
@@ -779,7 +779,7 @@ export default function Materials() {
                 <figure className="mat-showcase__media">
                   <img
                     src={`/materials/${m.id}.jpg`}
-                    alt={`${m.name} — ${m.role}`}
+                    alt={`${m.name}, ${m.role}`}
                     loading="lazy"
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
@@ -873,7 +873,7 @@ export default function Materials() {
               <p className="mat-section-eyebrow">The result</p>
               <h2 className="mat-section-title">A bag that carries its story</h2>
               <p className="mat-section-lead">
-                Every Hybrid bag is one of a kind — its texture, its trims, its
+                Every Hybrid bag is one of a kind. Its texture, its trims, its
                 tones change with the matter it&apos;s made of. Built to be used,
                 designed to come back to the earth.
               </p>

@@ -36,7 +36,7 @@ const FILAMENTS = [
     family: "Plant-based",
     accent: "#e6d690",
     description:
-      "Polylactic acid made from fermented corn starch. The everyday alternative to ABS — compostable in industrial conditions, with a low printing temperature.",
+      "Polylactic acid made from fermented corn starch. The everyday alternative to ABS, compostable in industrial conditions, with a low printing temperature.",
     ingredients: [
       "Corn starch (or sugarcane)",
       "Lactic acid bacteria",
@@ -144,7 +144,7 @@ const FILAMENTS = [
     steps: [
       "Dehydrate the algae fully and grind to <60 µm.",
       "Blend with PLA pellets in a planetary mixer.",
-      "Extrude at 180–195 °C — avoid overheating to preserve colour.",
+      "Extrude at 180–195 °C. Avoid overheating to preserve colour.",
       "Print at 195–210 °C, expect a matte green finish.",
     ],
   },
@@ -165,7 +165,7 @@ const FILAMENTS = [
       "Collect cork dust from local stopper workshops.",
       "Dry at 60 °C for 6 hours to remove moisture.",
       "Blend with PLA and PEG, then extrude at 180–195 °C.",
-      "Print at 190–205 °C — best with a 0.6 mm nozzle to avoid clogs.",
+      "Print at 190–205 °C. Best with a 0.6 mm nozzle to avoid clogs.",
     ],
   },
   {
@@ -185,7 +185,7 @@ const FILAMENTS = [
       "Mill bamboo into short fibers, dry to <0.5% moisture.",
       "Compound with PLA in a twin-screw extruder.",
       "Pelletise, then extrude into 1.75 mm filament.",
-      "Print at 200–215 °C — sand for a smoother finish.",
+      "Print at 200–215 °C. Sand for a smoother finish.",
     ],
   },
   {
@@ -212,7 +212,7 @@ const FILAMENTS = [
 ];
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Biomaterials — recettes maison
+   Biomaterials. recettes maison
    ────────────────────────────────────────────────────────────────────────── */
 const BIOMATERIALS = [
   {
@@ -277,7 +277,7 @@ const BIOMATERIALS = [
     steps: [
       "Mix starch and water in a saucepan until smooth.",
       "Add vinegar and glycerin, stir well.",
-      "Heat gently while stirring — the mixture will turn translucent and thick.",
+      "Heat gently while stirring until the mixture turns translucent and thick.",
       "Pour onto a silicone mat, spread thin.",
       "Dry for 2–3 days.",
     ],
@@ -397,7 +397,7 @@ const BIOMATERIALS = [
     family: "Vegetable-based",
     accent: "#6cb898",
     description:
-      "Spinach blanched and pulped, set with agar — a translucent green film that catches the light beautifully.",
+      "Spinach blanched and pulped, set with agar into a translucent green film that catches the light beautifully.",
     ingredients: [
       "200 g fresh spinach",
       "100 ml water",
@@ -419,7 +419,7 @@ const BIOMATERIALS = [
     family: "Citrus-based",
     accent: "#f4b48a",
     description:
-      "Orange peels caramelised with pectin and lemon — an amber, slightly fragrant film perfect for packaging or jewellery.",
+      "Orange peels caramelised with pectin and lemon into an amber, slightly fragrant film perfect for packaging or jewellery.",
     ingredients: [
       "150 g orange peels",
       "200 ml water",
@@ -441,7 +441,7 @@ const BIOMATERIALS = [
     family: "Seed-based",
     accent: "#b08868",
     description:
-      "Avocado pits ground to flour, cooked with starch — produces a delicate pink-brown film that darkens with time.",
+      "Avocado pits ground to flour, cooked with starch to produce a delicate pink-brown film that darkens with time.",
     ingredients: [
       "30 g avocado seed flour (dried & milled)",
       "100 ml water",
@@ -485,7 +485,7 @@ const BIOMATERIALS = [
     family: "Organic",
     accent: "#8b6647",
     description:
-      "Spent coffee grounds boiled and bound with agar — a deep brown, paper-like sheet that smells faintly of espresso.",
+      "Spent coffee grounds boiled and bound with agar into a deep brown, paper-like sheet that smells faintly of espresso.",
     ingredients: [
       "30 g spent coffee grounds",
       "150 ml water",
@@ -507,7 +507,7 @@ const BIOMATERIALS = [
     family: "Leaf-based",
     accent: "#a87858",
     description:
-      "Used green tea leaves blended with pectin — a translucent jade-brown sheet, faintly aromatic.",
+      "Used green tea leaves blended with pectin into a translucent jade-brown sheet, faintly aromatic.",
     ingredients: [
       "40 g spent tea leaves",
       "200 ml water",
@@ -529,7 +529,7 @@ const BIOMATERIALS = [
     family: "Marine-based",
     accent: "#f0d870",
     description:
-      "Chitosan extracted from shrimp shells — strong, transparent, and naturally antibacterial. Used in wound dressings and food packaging.",
+      "Chitosan extracted from shrimp shells, strong, transparent, and naturally antibacterial. Used in wound dressings and food packaging.",
     ingredients: [
       "2 g chitosan powder",
       "100 ml acetic acid 1%",
@@ -550,18 +550,18 @@ const BIOMATERIALS = [
     family: "Animal protein",
     accent: "#e8e0c8",
     description:
-      "Egg whites whipped briefly and dried with glycerin — a fully transparent, paper-thin film that catches light like silk.",
+      "Egg whites whipped briefly and dried with glycerin into a fully transparent, paper-thin film that catches light like silk.",
     ingredients: [
       "3 egg whites",
       "20 ml water",
       "5 g glycerin",
     ],
     steps: [
-      "Whisk egg whites and water gently — avoid foam.",
+      "Whisk egg whites and water gently. Avoid foam.",
       "Add glycerin, strain through fine cloth.",
       "Spread very thin on a silicone mat.",
       "Dry slowly at 30 °C for 24 hours.",
-      "Peel carefully — fragile when fresh.",
+      "Peel carefully, fragile when fresh.",
     ],
   },
   {
@@ -571,14 +571,14 @@ const BIOMATERIALS = [
     family: "Animal protein",
     accent: "#f0e8d0",
     description:
-      "Casein extracted from skimmed milk with vinegar — a hard, ivory-coloured plastic, used historically for buttons and beads.",
+      "Casein extracted from skimmed milk with vinegar, a hard, ivory-coloured plastic, used historically for buttons and beads.",
     ingredients: [
       "500 ml skimmed milk",
       "30 ml white vinegar",
     ],
     steps: [
       "Heat milk gently to 60 °C.",
-      "Pour vinegar in slowly, stirring — curds will form.",
+      "Pour vinegar in slowly, stirring until curds form.",
       "Strain through a cloth, press out the liquid.",
       "Knead the curds into shape (moulds optional).",
       "Air-dry for 3 days, then sand or polish.",
@@ -613,7 +613,7 @@ const BIOMATERIALS = [
     family: "Algae-based",
     accent: "#8cc8b0",
     description:
-      "Carrageenan from red seaweed — produces a glassy, slightly elastic film that dissolves in hot water.",
+      "Carrageenan from red seaweed produces a glassy, slightly elastic film that dissolves in hot water.",
     ingredients: [
       "4 g carrageenan",
       "100 ml water",
@@ -634,7 +634,7 @@ const BIOMATERIALS = [
     family: "Vegetable-based",
     accent: "#e8a878",
     description:
-      "Roasted pumpkin pulped and set with agar — warm orange, slightly grainy, fully biodegradable.",
+      "Roasted pumpkin pulped and set with agar into a warm orange, slightly grainy, fully biodegradable sheet.",
     ingredients: [
       "200 g pumpkin pulp",
       "50 ml water",
@@ -758,7 +758,7 @@ function SampleTile({ sample, onClick }) {
       className="proc-tile"
       style={{ "--accent": sample.accent }}
       onClick={onClick}
-      aria-label={`${sample.name} — ${sample.short}`}
+      aria-label={`${sample.name}, ${sample.short}`}
     >
       <figure className="proc-tile__media">
         <img
@@ -781,7 +781,6 @@ function SampleTile({ sample, onClick }) {
 export default function Process() {
   const [activeSample, setActiveSample] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [soundMuted, setSoundMuted] = useState(false);
   const menuOverlayRef = useRef(null);
 
   useEffect(() => {
@@ -805,34 +804,7 @@ export default function Process() {
           Hybrid
         </Link>
         <div className="nav-actions">
-          <button
-            type="button"
-            className={`sound-button${soundMuted ? " sound-button--muted" : ""}`}
-            aria-label={
-              soundMuted ? "Unmute ambient sound" : "Mute ambient sound"
-            }
-            aria-pressed={soundMuted}
-            onClick={() => setSoundMuted((muted) => !muted)}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 14.5V9.5H8.1L12 6.2V17.8L8.1 14.5H5Z" />
-              {!soundMuted && (
-                <>
-                  <path d="M15.2 9.2C16.3 10.1 16.9 11 16.9 12C16.9 13 16.3 13.9 15.2 14.8" />
-                  <path d="M17.6 6.9C19.5 8.3 20.5 10 20.5 12C20.5 14 19.5 15.7 17.6 17.1" />
-                </>
-              )}
-              {soundMuted && (
-                <line
-                  className="sound-button__mute-line"
-                  x1="5"
-                  y1="5"
-                  x2="19"
-                  y2="19"
-                />
-              )}
-            </svg>
-          </button>
+          <SoundButton />
 
           <button
             type="button"
@@ -855,7 +827,7 @@ export default function Process() {
           <p className="proc-intro__eyebrow">The Hybrid lab</p>
           <h1 className="proc-intro__title">How it&apos;s made</h1>
           <p className="proc-intro__lead">
-            Recycled filaments, home-grown biomaterials — and the film that
+            Recycled filaments, home-grown biomaterials, and the film that
             shows how a bioplastic comes to life.
           </p>
         </header>
@@ -892,7 +864,7 @@ export default function Process() {
             </h2>
             <p className="proc-section__lead">
               The Hybrid shell is printed in oyster shell filament. But many
-              other waste streams can be turned into filament — here are the
+              other waste streams can be turned into filament. Here are the
               ones we&apos;ve tested in the studio.
             </p>
           </header>
