@@ -25,7 +25,7 @@ const CAMERA_LOOK = new THREE.Vector3(0, 0.52, -1.85);
 const CAMERA_FOV = 42;
 
 const EMERGENCE_START = 0.35; // localY en vh
-const EMERGENCE_END = 1.05;
+const EMERGENCE_END = 1.25;
 const EMERGENCE_SPIN_Y = 0;
 /** Scroll local après l’émergence (fleurs, snap produit). */
 const BAG_SCENE_TAIL_VH = 0.45;
@@ -35,6 +35,8 @@ export const BAG_SCENE_FULL_VH = BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_V
 /** Scroll absolu où le CTA « Discover Materials » apparaît. */
 export const PRODUCT_REVEAL_VH =
   BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH + 0.75;
+/** Scroll max : pastilles + CTA visibles, puis on ne scroll plus. */
+export const SCROLL_LOCK_VH = PRODUCT_REVEAL_VH + 0.12;
 
 export { EMERGENCE_START, EMERGENCE_END };
 
@@ -58,6 +60,10 @@ function getWaterMirrorBufferSize(renderer, maxDimension = 4096) {
 const BAG_DRAG_START_LOCAL_VH =
   EMERGENCE_START + (EMERGENCE_END - EMERGENCE_START) * 0.45;
 
+/** Pastilles : fondu après la fin de l’émergence (évite le pop + saut visuel). */
+const HOTSPOT_REVEAL_START_VH = EMERGENCE_END + 0.15;
+const HOTSPOT_REVEAL_END_VH = EMERGENCE_END + 0.55;
+
 // Hotspots autour du sac — `side` ±1, `heightT` 0→bas / 1→haut.
 // Position calculée depuis la bbox du modèle pour épouser la silhouette (arc, pas colonne droite).
 const BAG_HOTSPOTS = [
@@ -69,7 +75,7 @@ const BAG_HOTSPOTS = [
   },
   {
     title: "Bioplastic inner lining",
-    body: "Inner bag crafted from an eco-friendly bioplastic made of flowers and cauliflower.",
+    body: "Inner bag crafted from an eco-friendly bioplastic made of flowers and red cabbage.",
     side: -1,
     heightT: 0.38,
     screenOffset: { x: -5, y: 0 },
@@ -677,6 +683,7 @@ export default function BagScene({
     const timer = new THREE.Timer();
     let animId;
     let wasDragEnabled = false;
+    let productFloatAnchor = null;
 
     function hideAllHotspots() {
       for (let i = 0; i < BAG_HOTSPOTS.length; i++) {
@@ -766,25 +773,35 @@ export default function BagScene({
       camera.lookAt(CAMERA_LOOK);
 
       if (bagAnim.loaded) {
-        if (localY < EMERGENCE_START * vh) {
+        const emergeStartPx = EMERGENCE_START * vh;
+        const emergeEndPx = EMERGENCE_END * vh;
+
+        if (localY < emergeStartPx) {
           bagGroup.visible = false;
           bagGroup.position.y = bagAnim.yBottom;
           bagGroup.rotation.y = BAG_FRONT_ROTATION_Y;
-        } else if (localY <= EMERGENCE_END * vh) {
-          bagGroup.visible = true;
-          const p =
-            (localY - EMERGENCE_START * vh) /
-            ((EMERGENCE_END - EMERGENCE_START) * vh);
-          bagGroup.position.y = THREE.MathUtils.lerp(
-            bagAnim.yBottom,
-            bagAnim.ySurface,
-            emergeEase(p),
-          );
-          bagGroup.rotation.y = BAG_FRONT_ROTATION_Y + p * EMERGENCE_SPIN_Y;
+          productFloatAnchor = null;
         } else {
           bagGroup.visible = true;
-          bagGroup.position.y =
-            bagAnim.ySurface + Math.sin(performance.now() * 0.0012) * 0.06;
+
+          if (localY <= emergeEndPx) {
+            productFloatAnchor = null;
+            const p =
+              (localY - emergeStartPx) / (emergeEndPx - emergeStartPx);
+            bagGroup.position.y = THREE.MathUtils.lerp(
+              bagAnim.yBottom,
+              bagAnim.ySurface,
+              emergeEase(p),
+            );
+            bagGroup.rotation.y = BAG_FRONT_ROTATION_Y + p * EMERGENCE_SPIN_Y;
+          } else {
+            if (productFloatAnchor === null) {
+              productFloatAnchor = performance.now();
+            }
+            const floatT = (performance.now() - productFloatAnchor) * 0.0012;
+            bagGroup.position.y =
+              bagAnim.ySurface + Math.sin(floatT) * 0.06;
+          }
         }
 
         const canDragBag = localY >= BAG_DRAG_START_LOCAL_VH * vh;
@@ -793,7 +810,15 @@ export default function BagScene({
           wasDragEnabled = canDragBag;
         }
 
-        const isProduct = localY >= EMERGENCE_END * vh;
+        const isProduct = localY >= emergeEndPx;
+        const localYVh = localY / vh;
+        const hotspotReveal = THREE.MathUtils.clamp(
+          (localYVh - HOTSPOT_REVEAL_START_VH) /
+            (HOTSPOT_REVEAL_END_VH - HOTSPOT_REVEAL_START_VH),
+          0,
+          1,
+        );
+        const hotspotOpacity = hotspotReveal * hotspotReveal * (3 - 2 * hotspotReveal);
 
         if (
           drag.productPhase &&
@@ -820,7 +845,7 @@ export default function BagScene({
             el.setAttribute("aria-hidden", "true");
           };
 
-          if (!isProduct) {
+          if (!isProduct || hotspotOpacity <= 0) {
             hide();
             return;
           }
@@ -851,10 +876,14 @@ export default function BagScene({
           const sy = spot.screenOffset?.y ?? 0;
           el.style.left = `${(worldHotspot.x * 0.5 + 0.5) * w + sx}px`;
           el.style.top = `${(-worldHotspot.y * 0.5 + 0.5) * h + sy}px`;
-          el.style.opacity = "1";
-          el.style.visibility = "visible";
-          el.style.pointerEvents = "auto";
-          el.setAttribute("aria-hidden", "false");
+          el.style.opacity = String(hotspotOpacity);
+          el.style.setProperty(
+            "--hotspot-scale",
+            String(0.82 + 0.18 * hotspotOpacity),
+          );
+          el.style.visibility = hotspotOpacity > 0.03 ? "visible" : "hidden";
+          el.style.pointerEvents = hotspotOpacity > 0.45 ? "auto" : "none";
+          el.setAttribute("aria-hidden", hotspotOpacity > 0.45 ? "false" : "true");
         });
 
       }

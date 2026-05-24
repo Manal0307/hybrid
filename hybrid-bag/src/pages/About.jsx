@@ -11,7 +11,7 @@ const FAQ = [
   },
   {
     q: "What makes it different from a regular bag?",
-    a: "It combines 3D-printed structure, floral bioplastic lining, recycled fabric trims and forms inspired by marine life, all in one circular design.",
+    a: "It combines 3D-printed structure, cabbage bioplastic lining, recycled fabric trims and forms inspired by marine life, all in one circular design.",
   },
   {
     q: "Can I get in touch about the project?",
@@ -442,7 +442,7 @@ export default function About() {
             data-reveal="mission-p1"
             className={revealCls("mission-p1", revealed, "about-block__text", "about-reveal--d1")}
           >
-            We believe waste is not an endpoint. Oyster shells, floral bioplastics,
+            We believe waste is not an endpoint. Oyster shells, cabbage bioplastics,
             recycled fabrics. Each material tells a story of second chances. Hybrid
             proves that a contemporary bag can be beautiful, functional and circular
             by design.

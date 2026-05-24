@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Scene3D, {
-  BAG_SCENE_FULL_VH,
   BAG_START_VH,
   TEXT_TRACK_BEFORE_BAG_VH,
   EMERGENCE_START,
   EMERGENCE_END,
   PRODUCT_REVEAL_VH,
+  SCROLL_LOCK_VH,
 } from "../components/Scene3D";
 import CoralLoader from "../components/CoralLoader";
 import MenuOverlay from "../components/MenuOverlay";
@@ -22,7 +22,8 @@ const TEXT_TRACK_VH = TEXT_TRACK_BEFORE_BAG_VH;
 const FADE_OUT_START = TEXT_TRACK_VH - 0.6;
 const FADE_OUT_END = BAG_START_VH + 0.4;
 
-const SPACER2_VH = 3.5;
+/** Spacer calculé pour que la page se termine pile au scroll lock — pas de clamp brutal. */
+const SPACER2_VH = Math.max(0, SCROLL_LOCK_VH - TEXT_TRACK_VH);
 
 /** Titre « Hybrid Handbag » : visible sur l’eau, disparaît quand le sac émerge. */
 const BAG_EMERGENCE_START_VH = BAG_START_VH + EMERGENCE_START;
@@ -109,7 +110,7 @@ export default function Home() {
     markHomeIntroDone();
     document.body.style.overflow = "";
     const scrollToBag = () => {
-      window.scrollTo(0, BAG_SCENE_FULL_VH * window.innerHeight);
+      window.scrollTo(0, SCROLL_LOCK_VH * window.innerHeight);
     };
     scrollToBag();
     requestAnimationFrame(scrollToBag);
@@ -172,7 +173,10 @@ export default function Home() {
       window.scrollTo(0, 0);
     }
     const navTimer = setTimeout(() => setNavVisible(true), skipIntro ? 0 : 500);
-    const uiTimer = setTimeout(() => setUiIntroReady(true), skipIntro ? 0 : 850);
+    const uiTimer = setTimeout(
+      () => setUiIntroReady(true),
+      skipIntro ? 0 : 850,
+    );
     const hintTimer = setTimeout(
       () => setScrollHintVisible(!skipIntro),
       skipIntro ? 0 : 950,
@@ -186,6 +190,7 @@ export default function Home() {
 
   useEffect(() => {
     if (phase !== "scene") return;
+
     function onScroll() {
       const vh = window.innerHeight;
       const y = window.scrollY;
@@ -220,6 +225,7 @@ export default function Home() {
         setScrollHintVisible(yVh < BAG_START_VH + 0.5);
       }
     }
+
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);

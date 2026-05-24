@@ -321,7 +321,7 @@ body {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .product-hotspot__pin {
@@ -342,8 +342,9 @@ body {
     0 4px 18px rgba(0, 0, 0, 0.22);
   cursor: pointer;
   pointer-events: auto;
+  transform: scale(var(--hotspot-scale, 1));
   transition:
-    transform 0.25s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
     background 0.25s ease,
     border-color 0.25s ease,
     box-shadow 0.25s ease;
@@ -411,7 +412,7 @@ body {
 
 .product-hotspot:hover .product-hotspot__pin,
 .product-hotspot:focus-within .product-hotspot__pin {
-  transform: scale(1.12);
+  transform: scale(calc(var(--hotspot-scale, 1) * 1.12));
   background: rgba(255, 255, 255, 0.72);
   border-color: rgba(255, 255, 255, 0.95);
   box-shadow:

@@ -35,17 +35,17 @@ const MATERIALS = [
   {
     id: "bioplastic-lining",
     num: "02",
-    name: "Floral bioplastic",
+    name: "Cabbage bioplastic",
     role: "Inner lining",
     description:
-      "The inner bag is crafted from an eco-friendly bioplastic made of flowers and cauliflower — a soft, plant-based alternative to conventional synthetic liners.",
+      "The inner bag is crafted from an eco-friendly bioplastic made of flowers and red cabbage, a soft, plant-based alternative to conventional synthetic liners.",
     specs: [
-      { label: "Source", value: "Flowers & cauliflower" },
+      { label: "Source", value: "Flowers & red cabbage" },
       { label: "Type", value: "Bioplastic" },
       { label: "Feel", value: "Soft, flexible" },
       { label: "Biodegradable", value: "Yes" },
     ],
-    accent: "#3aaa60",
+    accent: "#7a3a8a",
   },
   {
     id: "recycled-fabric",

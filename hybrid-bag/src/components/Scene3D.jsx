@@ -5,6 +5,7 @@ import BagScene, {
   EMERGENCE_START,
   EMERGENCE_END,
   PRODUCT_REVEAL_VH,
+  SCROLL_LOCK_VH,
 } from "./BagScene";
 
 export {
@@ -14,6 +15,7 @@ export {
   EMERGENCE_START,
   EMERGENCE_END,
   PRODUCT_REVEAL_VH,
+  SCROLL_LOCK_VH,
 };
 
 export default function Scene3D({
