@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import MenuOverlay from "../components/MenuOverlay";
+import SoundButton from "../components/SoundButton";
 import { homeBagLink } from "../utils/homeNav";
 import "./Materials.css";
 
@@ -612,7 +613,6 @@ export default function Materials() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailIndex, setDetailIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [soundMuted, setSoundMuted] = useState(false);
   const menuOverlayRef = useRef(null);
 
   useEffect(() => {
@@ -648,34 +648,7 @@ export default function Materials() {
           Hybrid
         </Link>
         <div className="nav-actions">
-          <button
-            type="button"
-            className={`sound-button${soundMuted ? " sound-button--muted" : ""}`}
-            aria-label={
-              soundMuted ? "Unmute ambient sound" : "Mute ambient sound"
-            }
-            aria-pressed={soundMuted}
-            onClick={() => setSoundMuted((muted) => !muted)}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 14.5V9.5H8.1L12 6.2V17.8L8.1 14.5H5Z" />
-              {!soundMuted && (
-                <>
-                  <path d="M15.2 9.2C16.3 10.1 16.9 11 16.9 12C16.9 13 16.3 13.9 15.2 14.8" />
-                  <path d="M17.6 6.9C19.5 8.3 20.5 10 20.5 12C20.5 14 19.5 15.7 17.6 17.1" />
-                </>
-              )}
-              {soundMuted && (
-                <line
-                  className="sound-button__mute-line"
-                  x1="5"
-                  y1="5"
-                  x2="19"
-                  y2="19"
-                />
-              )}
-            </svg>
-          </button>
+          <SoundButton />
 
           <button
             type="button"

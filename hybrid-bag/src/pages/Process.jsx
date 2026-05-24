@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import MenuOverlay from "../components/MenuOverlay";
+import SoundButton from "../components/SoundButton";
 import { homeBagLink } from "../utils/homeNav";
 import "./Process.css";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Recycled filaments — alternatives utilisées pour l'impression 3D
+   Recycled filaments. alternatives utilisées pour l'impression 3D
    ────────────────────────────────────────────────────────────────────────── */
 const FILAMENTS = [
   {
@@ -911,7 +912,7 @@ export default function Process() {
             </h2>
             <p className="proc-section__lead">
               Made from food waste, algae, fungi and starches. Each tile opens
-              a full recipe — ingredients, steps, drying time. Try them at home.
+              a full recipe with ingredients, steps, drying time. Try them at home.
             </p>
           </header>
 

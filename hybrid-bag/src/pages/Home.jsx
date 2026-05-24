@@ -10,6 +10,8 @@ import Scene3D, {
 } from "../components/Scene3D";
 import CoralLoader from "../components/CoralLoader";
 import MenuOverlay from "../components/MenuOverlay";
+import SoundButton from "../components/SoundButton";
+import { useAmbientSound } from "../context/AmbientSoundContext";
 import {
   homeBagLink,
   markHomeIntroDone,
@@ -97,13 +99,29 @@ export default function Home() {
   const [productVisible, setProductVisible] = useState(() => skipIntro);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
   const [bagSceneVisible, setBagSceneVisible] = useState(() => skipIntro);
-  const [soundMuted, setSoundMuted] = useState(false);
+  const { unlock, setWaterActive } = useAmbientSound();
   const [textRevealing, setTextRevealing] = useState(() => skipIntro);
   const [navVisible, setNavVisible] = useState(() => skipIntro);
   const [uiIntroReady, setUiIntroReady] = useState(() => skipIntro);
   const [hybridHeroOpacity, setHybridHeroOpacity] = useState(0);
   const menuOverlayRef = useRef(null);
   const textTrackRef = useRef(null);
+
+  useEffect(() => {
+    if (skipIntro || phase === "loadingExit" || phase === "scene") {
+      unlock();
+    }
+  }, [phase, skipIntro, unlock]);
+
+  useEffect(() => {
+    if (phase !== "scene") {
+      setWaterActive(false);
+      return;
+    }
+    setWaterActive(bagSceneVisible);
+  }, [phase, bagSceneVisible, setWaterActive]);
+
+  useEffect(() => () => setWaterActive(false), [setWaterActive]);
 
   useEffect(() => {
     if (!skipIntro) return;
@@ -137,6 +155,10 @@ export default function Home() {
     }, 28);
     return () => clearInterval(interval);
   }, [skipIntro]);
+
+  useEffect(() => {
+    if (loadPercent >= 100) unlock();
+  }, [loadPercent, unlock]);
 
   useEffect(() => {
     if (phase !== "loading") return;
@@ -244,6 +266,7 @@ export default function Home() {
       {(phase === "loading" || phase === "loadingExit") && (
         <div
           className={`loading-screen ${phase === "loadingExit" ? "fade-out" : ""}`}
+          onPointerDown={unlock}
         >
           <CoralLoader />
           <p className="loading-text">
@@ -266,34 +289,7 @@ export default function Home() {
             Hybrid
           </Link>
           <div className="nav-actions">
-            <button
-              type="button"
-              className={`sound-button${soundMuted ? " sound-button--muted" : ""}`}
-              aria-label={
-                soundMuted ? "Unmute ambient sound" : "Mute ambient sound"
-              }
-              aria-pressed={soundMuted}
-              onClick={() => setSoundMuted((muted) => !muted)}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 14.5V9.5H8.1L12 6.2V17.8L8.1 14.5H5Z" />
-                {!soundMuted && (
-                  <>
-                    <path d="M15.2 9.2C16.3 10.1 16.9 11 16.9 12C16.9 13 16.3 13.9 15.2 14.8" />
-                    <path d="M17.6 6.9C19.5 8.3 20.5 10 20.5 12C20.5 14 19.5 15.7 17.6 17.1" />
-                  </>
-                )}
-                {soundMuted && (
-                  <line
-                    className="sound-button__mute-line"
-                    x1="5"
-                    y1="5"
-                    x2="19"
-                    y2="19"
-                  />
-                )}
-              </svg>
-            </button>
+            <SoundButton />
 
             <button
               type="button"
