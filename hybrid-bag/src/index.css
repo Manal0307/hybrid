@@ -605,6 +605,12 @@ body {
   line-height: 1.25;
 }
 
+.text-slide--solo h2 {
+  font-size: clamp(1.75rem, 4.2vw, 2.85rem);
+  margin-bottom: 0;
+  letter-spacing: 0.12em;
+}
+
 .text-slide p {
   font-size: clamp(0.92rem, 1.4vw, 1.05rem);
   line-height: 1.7;
@@ -692,18 +698,40 @@ body {
 
 .mo-overlay.mo-overlay--exiting {
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.42s cubic-bezier(0.32, 1, 0.36, 1);
+  animation: moFadeOut 0.28s cubic-bezier(0.45, 0, 1, 1) both;
 }
 
 .mo-overlay.mo-overlay--exiting .mo-backdrop {
-  opacity: 0;
-  transition: opacity 0.38s ease;
+  animation: none;
+  transition: none;
+}
+
+.mo-overlay.mo-overlay--exiting .mo-panel {
+  animation: moPanelOut 0.28s cubic-bezier(0.45, 0, 1, 1) both;
+}
+
+.mo-overlay.mo-overlay--exiting .mo-card {
+  animation: none;
+  pointer-events: none;
+}
+
+.mo-overlay.mo-overlay--exiting .mo-footer {
+  animation: none;
 }
 
 @keyframes moFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+@keyframes moFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes moPanelOut {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(10px) scale(0.985); }
 }
 
 .mo-backdrop {
@@ -734,16 +762,6 @@ body {
   transition:
     opacity 0.38s cubic-bezier(0.32, 1, 0.36, 1),
     transform 0.42s cubic-bezier(0.32, 1, 0.36, 1);
-}
-
-.mo-overlay.mo-overlay--exiting .mo-panel {
-  opacity: 0;
-  transform: translateY(20px) scale(0.97);
-}
-
-.mo-overlay.mo-overlay--exiting .mo-footer {
-  opacity: 0;
-  transition: opacity 0.28s ease;
 }
 
 .mo-header {
@@ -824,17 +842,6 @@ body {
   animation: moCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.mo-overlay.mo-overlay--exiting .mo-card {
-  opacity: 0;
-  transform: translateY(14px) scale(0.97);
-  pointer-events: none;
-}
-
-.mo-overlay.mo-overlay--exiting .mo-card:nth-child(1) { transition-delay: 0.08s; }
-.mo-overlay.mo-overlay--exiting .mo-card:nth-child(2) { transition-delay: 0.05s; }
-.mo-overlay.mo-overlay--exiting .mo-card:nth-child(3) { transition-delay: 0.02s; }
-.mo-overlay.mo-overlay--exiting .mo-card:nth-child(4) { transition-delay: 0s; }
-
 @keyframes moCardIn {
   from { opacity: 0; transform: translateY(18px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -895,11 +902,6 @@ body {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(90, 62, 82, 0.5);
-}
-
-.mo-overlay.mo-overlay--exiting .mo-panel {
-  opacity: 0;
-  transform: translateY(20px) scale(0.97);
 }
 
 .mo-footer {

@@ -9,7 +9,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { homeBagLink } from "../utils/homeNav";
 
-const EXIT_MS = 480;
+const EXIT_MS = 300;
 
 /* Accents glow — palette proche du ciel sac (mauve A78699, rose pâle, lavande) */
 const ITEMS = [
@@ -125,7 +125,7 @@ const MenuOverlay = forwardRef(function MenuOverlay({ onClose }, ref) {
         </div>
 
         {/* Footer */}
-        <p className="mo-footer">© 2026 Hybrid — Bruxelles</p>
+        <p className="mo-footer">© 2026 Hybrid</p>
       </div>
     </div>
   );
