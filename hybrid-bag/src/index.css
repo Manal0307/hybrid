@@ -304,6 +304,33 @@ body {
   height: 100%;
 }
 
+.bag-rotate-hint {
+  position: fixed;
+  left: 50%;
+  top: clamp(52%, 56vh, 62%);
+  z-index: 4;
+  margin: 0;
+  padding: 0.45rem 0.95rem;
+  transform: translateX(-50%);
+  border: 1px solid rgba(245, 232, 216, 0.22);
+  border-radius: 999px;
+  background: rgba(20, 16, 22, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: 0.56rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  text-indent: 0.24em;
+  color: rgba(245, 232, 216, 0.78);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.55s ease,
+    visibility 0.55s ease;
+}
+
 /* ─── Hotspots sac (phase produit, suit la rotation 3D) ─────────────── */
 .product-hotspots-layer {
   position: fixed;

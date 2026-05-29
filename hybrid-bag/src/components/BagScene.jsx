@@ -324,6 +324,7 @@ export default function BagScene({
 }) {
   const containerRef = useRef(null);
   const hotspotRefs = useRef([]);
+  const rotateHintRef = useRef(null);
   const onReadyRef = useRef(onReady);
   const phaseRef = useRef(phase);
   const snapRef = useRef(snapToProduct);
@@ -658,13 +659,25 @@ export default function BagScene({
 
     // ── Drag to rotate ────────────────────────────────────────────────────────
     const drag = { active: false, prevX: 0, velocityY: 0, productPhase: false };
+    let hasRotated = false;
     const worldHotspot = new THREE.Vector3();
+
+    function updateRotateHint(show) {
+      const el = rotateHintRef.current;
+      if (!el) return;
+      el.style.opacity = show ? "1" : "0";
+      el.style.visibility = show ? "visible" : "hidden";
+    }
 
     function onPointerDown(e) {
       if (!drag.productPhase) return;
       drag.active = true;
       drag.prevX = e.clientX;
       drag.velocityY = 0;
+      if (!hasRotated) {
+        hasRotated = true;
+        updateRotateHint(false);
+      }
     }
     function onPointerMove(e) {
       if (!drag.active) return;
@@ -810,6 +823,7 @@ export default function BagScene({
           drag.productPhase = canDragBag;
           wasDragEnabled = canDragBag;
         }
+        updateRotateHint(canDragBag && !hasRotated);
 
         const isProduct = localY >= emergeEndPx;
         const localYVh = localY / vh;
@@ -940,6 +954,14 @@ export default function BagScene({
     <>
       <div ref={containerRef} className="scene-container" />
       {phase === "scene" && (
+      <>
+      <p
+        ref={rotateHintRef}
+        className="bag-rotate-hint"
+        aria-hidden="true"
+      >
+        Drag to rotate
+      </p>
       <div className="product-hotspots-layer">
         {BAG_HOTSPOTS.map((spot, i) => (
           <div
@@ -961,6 +983,7 @@ export default function BagScene({
           </div>
         ))}
       </div>
+      </>
       )}
     </>
   );
