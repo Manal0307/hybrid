@@ -69,28 +69,28 @@ const HOTSPOT_REVEAL_END_VH = EMERGENCE_END + 0.55;
 const BAG_HOTSPOTS = [
   {
     title: "Oyster shell structure",
-    body: "Outer shell 3D-printed from PLA enriched with recycled oyster shells.",
+    body: "Coral-inspired lattice 3D-printed in oyster-shell filament, organic and pleasant to the touch.",
     side: -1,
     heightT: 0.97,
     radialIn: 0.11,
   },
   {
     title: "Red cabbage bioplastic",
-    body: "Inner bag cast from a soft bioplastic based on red cabbage extract.",
+    body: "Inner bag in solid, translucent red cabbage bioplastic, sewn on a sewing machine.",
     side: -1,
     heightT: 0.50,
     screenOffset: { x: -5, y: -18 },
   },
   {
     title: "Recycled textiles",
-    body: "Trims and woven details made from upcycled textile offcuts.",
+    body: "Fabric recovered at R-use Fabric in Ixelles, applied as trims on the bag.",
     side: 1,
     heightT: 0.97,
     radialIn: 0.11,
   },
   {
-    title: "Flower bioplastics",
-    body: "Decorative florals set in a gelatin bioplastic with dried petals.",
+    title: "Handmade flowers",
+    body: "Flowers made by hand from recycled textile, red cabbage bioplastics and pearls from an old broken necklace.",
     side: 1,
     heightT: 0.50,
     screenOffset: { x: 5, y: -18 },

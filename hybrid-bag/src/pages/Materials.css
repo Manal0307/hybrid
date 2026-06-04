@@ -198,9 +198,9 @@
   overflow: hidden;
   background: radial-gradient(
     ellipse 85% 75% at 50% 48%,
-    #fffdfe 0%,
-    var(--mat-blush) 42%,
-    var(--mat-rose) 100%
+    #f5eef2 0%,
+    #e8d4e0 42%,
+    #d4bcc8 100%
   );
   border: 1px solid var(--mat-line-soft);
   box-shadow:
@@ -214,10 +214,10 @@
   pointer-events: none;
   background: radial-gradient(
     circle at 50% 42%,
-    color-mix(in srgb, var(--accent, #c9a0b8) 18%, transparent) 0%,
+    color-mix(in srgb, var(--accent, #c9a0b8) 24%, transparent) 0%,
     transparent 58%
   );
-  opacity: 0.95;
+  opacity: 1;
   z-index: 0;
 }
 
@@ -232,6 +232,12 @@
   display: block;
   width: 100% !important;
   height: 100% !important;
+  cursor: grab;
+  touch-action: none;
+}
+
+.mat-viewer-canvas canvas.is-grabbing {
+  cursor: grabbing;
 }
 
 .mat-viewer-click-badge {

@@ -14,8 +14,28 @@ const HDRI_PATH = new URL(
 ).href;
 
 const BAG_MODEL_PATH = "/models/codebag.glb";
+const FILAMENT_MODEL_PATH = "/models/filament.glb";
+const INNERBAG_MODEL_PATH = "/models/innerbag.glb";
+const TISSU_MODEL_PATH = "/models/tissu.glb";
+const FLOWERS_MODEL_PATH = "/models/flowers.glb";
+const MATERIAL_VIEWER_TARGET = 1.58;
+/** GLB + maquettes matière dans le viewer */
+const MATERIAL_GLB_VIEWER_TARGET = 1.88;
 /** Même orientation que BagScene : face caméra (évite l’effet « de dos »). */
 const BAG_FRONT_ROTATION_Y = Math.PI;
+
+/** Index matière → GLB (4 couches du sac) */
+const MATERIAL_GLB = {
+  0: FILAMENT_MODEL_PATH,
+  1: INNERBAG_MODEL_PATH,
+  2: TISSU_MODEL_PATH,
+  3: FLOWERS_MODEL_PATH,
+};
+
+/** Rotation initiale par matière (tissu exporté à plat → dressé face caméra) */
+const MATERIAL_MODEL_ROTATION = {
+  2: { x: -Math.PI / 2, y: Math.PI, z: 0 },
+};
 
 const MATERIALS = [
   {
@@ -24,12 +44,12 @@ const MATERIALS = [
     name: "Oyster shell PLA",
     role: "3D-printed structure",
     description:
-      "The bag’s outer shell is 3D-printed from a filament made of crushed oyster shells recovered from coastal waste. Rigid, lightweight, it forms the structural frame of Hybrid without virgin plastic.",
+      "The outer structure takes its shape from ocean corals: an open, organic lattice 3D-printed in oyster-shell filament. The material has a natural, pleasant feel and forms the rigid frame of the bag without virgin plastic.",
     specs: [
-      { label: "Source", value: "Oyster shells" },
+      { label: "Inspiration", value: "Ocean corals" },
+      { label: "Filament", value: "Oyster shell PLA" },
+      { label: "Texture", value: "Organic, soft touch" },
       { label: "Process", value: "FDM 3D printing" },
-      { label: "Role", value: "Outer structure" },
-      { label: "End of life", value: "Circular" },
     ],
     accent: "#d4c4a0",
   },
@@ -39,12 +59,12 @@ const MATERIALS = [
     name: "Red cabbage bioplastic",
     role: "Inner bag",
     description:
-      "The inner pouch is cast from a home-grown bioplastic based on red cabbage extract — soft, plant-based, and biodegradable. It replaces a conventional synthetic liner.",
+      "The inner bag is made from red cabbage bioplastic: solid, translucent, and plant-based. I sewed it on my sewing machine, a simple, sturdy lining that holds the bag together efficiently.",
     specs: [
       { label: "Source", value: "Red cabbage" },
-      { label: "Type", value: "Gelatin bioplastic" },
-      { label: "Feel", value: "Soft, flexible" },
-      { label: "Biodegradable", value: "Yes" },
+      { label: "Type", value: "Bioplastic" },
+      { label: "Finish", value: "Solid, translucent" },
+      { label: "Made", value: "Sewn on sewing machine" },
     ],
     accent: "#7a3a8a",
   },
@@ -54,10 +74,10 @@ const MATERIALS = [
     name: "Recycled textiles",
     role: "Woven trims",
     description:
-      "Trims and woven surface details are made from upcycled textile offcuts — reclaimed fabric waste given a second life on the bag.",
+      "The fabric trims come from textile I recovered at R-use Fabric in Ixelles: offcuts and reclaimed yardage given a second life on the bag as woven surface details.",
     specs: [
-      { label: "Origin", value: "Textile waste" },
-      { label: "Recycled", value: "100%" },
+      { label: "Source", value: "R-use Fabric, Ixelles" },
+      { label: "Recovered", value: "Shop offcuts" },
       { label: "Finish", value: "Hand-applied" },
       { label: "Care", value: "Spot clean" },
     ],
@@ -66,15 +86,15 @@ const MATERIALS = [
   {
     id: "flower-biomaterial",
     num: "04",
-    name: "Flower bioplastic",
+    name: "Handmade flowers",
     role: "Biomaterial florals",
     description:
-      "Decorative florals are set in a gelatin bioplastic with dried petals — the same family of kitchen-made biomaterials as the inner lining, grown and cast by hand.",
+      "The flowers on the bag were made by hand, built from recycled textile offcuts and several red cabbage bioplastics, each cast with a slightly different tone. A few pearls were salvaged from an old broken necklace and sewn into the centres.",
     specs: [
-      { label: "Source", value: "Dried flower petals" },
-      { label: "Binder", value: "Food gelatin" },
-      { label: "Process", value: "Home-cast film" },
-      { label: "Biodegradable", value: "Yes" },
+      { label: "Textile", value: "Recycled offcuts" },
+      { label: "Bioplastic", value: "Red cabbage (varied casts)" },
+      { label: "Pearls", value: "From a broken necklace" },
+      { label: "Made", value: "By hand" },
     ],
     accent: "#e8a8c4",
   },
@@ -94,176 +114,33 @@ function setGroupOpacity(group, opacity) {
   });
 }
 
-function buildOyster() {
-  const g = new THREE.Group();
-  const mat = new THREE.MeshPhysicalMaterial({
-    color: 0xf0e0cc,
-    metalness: 0.02,
-    roughness: 0.08,
-    iridescence: 1.0,
-    iridescenceIOR: 1.5,
-    iridescenceThicknessRange: [100, 400],
-    clearcoat: 1,
-    clearcoatRoughness: 0.04,
-    transparent: true,
-    opacity: 1,
-  });
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.62, 64, 64), mat));
-  for (let i = 0; i < 12; i++) {
-    const base = (i / 12) * Math.PI * 2;
-    const pts = [];
-    for (let t = 0; t <= 1; t += 0.04) {
-      const a = base + t * Math.PI * 3.5;
-      const r = 0.72 + t * 0.42;
-      pts.push(
-        new THREE.Vector3(
-          Math.cos(a) * r * 0.4,
-          (t - 0.5) * 2.3,
-          Math.sin(a) * r * 0.4,
-        ),
-      );
+function prepareMeshForViewer(root) {
+  root.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = false;
+      child.receiveShadow = false;
     }
-    const tube = new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(pts),
-      30,
-      0.012,
-      5,
-    );
-    const m = mat.clone();
-    m.transparent = true;
-    g.add(new THREE.Mesh(tube, m));
-  }
-  return g;
-}
-
-/** Doublure — film souple violet (chou rouge / bioplastique) */
-function buildCabbageLining() {
-  const g = new THREE.Group();
-  const pouchMat = new THREE.MeshPhysicalMaterial({
-    color: 0x6a2878,
-    metalness: 0,
-    roughness: 0.35,
-    transmission: 0.55,
-    thickness: 0.65,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.92,
   });
-  const pouch = new THREE.Mesh(
-    new THREE.SphereGeometry(0.95, 48, 48),
-    pouchMat,
-  );
-  pouch.scale.set(1.05, 0.72, 0.88);
-  g.add(pouch);
-
-  for (let i = 0; i < 6; i++) {
-    const angle = (i / 6) * Math.PI * 2;
-    const geo = new THREE.PlaneGeometry(0.42, 1.85, 4, 28);
-    const pos = geo.attributes.position;
-    for (let j = 0; j < pos.count; j++) {
-      const y = pos.getY(j);
-      const wobble = Math.sin(y * 3.2 + i) * 0.06;
-      pos.setX(j, pos.getX(j) + wobble);
-    }
-    geo.computeVertexNormals();
-    const t = i / 6;
-    const mat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x4a1848).lerp(new THREE.Color(0xb868c8), t),
-      metalness: 0,
-      roughness: 0.4,
-      transmission: 0.42,
-      thickness: 0.35,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.88,
-    });
-    const sheet = new THREE.Mesh(geo, mat);
-    sheet.rotation.y = angle;
-    sheet.position.set(Math.sin(angle) * 0.22, 0.05, Math.cos(angle) * 0.22);
-    g.add(sheet);
-  }
-  return g;
 }
 
-/** Fleurs — pétales en bioplastique (gelatin + pétales séchés) */
-function buildFlowers() {
+function fitModelInViewer(model, targetSize = MATERIAL_VIEWER_TARGET) {
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const s = targetSize / maxDim;
+  model.scale.setScalar(s);
+  model.position.set(-center.x * s, -center.y * s, -center.z * s);
+  prepareMeshForViewer(model);
+  return model;
+}
+
+function createMaterialRoot() {
   const g = new THREE.Group();
-  const petalColors = [0xf0c8d8, 0xe8a8c4, 0xf8e0ec, 0xd890b0];
-  for (let i = 0; i < 10; i++) {
-    const angle = (i / 10) * Math.PI * 2;
-    const tilt = 0.35 + (i % 3) * 0.15;
-    const geo = new THREE.SphereGeometry(0.38, 20, 16);
-    geo.scale(1.15, 0.18, 0.55);
-    const mat = new THREE.MeshPhysicalMaterial({
-      color: petalColors[i % petalColors.length],
-      metalness: 0,
-      roughness: 0.45,
-      transmission: 0.28,
-      thickness: 0.25,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.9,
-    });
-    const petal = new THREE.Mesh(geo, mat);
-    petal.rotation.set(tilt, angle, Math.sin(angle) * 0.25);
-    petal.position.set(
-      Math.cos(angle) * 0.55,
-      (i % 4) * 0.12 - 0.18,
-      Math.sin(angle) * 0.55,
-    );
-    g.add(petal);
-  }
-  const center = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 24, 24),
-    new THREE.MeshPhysicalMaterial({
-      color: 0xfff4e8,
-      roughness: 0.5,
-      transmission: 0.15,
-      transparent: true,
-      opacity: 0.95,
-    }),
-  );
-  g.add(center);
+  g.visible = false;
+  setGroupOpacity(g, 0);
   return g;
 }
-
-function buildTextile() {
-  const g = new THREE.Group();
-  const geo = new THREE.SphereGeometry(1.05, 96, 96);
-  const pos = geo.attributes.position;
-  const nrm = geo.attributes.normal;
-  for (let i = 0; i < pos.count; i++) {
-    const nx = nrm.getX(i),
-      ny = nrm.getY(i),
-      nz = nrm.getZ(i);
-    const u = Math.atan2(nz, nx) / (Math.PI * 2) + 0.5;
-    const v = Math.acos(Math.max(-1, Math.min(1, ny))) / Math.PI;
-    const weave = Math.sin(u * 36) * Math.cos(v * 18) * 0.048;
-    pos.setXYZ(
-      i,
-      pos.getX(i) + nx * weave,
-      pos.getY(i) + ny * weave,
-      pos.getZ(i) + nz * weave,
-    );
-  }
-  geo.computeVertexNormals();
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x8a5c38,
-    metalness: 0.05,
-    roughness: 0.9,
-    transparent: true,
-    opacity: 1,
-  });
-  g.add(new THREE.Mesh(geo, mat));
-  return g;
-}
-
-const BUILDERS = [
-  buildOyster,
-  buildCabbageLining,
-  buildTextile,
-  buildFlowers,
-];
 
 /** Viewer central : sac (aucune sélection) ou maquette matière + clic pour détail */
 function MaterialsViewer({ focusMaterial, onOpenDetail }) {
@@ -297,7 +174,7 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
       0.1,
       100,
     );
-    camera.position.set(0, 0.06, 3.65);
+    camera.position.set(0, 0.06, 3.35);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     pmrem.compileEquirectangularShader();
@@ -323,43 +200,50 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
     bagWrapper.position.set(0, -0.07, 0);
     spin.add(bagWrapper);
 
-    const materialRoots = BUILDERS.map((build) => {
-      const g = build();
-      g.visible = false;
-      setGroupOpacity(g, 0);
+    const materialRoots = [0, 1, 2, 3].map(() => {
+      const g = createMaterialRoot();
       spin.add(g);
       return g;
     });
 
-    new GLTFLoader().load(
+    const gltfLoader = new GLTFLoader();
+    const materialModelsReady = [false, false, false, false];
+
+    gltfLoader.load(
       BAG_MODEL_PATH,
       (gltf) => {
-        const model = gltf.scene;
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const s = 1.42 / maxDim;
-        model.scale.setScalar(s);
-        model.position.set(
-          -center.x * s,
-          -center.y * s + (size.y * s) * 0.5,
-          -center.z * s,
-        );
-        model.traverse((c) => {
-          if (c.isMesh) {
-            c.castShadow = false;
-            c.receiveShadow = false;
-          }
-        });
-        bagWrapper.add(model);
+        bagWrapper.add(fitModelInViewer(gltf.scene));
       },
       undefined,
-      () => console.warn("codebag.glb introuvable sur /materials"),
+      (err) => console.error("codebag.glb:", err),
     );
+
+    for (const [index, path] of Object.entries(MATERIAL_GLB)) {
+      const i = Number(index);
+      gltfLoader.load(
+        path,
+        (gltf) => {
+          const root = materialRoots[i];
+          root.clear();
+          const orient = new THREE.Group();
+          orient.add(gltf.scene);
+          const rot = MATERIAL_MODEL_ROTATION[i];
+          if (rot) orient.rotation.set(rot.x ?? 0, rot.y ?? 0, rot.z ?? 0);
+          root.add(fitModelInViewer(orient, MATERIAL_GLB_VIEWER_TARGET));
+          materialModelsReady[i] = true;
+          if (focusRef.current === i) {
+            setGroupOpacity(root, 1);
+            root.visible = true;
+          }
+        },
+        undefined,
+        (err) => console.error(`GLB ${path}:`, err),
+      );
+    }
 
     const matOpacities = [0, 0, 0, 0];
     let bagOpacity = 1;
+    let prevFocus = focusRef.current;
 
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
@@ -369,7 +253,9 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
     let dragStartY = 0;
     let pointerDown = false;
     let prevX = 0;
+    let prevY = 0;
     let velY = 0;
+    let velX = 0;
 
     const DRAG_THRESH = 6;
 
@@ -382,46 +268,33 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
       dragStartX = e.clientX;
       dragStartY = e.clientY;
       prevX = e.clientX;
+      prevY = e.clientY;
       velY = 0;
+      velX = 0;
       lastCX = e.clientX;
       lastCY = e.clientY;
     };
     const onPointerMove = (e) => {
       lastCX = e.clientX;
       lastCY = e.clientY;
-      const rect = renderer.domElement.getBoundingClientRect();
+      if (!pointerDown) return;
 
-      if (pointerDown) {
-        const dx = e.clientX - dragStartX;
-        const dy = e.clientY - dragStartY;
-        if (!isDragging && (Math.abs(dx) > DRAG_THRESH || Math.abs(dy) > DRAG_THRESH)) {
-          isDragging = true;
-        }
-        if (isDragging) {
-          renderer.domElement.style.cursor = "grabbing";
-          velY = (e.clientX - prevX) * 0.01;
-          prevX = e.clientX;
-        }
-        return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      if (!isDragging && (Math.abs(dx) > DRAG_THRESH || Math.abs(dy) > DRAG_THRESH)) {
+        isDragging = true;
+        renderer.domElement.classList.add("is-grabbing");
       }
-
-      const fx = focusRef.current;
-      if (fx !== null && materialRoots[fx]?.visible) {
-        ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-        raycaster.setFromCamera(ndc, camera);
-        const hits = raycaster.intersectObject(materialRoots[fx], true);
-        renderer.domElement.style.cursor =
-          hits.length > 0 ? "pointer" : "grab";
-      } else if (focusRef.current === null && bagWrapper.visible) {
-        renderer.domElement.style.cursor = "grab";
-      } else {
-        renderer.domElement.style.cursor = "default";
+      if (isDragging) {
+        velY = (e.clientX - prevX) * 0.01;
+        velX = (e.clientY - prevY) * 0.01;
+        prevX = e.clientX;
+        prevY = e.clientY;
       }
     };
 
     const onPointerLeave = () => {
-      renderer.domElement.style.cursor = "";
+      renderer.domElement.classList.remove("is-grabbing");
       if (pointerDown) finishPointerUp(lastCX, lastCY);
     };
 
@@ -443,6 +316,7 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
         }
       }
       isDragging = false;
+      renderer.domElement.classList.remove("is-grabbing");
     };
 
     const onUp = (e) => finishPointerUp(e.clientX, e.clientY);
@@ -464,7 +338,10 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
     let rafId = 0;
     const animate = () => {
       rafId = requestAnimationFrame(animate);
-      if (!isDragging) velY *= 0.92;
+      if (!isDragging) {
+        velY *= 0.92;
+        velX *= 0.92;
+      }
 
       const f = focusRef.current;
       const showBag = f === null;
@@ -491,16 +368,32 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
         });
       }
 
+      if (f !== prevFocus) {
+        if (f !== null && prevFocus !== null) {
+          for (let i = 0; i < 4; i++) {
+            if (i !== f) {
+              matOpacities[i] = 0;
+              materialRoots[i].visible = false;
+              setGroupOpacity(materialRoots[i], 0);
+            }
+          }
+        }
+        prevFocus = f;
+      }
+
       for (let i = 0; i < 4; i++) {
         const target = f === i ? 1 : 0;
-        matOpacities[i] += (target - matOpacities[i]) * 0.1;
+        const rate = target === 1 ? 0.2 : f === null ? 0.14 : 0.55;
+        matOpacities[i] += (target - matOpacities[i]) * rate;
         setGroupOpacity(materialRoots[i], matOpacities[i]);
         materialRoots[i].visible = matOpacities[i] > 0.02;
       }
 
-      const activeSpin =
-        f === null ? velY * 0.85 + 0.0022 : velY + 0.003;
-      spin.rotation.y += activeSpin;
+      const idleSpin = isDragging ? 0 : f === null ? 0.0022 : 0.0028;
+      const spinY = (f === null ? velY * 0.85 : velY * 0.9) + idleSpin;
+      const spinX = f === null ? velX * 0.85 : velX * 0.9;
+      spin.rotation.y += spinY;
+      spin.rotation.x += spinX;
 
       renderer.render(scene, camera);
     };
@@ -684,7 +577,7 @@ export default function Materials() {
           <h1 className="mat-intro__title">How it&apos;s made</h1>
           <p className="mat-lead">
             Oyster-shell structure, red-cabbage inner bag, recycled textiles and
-            flower bioplastics — pick a layer to explore it in 3D.
+            flower bioplastics. Pick a layer to explore it in 3D.
           </p>
         </header>
 
@@ -738,8 +631,8 @@ export default function Materials() {
               className={`mat-viewer-hint${focusMaterial != null ? " mat-viewer-hint--detail" : ""}`}
             >
               {focusMaterial == null
-                ? "Drag to rotate the bag, or pick a material on the sides"
-                : "Click the shape without dragging to open the full sheet"}
+                ? "Drag to rotate the bag in 3D, or pick a material on the sides"
+                : "Drag to rotate in 3D · click without dragging for the full sheet"}
             </p>
             {focusMaterial != null && (
               <button
@@ -831,50 +724,12 @@ export default function Materials() {
           </div>
         </section>
 
-        <section className="mat-process" aria-label="Behind the scenes">
-          <header className="mat-section-head">
-            <p className="mat-section-eyebrow">Behind the scenes</p>
-            <h2 className="mat-section-title">From matter to bag</h2>
-            <p className="mat-section-lead">
-              From sourcing reclaimed shells to printing the outer shell, every
-              step of Hybrid was designed to keep waste, water and energy to a
-              minimum.
-            </p>
-          </header>
-
-          <div className="mat-process__grid">
-            {[
-              { num: "01", title: "Sourcing", caption: "Oyster shells, red cabbage, textile offcuts and dried petals collected for the bag." },
-              { num: "02", title: "3D printing", caption: "The oyster-shell structure is printed layer by layer — no virgin plastic." },
-              { num: "03", title: "Hand-finishing", caption: "Red-cabbage lining, recycled textiles and flower bioplastics applied by hand." },
-            ].map((step) => (
-              <article key={step.num} className="mat-process__card">
-                <figure className="mat-process__media">
-                  <img
-                    src={`/materials/process-${step.num}.jpg`}
-                    alt={step.title}
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                </figure>
-                <div className="mat-process__text">
-                  <p className="mat-process__num">{step.num}</p>
-                  <h3 className="mat-process__title">{step.title}</h3>
-                  <p className="mat-process__caption">{step.caption}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
         <section className="mat-final" aria-label="The final piece">
           <div className="mat-final__inner">
             <div className="mat-final__media">
               <img
-                src="/materials/bag-final.jpg"
-                alt="The finished Hybrid bag"
+                src="/materials/bag-final.png"
+                alt="Hybrid bag with 3D-printed lattice shell, fabric flowers and pearl trims"
                 loading="lazy"
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
@@ -883,11 +738,15 @@ export default function Materials() {
             </div>
             <div className="mat-final__text">
               <p className="mat-section-eyebrow">The result</p>
-              <h2 className="mat-section-title">A bag that carries its story</h2>
+              <h2 className="mat-section-title">Structure, lining & florals</h2>
               <p className="mat-section-lead">
-                Every Hybrid bag is one of a kind. Its texture, its trims, its
-                tones change with the matter it&apos;s made of. Built to be used,
-                designed to come back to the earth.
+                The shell is inspired by ocean corals, 3D-printed in oyster
+                filament with an open organic lattice, light and pleasant to the
+                touch, pierced so the translucent inner bag
+                shows through. The lining is red cabbage bioplastic, sewn on a
+                sewing machine. Handmade flowers, recycled textile, varied red
+                cabbage bioplastics and pearls from a broken necklace, sit on
+                the shell alongside other reclaimed trims.
               </p>
             </div>
           </div>
