@@ -117,6 +117,11 @@
   gap: clamp(0.85rem, 1.6vw, 1.25rem);
 }
 
+/* 8 tuiles : 4 colonnes × 2 lignes */
+.proc-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .proc-tile {
   position: relative;
   display: block;
@@ -139,7 +144,11 @@
 .proc-tile:hover,
 .proc-tile:focus-visible {
   transform: translateY(-3px);
-  border-color: color-mix(in srgb, var(--accent, var(--proc-mauve)) 55%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--accent, var(--proc-mauve)) 55%,
+    transparent
+  );
   box-shadow: 0 14px 36px rgba(61, 53, 66, 0.1);
   background: rgba(255, 255, 255, 0.92);
   outline: none;
@@ -147,7 +156,8 @@
 
 .proc-tile:focus-visible {
   box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--accent, var(--proc-mauve)) 60%, transparent),
+    0 0 0 2px
+      color-mix(in srgb, var(--accent, var(--proc-mauve)) 60%, transparent),
     0 14px 36px rgba(61, 53, 66, 0.1);
 }
 
@@ -165,10 +175,27 @@
 }
 
 .proc-tile__media img {
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* Voile beige / rosé — visible par-dessus la photo (comme avant sans image) */
+.proc-tile__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    138deg,
+    color-mix(in srgb, var(--accent, #e8d0c8) 22%, rgba(255, 253, 250, 0.72)) 0%,
+    color-mix(in srgb, var(--accent, #d4b8a8) 38%, rgba(244, 230, 220, 0.55)) 55%,
+    color-mix(in srgb, var(--accent, #c9a890) 28%, rgba(232, 216, 200, 0.62)) 100%
+  );
 }
 
 .proc-tile__family {
@@ -176,6 +203,7 @@
   top: 0.7rem;
   left: 0.7rem;
   z-index: 2;
+  max-width: calc(100% - 1.4rem);
   padding: 0.3rem 0.6rem;
   font-size: 0.55rem;
   font-weight: 600;
@@ -183,6 +211,31 @@
   text-transform: uppercase;
   color: var(--proc-ink);
   background: rgba(255, 254, 252, 0.92);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+.proc-tile--featured {
+  border-color: color-mix(
+    in srgb,
+    var(--accent, var(--proc-mauve)) 45%,
+    var(--proc-line)
+  );
+}
+
+.proc-tile__badge {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 2;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--proc-ink);
+  background: color-mix(in srgb, var(--accent, #c9a0b8) 28%, #fff);
+  border: 1px solid color-mix(in srgb, var(--accent, #c9a0b8) 35%, transparent);
   border-radius: 999px;
   backdrop-filter: blur(8px);
 }
@@ -222,7 +275,8 @@
 
 .proc-video__frame {
   position: relative;
-  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 100%;
   border-radius: 1.1rem;
   overflow: hidden;
   background: radial-gradient(
@@ -238,14 +292,17 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 
-.proc-video__media {
-  position: absolute;
-  inset: 0;
+/* Vidéo en longueur — pleine largeur du contenu (comme au départ), sans bandes noires */
+.proc-video__frame--portrait {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+}
+
+.proc-video__frame--portrait .proc-video__media {
   display: block;
-  background: #000;
+  width: 100%;
+  height: auto;
+  background: transparent;
 }
 
 .proc-video__placeholder {
@@ -269,7 +326,8 @@
 }
 
 /* Si la vidéo se charge, on cache le placeholder en surimpression */
-.proc-video__frame:has(video:not([style*="display: none"])) .proc-video__placeholder {
+.proc-video__frame:has(video:not([style*="display: none"]))
+  .proc-video__placeholder {
   display: none;
 }
 
@@ -292,7 +350,9 @@
   text-decoration: none;
   border-bottom: 1px solid rgba(143, 122, 144, 0.35);
   padding-bottom: 0.35rem;
-  transition: gap 0.25s, color 0.25s;
+  transition:
+    gap 0.25s,
+    color 0.25s;
 }
 
 .proc-footer__link:hover {
@@ -318,8 +378,12 @@
 }
 
 @keyframes procFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .proc-modal {
@@ -331,12 +395,7 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 1.1rem;
-  background: linear-gradient(
-    168deg,
-    #fffdfe 0%,
-    #faf4f8 50%,
-    #f3e8f0 100%
-  );
+  background: linear-gradient(168deg, #fffdfe 0%, #faf4f8 50%, #f3e8f0 100%);
   border: 1px solid var(--proc-line);
   box-shadow:
     0 28px 64px rgba(61, 53, 66, 0.16),
@@ -345,8 +404,14 @@
 }
 
 @keyframes procModalUp {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .proc-modal__head {
@@ -379,7 +444,10 @@
   background: rgba(255, 255, 255, 0.9);
   color: var(--proc-ink);
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s ease, border-color 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.15s ease,
+    border-color 0.2s;
 }
 
 .proc-modal__close:hover {
@@ -395,6 +463,7 @@
 }
 
 .proc-modal__media {
+  position: relative;
   margin: 1.35rem -1.6rem 1.5rem;
   aspect-ratio: 16 / 9;
   background: linear-gradient(
@@ -408,10 +477,26 @@
 }
 
 .proc-modal__media img {
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.proc-modal__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    138deg,
+    color-mix(in srgb, var(--accent, #e8d0c8) 18%, rgba(255, 253, 250, 0.65)) 0%,
+    color-mix(in srgb, var(--accent, #d4b8a8) 32%, rgba(244, 230, 220, 0.48)) 55%,
+    color-mix(in srgb, var(--accent, #c9a890) 24%, rgba(232, 216, 200, 0.55)) 100%
+  );
 }
 
 .proc-modal__title {
@@ -434,11 +519,45 @@
 }
 
 .proc-modal__desc {
-  margin: 0 0 1.5rem;
+  margin: 0 0 1rem;
   font-size: 0.88rem;
   line-height: 1.75;
   letter-spacing: 0.02em;
   color: var(--proc-ink-soft);
+}
+
+.proc-modal__desc:last-of-type {
+  margin-bottom: 1.35rem;
+}
+
+.proc-modal__specs {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 0.35rem;
+  padding: 1rem 1.05rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 254, 252, 0.85);
+  border: 1px solid var(--proc-line);
+}
+
+.proc-modal__spec {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.proc-modal__spec dt {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent, var(--proc-mauve));
+}
+
+.proc-modal__spec dd {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--proc-ink);
 }
 
 .proc-modal__section {
@@ -518,7 +637,8 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent, var(--proc-mauve)) 20%, #fff);
   color: var(--proc-ink);
-  border: 1px solid color-mix(in srgb, var(--accent, var(--proc-mauve)) 35%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--accent, var(--proc-mauve)) 35%, transparent);
 }
 
 /* ─── Responsive ───────────────────────────────────────────────────────── */
@@ -527,14 +647,14 @@
     padding-top: 5rem;
   }
 
-  .proc-grid {
-    grid-template-columns: 1fr 1fr;
+  .proc-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
   }
 }
 
 @media (max-width: 480px) {
-  .proc-grid {
+  .proc-grid--4 {
     grid-template-columns: 1fr;
   }
 

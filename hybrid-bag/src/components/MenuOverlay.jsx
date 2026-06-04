@@ -29,16 +29,16 @@ const ITEMS = [
   },
   {
     num: "03",
-    label: "Process",
-    sub: "How it's made",
-    to: "/process",
+    label: "Materials",
+    sub: "Filaments & biomaterials",
+    to: "/materials",
     color: "#dba8c4",
   },
   {
     num: "04",
-    label: "Materials",
-    sub: "What it's made of",
-    to: "/materials",
+    label: "Process",
+    sub: "How it's made",
+    to: "/process",
     color: "#a894cc",
   },
 ];

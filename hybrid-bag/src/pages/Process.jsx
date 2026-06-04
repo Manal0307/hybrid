@@ -10,203 +10,161 @@ import "./Process.css";
    ────────────────────────────────────────────────────────────────────────── */
 const FILAMENTS = [
   {
-    id: "oyster-shell",
-    name: "Oyster shell",
-    short: "Used for the Hybrid bag",
-    family: "Mineral",
-    accent: "#d4c4a0",
+    id: "rpet-recycled",
+    name: "rPET Recycled",
+    short: "Post-consumer polyester",
+    family: "Recycled Polyester",
+    accent: "#7a98b0",
+    composition: "100% recycled PET (bottles & packaging)",
+    aspect: "Cool grey-blue, clean, slightly glossy",
+    usage: "Functional parts, durable prototypes, everyday objects",
     description:
-      "Crushed oyster shells collected from coastal restaurants are blended with a PLA base. The result is a chalky, naturally rigid filament that prints like ceramic.",
-    ingredients: [
-      "70% PLA base (corn-derived)",
-      "30% micronised oyster shell (calcium carbonate)",
-      "Mineral pigments (optional)",
-    ],
-    steps: [
-      "Clean and dry the oyster shells, then grind them into a fine powder (<50 µm).",
-      "Mix the shell powder with PLA pellets in an industrial blender until homogeneous.",
-      "Extrude through a 1.75 mm filament extruder at 180–200 °C.",
-      "Cool, spool and dry. Print between 195–215 °C.",
+      "rPET filament is made from recycled polyethylene terephthalate — typically from plastic bottles and packaging waste. It turns a common waste stream into a strong, printable material with a cooler, more technical finish than standard PLA.\n\nIt offers good layer adhesion and mechanical resistance, making it suitable for functional parts and objects that need a bit more durability.",
+    keyQualities: [
+      "Made from recycled PET waste",
+      "Strong and durable",
+      "Good layer adhesion",
+      "Cool technical finish",
+      "Suitable for functional design",
     ],
   },
   {
-    id: "pla-corn",
-    name: "Corn-based PLA",
-    short: "Most common bioplastic",
-    family: "Plant-based",
-    accent: "#e6d690",
+    id: "fishing-net",
+    name: "Fishing Net Filament",
+    short: "Recycled ocean nylon",
+    family: "Recycled Nylon / Ocean Waste",
+    accent: "#4a7898",
+    composition: "Recycled nylon from fishing nets",
+    aspect: "Matte, technical, slightly irregular tones",
+    usage: "Functional parts, sustainable design, durable objects",
     description:
-      "Polylactic acid made from fermented corn starch. The everyday alternative to ABS, compostable in industrial conditions, with a low printing temperature.",
-    ingredients: [
-      "Corn starch (or sugarcane)",
-      "Lactic acid bacteria",
-      "Glycerin (plasticiser)",
-    ],
-    steps: [
-      "Ferment corn starch with lactobacillus to produce lactic acid.",
-      "Polymerise the lactic acid into PLA pellets.",
-      "Extrude the pellets into a 1.75 mm filament.",
-      "Print at 190–220 °C, bed at 50–60 °C.",
+      "This filament is made from discarded fishing nets collected through the Circular Ocean project. By transforming recovered fishing nets into a high-quality 3D printing material, it shows how ocean waste can become part of a circular design process.\n\nThe material is based on recycled nylon and offers strong mechanical and thermal properties. It is resistant to heat, UV exposure and structural wear, making it suitable for both functional parts and sustainable design applications. Its matte surface and subtle color variations reveal its recycled origin, giving the final object a raw and responsible aesthetic.",
+    keyQualities: [
+      "Made from recovered fishing nets",
+      "Recycled nylon",
+      "High heat resistance",
+      "UV-resistant",
+      "Strong and durable",
+      "Reduced carbon footprint compared to virgin nylon",
     ],
   },
   {
-    id: "recycled-pet",
-    name: "Recycled PET",
-    short: "From discarded bottles",
-    family: "Recycled plastic",
-    accent: "#9bc8e6",
+    id: "smartfil-algae",
+    name: "PLA Smartfil Algae",
+    short: "Spirulina biocomposite",
+    family: "Algae-based / Biocomposite",
+    accent: "#5a8868",
+    composition: "85% PLA + 15% spirulina algae",
+    aspect: "Natural green tone, organic finish",
+    usage: "Eco-conscious prototypes, design objects, educational projects",
     description:
-      "Plastic bottles collected, washed and shredded into flakes, then extruded as a tough, slightly translucent filament. Cuts virgin plastic use by 100%.",
-    ingredients: [
-      "Clear PET bottles (PETE / #1)",
-      "Drying agent",
-    ],
-    steps: [
-      "Sort and wash the bottles, remove labels and caps.",
-      "Shred into 5 mm flakes, then dry at 70 °C for 4 hours.",
-      "Extrude into filament at 250–270 °C.",
-      "Print at 240–260 °C with an enclosed chamber.",
+      "PLA Smartfil Algae is an ecological 3D printing filament made from PLA mixed with spirulina algae. By combining a familiar printing material with algae, it creates a more sustainable alternative for users who want to reduce the environmental impact of their prints.\n\nThe algae content gives the filament a natural identity and connects the material to renewable resources. It is especially interesting for projects that explore bio-based materials, experimental design and ecological storytelling.",
+    keyQualities: [
+      "Contains spirulina algae",
+      "85% PLA and 15% algae",
+      "Bio-based visual identity",
+      "Eco-oriented material",
+      "Suitable for design and concept prototypes",
     ],
   },
   {
-    id: "coffee-grounds",
-    name: "Coffee grounds",
-    short: "From cafés waste",
-    family: "Organic",
-    accent: "#8b6647",
+    id: "wound-up-coffee",
+    name: "Wound Up — PLA Coffee",
+    short: "Coffee waste composite",
+    family: "Organic / Biocomposite",
+    accent: "#6b4a32",
+    composition: "PLA + coffee waste",
+    aspect: "Dark brown, granular, slightly translucent",
+    usage: "Organic design, decorative pieces, material experimentation",
     description:
-      "Used coffee grounds dried, sieved and mixed with PLA. The filament has a soft brown tone and a faint coffee scent when printing.",
-    ingredients: [
-      "Used coffee grounds (dried)",
-      "PLA base (70%)",
-      "Natural waxes (optional)",
-    ],
-    steps: [
-      "Collect spent coffee grounds, oven-dry at 90 °C for 12 hours.",
-      "Sieve to <100 µm, blend with PLA pellets (≤30% by weight).",
-      "Extrude into a 1.75 mm filament at 185–200 °C.",
-      "Print at 195–210 °C.",
+      "Wound Up is a PLA-based biocomposite filament made with waste coffee by-products. Its dark brown color does not come from synthetic dyes, but from the natural coffee content inside the material. This gives the filament a warm, organic and textured appearance.\n\nThe material keeps the easy printing properties of PLA while adding a more tactile and natural finish. Its grainy surface and subtle translucency make it especially interesting for objects where texture, imperfection and material origin are part of the visual story.",
+    keyQualities: [
+      "Made with coffee waste",
+      "Natural dark brown color",
+      "Granular texture",
+      "PLA-based and easy to print",
+      "No heated bed required",
+      "Organic visual finish",
     ],
   },
   {
-    id: "hemp-fiber",
-    name: "Hemp fiber",
-    short: "Plant-based composite",
-    family: "Plant-based",
-    accent: "#a8b07a",
+    id: "aquatek-pva",
+    name: "AquaTek PVA",
+    short: "Water-soluble support",
+    family: "Water-soluble Support Material",
+    accent: "#b8c8d8",
+    composition: "Biodegradable PVA",
+    aspect: "Clean, translucent or pale support material",
+    usage: "Soluble supports, complex prints, clean finishing",
     description:
-      "Hemp fibers ground and blended with PLA for a matte, fibrous finish. The fibers add stiffness and a beautifully irregular surface texture.",
-    ingredients: [
-      "Hemp fibers (chopped, <2 mm)",
-      "PLA base (75%)",
-      "Compatibiliser (maleic anhydride)",
-    ],
-    steps: [
-      "Dry the hemp fibers at 105 °C to remove moisture.",
-      "Pre-compound with PLA in a twin-screw extruder.",
-      "Pellet, then re-extrude into 1.75 mm filament.",
-      "Print at 200–215 °C, expect a matte finish.",
+      "AquaTek PVA is a water-soluble support filament designed for complex 3D prints. It allows support structures to be removed by dissolving them in warm water, reducing the risk of damaging the final printed object.\n\nThis material is especially useful when printing detailed shapes, overhangs or internal geometries that would be difficult to clean manually. It is compatible with common materials such as PLA, ABS and PETG, making it a practical support solution for both prototyping and small-scale production.\n\nIts biodegradable composition makes it a more responsible option for workshops looking for technical performance with a lower environmental impact.",
+    keyQualities: [
+      "Water-soluble support material",
+      "Dissolves in warm water",
+      "Compatible with PLA, ABS and PETG",
+      "Useful for complex prints",
+      "Biodegradable",
+      "Clean support removal",
     ],
   },
   {
-    id: "wood-fiber",
-    name: "Wood fiber",
-    short: "From sawmill offcuts",
-    family: "Recycled plant",
-    accent: "#c19a6b",
+    id: "wood-addnorth",
+    name: "PLA Wood Addnorth",
+    short: "Wood fiber composite",
+    family: "Recycled Plant / Wood Composite",
+    accent: "#b8956a",
+    composition: "60% PLA + 40% natural wood fibers",
+    aspect: "Wood-like, warm, natural surface",
+    usage: "Decoration, architecture models, design objects",
     description:
-      "Wood sawdust collected from local carpentry workshops and bound with PLA. Looks and feels like raw wood, can be sanded after printing.",
-    ingredients: [
-      "Sawdust (<80 µm)",
-      "PLA base (60–70%)",
-      "Binder (PHA optional)",
-    ],
-    steps: [
-      "Dry the sawdust at 80 °C for 8 hours.",
-      "Blend with PLA pellets, aim for 30% wood content.",
-      "Extrude into filament at 175–190 °C (lower than pure PLA).",
-      "Print at 190–210 °C, sand or seal for a wood-like finish.",
+      "PLA Wood Addnorth is a composite filament made from PLA and natural wood fibers. With 40% wood content, it creates printed objects with a surface finish that closely resembles natural wood.\n\nBecause it is PLA-based, it remains easy to print and compatible with most FDM 3D printers. It does not require a heated bed and can be printed using standard PLA settings. The high percentage of wood fibers gives the final object a warm, tactile and organic look, making it ideal for decorative pieces, architectural models and design prototypes.",
+    keyQualities: [
+      "Contains natural wood fibers",
+      "60% PLA and 40% wood",
+      "Wood-like surface finish",
+      "Easy to print",
+      "No heated bed required",
+      "Suitable for decorative design",
     ],
   },
   {
-    id: "algae-composite",
-    name: "Algae composite",
-    short: "Sea-bound 3D printing",
-    family: "Algae-based",
-    accent: "#88b8a0",
+    id: "pla-huitre",
+    name: "PLA Huître",
+    short: "Oyster shell biocomposite",
+    family: "Mineral / Biocomposite",
+    accent: "#c4b8a0",
+    composition: "PLA + oyster shell by-products",
+    aspect: "Whitish tone, mineral particles, subtle shine",
+    usage: "Artistic pieces, decorative objects, experimental accessories",
     description:
-      "Dried spirulina and brown algae ground into a fine powder, mixed with PLA to produce a deep-green filament with a faintly oceanic scent.",
-    ingredients: [
-      "Spirulina / brown algae (dried, milled)",
-      "PLA base (70–80%)",
-      "Glycerin (1–2%)",
-    ],
-    steps: [
-      "Dehydrate the algae fully and grind to <60 µm.",
-      "Blend with PLA pellets in a planetary mixer.",
-      "Extrude at 180–195 °C. Avoid overheating to preserve colour.",
-      "Print at 195–210 °C, expect a matte green finish.",
+      "PLA Huître is a biocomposite filament made from PLA combined with oyster shell by-products. Instead of treating shell waste as useless material, it gives it a second life through 3D printing.\n\nOnce printed, it has a whitish mineral tone with small particles that create a slightly luminous and marbled effect. These particles help hide layer lines and small printing imperfections, which makes the material especially suitable for artistic and decorative objects.",
+    keyQualities: [
+      "Made with oyster shell waste",
+      "Mineral and pearly finish",
+      "Hides layer lines well",
+      "Easy to print (PLA-based)",
+      "Ideal for art, design and decoration",
+      "Recommended nozzle: 0.5 mm or larger",
     ],
   },
   {
-    id: "cork-composite",
-    name: "Cork composite",
-    short: "From wine bottle stoppers",
-    family: "Plant-based",
-    accent: "#b89878",
+    id: "pla-ardoise",
+    name: "PLA Ardoise — Coproduit",
+    short: "Revalorized slate waste",
+    family: "Mineral / Revalorized Stone Waste",
+    accent: "#6a6868",
+    composition: "Bio-based PLA + slate particles",
+    aspect: "Natural slate grey, mineral grain",
+    usage: "Design objects, architectural models, decorative pieces",
     description:
-      "Cork dust recovered from cork stopper production blended with PLA. The filament prints soft, slightly compressible objects with a natural cork texture.",
-    ingredients: [
-      "Cork dust (<100 µm)",
-      "PLA base (75%)",
-      "Plasticiser (PEG)",
-    ],
-    steps: [
-      "Collect cork dust from local stopper workshops.",
-      "Dry at 60 °C for 6 hours to remove moisture.",
-      "Blend with PLA and PEG, then extrude at 180–195 °C.",
-      "Print at 190–205 °C. Best with a 0.6 mm nozzle to avoid clogs.",
-    ],
-  },
-  {
-    id: "bamboo-fiber",
-    name: "Bamboo fiber",
-    short: "Fast-growing plant base",
-    family: "Plant-based",
-    accent: "#c8c8a0",
-    description:
-      "Bamboo ground into micro-fibers and pre-compounded with PLA. Cheap to grow, strong when printed, beautifully fibrous on the surface.",
-    ingredients: [
-      "Bamboo fibers (<2 mm)",
-      "PLA base (70%)",
-      "Compatibiliser (maleic anhydride)",
-    ],
-    steps: [
-      "Mill bamboo into short fibers, dry to <0.5% moisture.",
-      "Compound with PLA in a twin-screw extruder.",
-      "Pelletise, then extrude into 1.75 mm filament.",
-      "Print at 200–215 °C. Sand for a smoother finish.",
-    ],
-  },
-  {
-    id: "flax-fiber",
-    name: "Flax fiber",
-    short: "Linen-strong filament",
-    family: "Plant-based",
-    accent: "#d8c890",
-    description:
-      "Flax fibers from linen production blended with PLA. Light, very stiff, with a pale fibrous look reminiscent of raw linen thread.",
-    ingredients: [
-      "Flax fibers (<1.5 mm)",
-      "PLA base (75%)",
-      "Silane coupling agent (0.5%)",
-    ],
-    steps: [
-      "Comb out short flax fibers from linen offcuts.",
-      "Treat with a silane coupling agent for better adhesion.",
-      "Compound with PLA pellets in a twin-screw extruder.",
-      "Pelletise, then extrude into 1.75 mm filament.",
-      "Print at 200–215 °C for a clean linen-like finish.",
+      "PLA Ardoise is a mineral composite filament made from bio-based PLA and locally revalorized slate waste. The material contains fine slate particles, creating an authentic stone-like texture and a natural grey finish.\n\nIts surface has a mineral grain that gives printed pieces a unique and raw appearance. The fine particle size allows for a cleaner finish, while the natural color variations make every print slightly different. For longer prints, a steel nozzle is recommended because mineral particles can be abrasive over time.\n\nThis filament is interesting for projects that explore local waste, mineral textures and durable material alternatives.",
+    keyQualities: [
+      "Made from revalorized slate waste",
+      "Bio-based PLA",
+      "Natural slate grey finish",
+      "Fine mineral particles",
+      "Unique color variations",
+      "Steel nozzle recommended for long prints",
     ],
   },
 ];
@@ -214,118 +172,8 @@ const FILAMENTS = [
 /* ──────────────────────────────────────────────────────────────────────────
    Biomaterials. recettes maison
    ────────────────────────────────────────────────────────────────────────── */
+/* Studio tests — max 8, recipes actually tried in the lab */
 const BIOMATERIALS = [
-  {
-    id: "cabbage-bioplastic",
-    name: "Cabbage bioplastic",
-    short: "Used for the bag lining",
-    family: "Gelatin-based",
-    accent: "#e8a8c4",
-    description:
-      "A soft, translucent bioplastic embedded with dried flower petals and red cabbage extract. Used as the inner lining of the Hybrid bag.",
-    ingredients: [
-      "12 g food gelatin (or 4 g agar)",
-      "60 ml red cabbage decoction (water boiled with red cabbage leaves)",
-      "8 g glycerin",
-      "Dried flower petals",
-    ],
-    steps: [
-      "Simmer chopped red cabbage in water for 20 minutes, then strain to keep the deep purple liquid.",
-      "Heat 60 ml of the red cabbage decoction to 70 °C in a saucepan (do not boil).",
-      "Whisk in the gelatin slowly until fully dissolved.",
-      "Add glycerin, stir for 1 minute. Remove from heat.",
-      "Pour onto a silicone mat, sprinkle dried petals evenly.",
-      "Let dry at room temperature for 24–48 hours.",
-    ],
-  },
-  {
-    id: "agar-seaweed",
-    name: "Agar seaweed",
-    short: "Vegan & translucent",
-    family: "Algae-based",
-    accent: "#7cc8a8",
-    description:
-      "A vegan bioplastic made from agar-agar, sourced from red seaweed. Fully biodegradable in soil, dissolves in hot water.",
-    ingredients: [
-      "4 g agar-agar powder",
-      "100 ml water",
-      "5 g glycerin",
-      "Natural colourant (optional)",
-    ],
-    steps: [
-      "Combine all ingredients in a saucepan.",
-      "Heat slowly while stirring until the agar is fully dissolved (~85 °C).",
-      "Simmer 2 minutes until the mixture thickens slightly.",
-      "Pour onto a flat silicone surface, spread to even thickness.",
-      "Dry at room temperature for 24 hours.",
-    ],
-  },
-  {
-    id: "potato-starch",
-    name: "Potato starch",
-    short: "Soft & flexible",
-    family: "Starch-based",
-    accent: "#e8d6a0",
-    description:
-      "The simplest bioplastic. Cheap, edible, and easy to colour. Great for prototypes and short-life applications.",
-    ingredients: [
-      "10 g potato starch",
-      "100 ml water",
-      "5 ml white vinegar",
-      "5 g glycerin",
-    ],
-    steps: [
-      "Mix starch and water in a saucepan until smooth.",
-      "Add vinegar and glycerin, stir well.",
-      "Heat gently while stirring until the mixture turns translucent and thick.",
-      "Pour onto a silicone mat, spread thin.",
-      "Dry for 2–3 days.",
-    ],
-  },
-  {
-    id: "fruit-pectin",
-    name: "Fruit pectin",
-    short: "From apple peels",
-    family: "Fruit-based",
-    accent: "#f4b48a",
-    description:
-      "A bioplastic made from apple peels rich in pectin. Naturally amber-coloured, with a fruity scent that fades over time.",
-    ingredients: [
-      "200 g apple peels",
-      "150 ml water",
-      "5 g glycerin",
-      "Lemon juice (a few drops)",
-    ],
-    steps: [
-      "Boil the apple peels with water and lemon juice for 30 min.",
-      "Blend the mixture until smooth, then sieve.",
-      "Add glycerin to the pulp, simmer for 5 min.",
-      "Spread on a silicone mat in a thin layer.",
-      "Dry at 40 °C in an oven for 8 hours, or 3 days at room temp.",
-    ],
-  },
-  {
-    id: "mycelium-foam",
-    name: "Mycelium foam",
-    short: "Living, grown material",
-    family: "Fungi-based",
-    accent: "#b8a890",
-    description:
-      "Mycelium (mushroom roots) grown on agricultural waste forms a dense, biodegradable foam. Used as packaging and structural cores.",
-    ingredients: [
-      "Hemp shavings or straw (substrate)",
-      "Mycelium spawn (Ganoderma or Pleurotus)",
-      "Water",
-      "Flour (food source)",
-    ],
-    steps: [
-      "Sterilise the substrate by boiling, then cool to room temperature.",
-      "Mix with mycelium spawn and a small amount of flour.",
-      "Pack into a sealed mould, leaving a small air hole.",
-      "Incubate in the dark at 24 °C for 7–10 days.",
-      "Demould, then dry in an oven at 80 °C to kill the mycelium.",
-    ],
-  },
   {
     id: "banana-leather",
     name: "Banana leather",
@@ -333,7 +181,7 @@ const BIOMATERIALS = [
     family: "Fruit-based",
     accent: "#d4b85a",
     description:
-      "A leather-like material made from banana peels and glycerin. Strong, flexible, and surprisingly water-resistant once treated.",
+      "A leather-like sheet made from ripe banana peels. Flexible, warm yellow-brown, and one of the first materials tested in the Hybrid lab.",
     ingredients: [
       "5 banana peels (very ripe)",
       "10 g glycerin",
@@ -348,34 +196,13 @@ const BIOMATERIALS = [
     ],
   },
   {
-    id: "kombucha-leather",
-    name: "Kombucha leather",
-    short: "Grown on tea",
-    family: "Bacterial cellulose",
-    accent: "#b08868",
-    description:
-      "SCOBY (kombucha culture) grown on sweetened tea forms a leather-like sheet of bacterial cellulose. Naturally amber, can be dyed.",
-    ingredients: [
-      "1 L brewed black tea",
-      "100 g sugar",
-      "100 ml kombucha starter (with SCOBY)",
-    ],
-    steps: [
-      "Brew strong black tea, dissolve sugar, let cool.",
-      "Add kombucha starter and SCOBY to a wide shallow container.",
-      "Cover with cloth, let grow at 25 °C for 2–3 weeks.",
-      "Harvest the pellicle, rinse, and dry on a flat surface.",
-      "Apply natural oil or wax for flexibility.",
-    ],
-  },
-  {
     id: "red-cabbage-bio",
-    name: "Red cabbage film",
-    short: "From kitchen waste",
+    name: "Red cabbage",
+    short: "Deep violet film",
     family: "Vegetable-based",
     accent: "#7a3a8a",
     description:
-      "Red cabbage leaves usually thrown away, turned into a deep violet, slightly translucent film. Used alongside the cabbage bioplastic in the Hybrid bag.",
+      "Red cabbage leaves turned into a deep violet, slightly translucent film. pH-sensitive colour that shifts in contact with acids and bases.",
     ingredients: [
       "300 g red cabbage leaves",
       "200 ml water",
@@ -383,43 +210,21 @@ const BIOMATERIALS = [
       "5 g agar-agar",
     ],
     steps: [
-      "Simmer the chopped leaves in water for 20 minutes to extract the deep purple decoction.",
+      "Simmer chopped leaves in water for 20 minutes.",
       "Strain to keep only the violet liquid.",
-      "Add agar and glycerin to the decoction, heat gently until thickened.",
+      "Add agar and glycerin, heat gently until thickened.",
       "Spread thin on a silicone mat.",
       "Dry at room temperature for 48 hours.",
     ],
   },
   {
-    id: "spinach-bioplastic",
-    name: "Spinach pulp",
-    short: "Translucent green film",
-    family: "Vegetable-based",
-    accent: "#6cb898",
-    description:
-      "Spinach blanched and pulped, set with agar into a translucent green film that catches the light beautifully.",
-    ingredients: [
-      "200 g fresh spinach",
-      "100 ml water",
-      "4 g agar-agar",
-      "5 g glycerin",
-    ],
-    steps: [
-      "Blanch the spinach 2 minutes, then drain.",
-      "Blend smooth, sieve through a fine cloth.",
-      "Heat the pulp with water and agar until dissolved.",
-      "Stir in glycerin, pour onto a silicone mat.",
-      "Dry for 24 hours at room temperature.",
-    ],
-  },
-  {
     id: "orange-peel",
-    name: "Orange peel",
-    short: "Citrus-amber translucent film",
+    name: "Orange",
+    short: "Citrus-amber film",
     family: "Citrus-based",
     accent: "#f4b48a",
     description:
-      "Orange peels caramelised with pectin and lemon into an amber, slightly fragrant film perfect for packaging or jewellery.",
+      "Orange peels cooked into an amber, slightly fragrant translucent film — a separate studio test from the cucumber recipe.",
     ingredients: [
       "150 g orange peels",
       "200 ml water",
@@ -435,57 +240,52 @@ const BIOMATERIALS = [
     ],
   },
   {
-    id: "avocado-seed",
-    name: "Avocado seed",
-    short: "Pink-brown bioplastic",
-    family: "Seed-based",
-    accent: "#b08868",
+    id: "cucumber-film",
+    name: "Cucumber",
+    short: "Pale green vegetable sheet",
+    family: "Vegetable-based",
+    accent: "#a8d8b0",
     description:
-      "Avocado pits ground to flour, cooked with starch to produce a delicate pink-brown film that darkens with time.",
+      "Cucumber pulp set with agar into a light green, slightly grainy sheet. Tested on its own, apart from the orange peel experiments.",
     ingredients: [
-      "30 g avocado seed flour (dried & milled)",
-      "100 ml water",
-      "5 ml white vinegar",
+      "200 g cucumber (peeled)",
+      "80 ml water",
+      "4 g agar-agar",
       "5 g glycerin",
     ],
     steps: [
-      "Sun-dry the pits for 5 days, then mill to flour.",
-      "Mix flour with water and vinegar.",
-      "Heat while stirring until thickened (~85 °C).",
-      "Stir in glycerin, pour onto a silicone mat.",
-      "Dry for 3 days at room temperature.",
+      "Blend cucumber with water until smooth, then sieve.",
+      "Heat the pulp with agar until dissolved (~85 °C).",
+      "Stir in glycerin.",
+      "Pour thin onto a silicone mat.",
+      "Dry for 24–48 hours at room temperature.",
     ],
   },
   {
-    id: "beet-bioplastic",
-    name: "Beet juice",
-    short: "Magenta-pink film",
-    family: "Vegetable-based",
-    accent: "#c890a8",
+    id: "plain-gelatin",
+    name: "Plain gelatin",
+    short: "Nothing added",
+    family: "Gelatin-based",
+    accent: "#f0e8e0",
     description:
-      "Beet juice set with carrageenan into a magenta translucent film. Fades to dusty pink as it dries.",
-    ingredients: [
-      "80 ml beet juice",
-      "20 ml water",
-      "3 g carrageenan",
-      "5 g glycerin",
-    ],
+      "The baseline test: food gelatin and water only, no glycerin, petals or dye. A stiff, glass-clear film that shows the raw behaviour of the binder.",
+    ingredients: ["12 g food gelatin", "100 ml water"],
     steps: [
-      "Warm beet juice and water gently.",
-      "Whisk in carrageenan slowly until dissolved.",
-      "Add glycerin, simmer 1 minute.",
-      "Pour onto a silicone mat, spread thin.",
-      "Dry for 24 hours.",
+      "Heat water to 70 °C in a saucepan (do not boil).",
+      "Whisk in gelatin slowly until fully dissolved.",
+      "Pour onto a silicone mat, spread as evenly as possible.",
+      "Let dry at room temperature for 24–48 hours.",
+      "Peel carefully — very brittle without plasticiser.",
     ],
   },
   {
     id: "coffee-film",
-    name: "Coffee film",
-    short: "Deep brown paper-like sheet",
+    name: "Coffee",
+    short: "Deep brown sheet",
     family: "Organic",
     accent: "#8b6647",
     description:
-      "Spent coffee grounds boiled and bound with agar into a deep brown, paper-like sheet that smells faintly of espresso.",
+      "Spent coffee grounds bound with agar into a deep brown, paper-like sheet that keeps a faint espresso scent while drying.",
     ingredients: [
       "30 g spent coffee grounds",
       "150 ml water",
@@ -495,161 +295,61 @@ const BIOMATERIALS = [
     steps: [
       "Simmer grounds with water for 15 min.",
       "Strain through a fine cloth.",
-      "Reheat the liquid, dissolve agar fully.",
+      "Reheat the liquid and dissolve agar fully.",
       "Add glycerin, pour thin onto a silicone mat.",
       "Dry for 24 hours.",
     ],
   },
   {
-    id: "tea-leaves",
-    name: "Tea leaves",
-    short: "Jade-brown translucent sheet",
-    family: "Leaf-based",
-    accent: "#a87858",
+    id: "flower-petals",
+    name: "Flower petals",
+    short: "Embedded in gelatin",
+    family: "Gelatin-based",
+    accent: "#e8b0c8",
     description:
-      "Used green tea leaves blended with pectin into a translucent jade-brown sheet, faintly aromatic.",
+      "A soft, translucent bioplastic with dried flower petals pressed into the surface. Used as inspiration for the inner lining of the Hybrid bag.",
     ingredients: [
-      "40 g spent tea leaves",
-      "200 ml water",
-      "4 g pectin",
-      "5 g glycerin",
-    ],
-    steps: [
-      "Boil tea leaves with water for 20 min.",
-      "Blend, then strain through cloth.",
-      "Reheat with pectin until thickened.",
-      "Stir in glycerin, spread thin.",
-      "Dry for 36 hours.",
-    ],
-  },
-  {
-    id: "chitosan-film",
-    name: "Chitosan film",
-    short: "From shrimp shells",
-    family: "Marine-based",
-    accent: "#f0d870",
-    description:
-      "Chitosan extracted from shrimp shells, strong, transparent, and naturally antibacterial. Used in wound dressings and food packaging.",
-    ingredients: [
-      "2 g chitosan powder",
-      "100 ml acetic acid 1%",
-      "5 g glycerin",
-    ],
-    steps: [
-      "Dissolve chitosan in the acid solution slowly.",
-      "Stir for 30 minutes until fully homogeneous.",
-      "Filter to remove undissolved particles.",
-      "Add glycerin, pour onto a silicone mat.",
-      "Dry for 48 hours.",
-    ],
-  },
-  {
-    id: "egg-white",
-    name: "Egg white film",
-    short: "Paper-thin & transparent",
-    family: "Animal protein",
-    accent: "#e8e0c8",
-    description:
-      "Egg whites whipped briefly and dried with glycerin into a fully transparent, paper-thin film that catches light like silk.",
-    ingredients: [
-      "3 egg whites",
-      "20 ml water",
-      "5 g glycerin",
-    ],
-    steps: [
-      "Whisk egg whites and water gently. Avoid foam.",
-      "Add glycerin, strain through fine cloth.",
-      "Spread very thin on a silicone mat.",
-      "Dry slowly at 30 °C for 24 hours.",
-      "Peel carefully, fragile when fresh.",
-    ],
-  },
-  {
-    id: "milk-casein",
-    name: "Milk casein",
-    short: "Ivory hard plastic",
-    family: "Animal protein",
-    accent: "#f0e8d0",
-    description:
-      "Casein extracted from skimmed milk with vinegar, a hard, ivory-coloured plastic, used historically for buttons and beads.",
-    ingredients: [
-      "500 ml skimmed milk",
-      "30 ml white vinegar",
-    ],
-    steps: [
-      "Heat milk gently to 60 °C.",
-      "Pour vinegar in slowly, stirring until curds form.",
-      "Strain through a cloth, press out the liquid.",
-      "Knead the curds into shape (moulds optional).",
-      "Air-dry for 3 days, then sand or polish.",
-    ],
-  },
-  {
-    id: "rice-flour",
-    name: "Rice flour",
-    short: "Soft translucent film",
-    family: "Starch-based",
-    accent: "#f0e0c8",
-    description:
-      "White rice flour cooked into a translucent, slightly elastic film. Cheap, easy to colour, and edible.",
-    ingredients: [
-      "12 g rice flour",
+      "12 g food gelatin",
       "100 ml water",
-      "5 ml vinegar",
-      "5 g glycerin",
+      "8 g glycerin",
+      "Dried flower petals",
     ],
     steps: [
-      "Whisk rice flour and water until smooth.",
-      "Add vinegar and glycerin.",
-      "Heat while stirring until translucent (~85 °C).",
-      "Pour onto a silicone mat, spread thin.",
-      "Dry for 48 hours.",
+      "Heat water to 70 °C, whisk in gelatin until dissolved.",
+      "Add glycerin, stir 1 minute, remove from heat.",
+      "Pour onto a silicone mat.",
+      "Place petals on the wet film before it sets.",
+      "Dry at room temperature for 24–48 hours.",
     ],
   },
   {
-    id: "carrageenan-film",
-    name: "Carrageenan film",
-    short: "Glassy seaweed sheet",
-    family: "Algae-based",
-    accent: "#8cc8b0",
+    id: "blue-nacre",
+    name: "Blue nacre",
+    short: "Pearlescent blue film",
+    family: "Gelatin-based",
+    accent: "#88b8d8",
     description:
-      "Carrageenan from red seaweed produces a glassy, slightly elastic film that dissolves in hot water.",
+      "Gelatin film tinted blue with a pearlescent finish — a studio experiment to mimic mother-of-pearl for small samples and jewellery tests.",
     ingredients: [
-      "4 g carrageenan",
+      "12 g food gelatin",
       "100 ml water",
-      "5 g glycerin",
+      "8 g glycerin",
+      "Blue food colouring (few drops)",
+      "Edible pearl dust or fine mica (pinch, optional)",
     ],
     steps: [
-      "Heat the water to 80 °C.",
-      "Whisk in carrageenan slowly until clear.",
-      "Stir in glycerin.",
-      "Pour thin onto silicone.",
-      "Dry for 24 hours.",
-    ],
-  },
-  {
-    id: "pumpkin-pulp",
-    name: "Pumpkin pulp",
-    short: "Warm orange sheet",
-    family: "Vegetable-based",
-    accent: "#e8a878",
-    description:
-      "Roasted pumpkin pulped and set with agar into a warm orange, slightly grainy, fully biodegradable sheet.",
-    ingredients: [
-      "200 g pumpkin pulp",
-      "50 ml water",
-      "4 g agar-agar",
-      "5 g glycerin",
-    ],
-    steps: [
-      "Roast pumpkin until soft, then pulp.",
-      "Heat the pulp with water and agar.",
-      "Stir in glycerin, simmer 2 min.",
-      "Spread on a silicone mat.",
-      "Dry for 48 hours.",
+      "Heat water to 70 °C, dissolve gelatin and glycerin.",
+      "Add colouring and pearl dust, stir gently to avoid bubbles.",
+      "Pour onto a very flat silicone mat.",
+      "Dry 24–48 h away from dust.",
+      "Optional: buff lightly once dry for more shine.",
     ],
   },
 ];
+
+function sampleImageSrc(sample) {
+  return `/process/${sample.id}.png`;
+}
 
 function SampleModal({ sample, open, onClose }) {
   const closeRef = useRef(null);
@@ -670,11 +370,7 @@ function SampleModal({ sample, open, onClose }) {
   if (!open || !sample) return null;
 
   return (
-    <div
-      className="proc-modal-backdrop"
-      onClick={onClose}
-      role="presentation"
-    >
+    <div className="proc-modal-backdrop" onClick={onClose} role="presentation">
       <div
         className="proc-modal"
         role="dialog"
@@ -711,7 +407,7 @@ function SampleModal({ sample, open, onClose }) {
             style={{ "--accent": sample.accent }}
           >
             <img
-              src={`/process/${sample.id}.jpg`}
+              src={sampleImageSrc(sample)}
               alt=""
               onError={(e) => {
                 e.currentTarget.style.display = "none";
@@ -723,28 +419,68 @@ function SampleModal({ sample, open, onClose }) {
             {sample.name}
           </h2>
           <p className="proc-modal__short">{sample.short}</p>
-          <p className="proc-modal__desc">{sample.description}</p>
+          {sample.description.split("\n\n").map((para, i) => (
+            <p key={i} className="proc-modal__desc">
+              {para}
+            </p>
+          ))}
 
-          <section className="proc-modal__section">
-            <h3 className="proc-modal__section-title">Ingredients</h3>
-            <ul className="proc-modal__list">
-              {sample.ingredients.map((ing) => (
-                <li key={ing}>{ing}</li>
-              ))}
-            </ul>
-          </section>
+          {sample.composition && (
+            <dl className="proc-modal__specs">
+              <div className="proc-modal__spec">
+                <dt>Composition</dt>
+                <dd>{sample.composition}</dd>
+              </div>
+              {sample.aspect && (
+                <div className="proc-modal__spec">
+                  <dt>Appearance</dt>
+                  <dd>{sample.aspect}</dd>
+                </div>
+              )}
+              {sample.usage && (
+                <div className="proc-modal__spec">
+                  <dt>Usage</dt>
+                  <dd>{sample.usage}</dd>
+                </div>
+              )}
+            </dl>
+          )}
 
-          <section className="proc-modal__section">
-            <h3 className="proc-modal__section-title">Steps</h3>
-            <ol className="proc-modal__steps">
-              {sample.steps.map((step, i) => (
-                <li key={i}>
-                  <span className="proc-modal__step-num">{String(i + 1).padStart(2, "0")}</span>
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
+          {sample.keyQualities ? (
+            <section className="proc-modal__section">
+              <h3 className="proc-modal__section-title">Key qualities</h3>
+              <ul className="proc-modal__list">
+                {sample.keyQualities.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
+          ) : (
+            <>
+              <section className="proc-modal__section">
+                <h3 className="proc-modal__section-title">Ingredients</h3>
+                <ul className="proc-modal__list">
+                  {sample.ingredients.map((ing) => (
+                    <li key={ing}>{ing}</li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="proc-modal__section">
+                <h3 className="proc-modal__section-title">Steps</h3>
+                <ol className="proc-modal__steps">
+                  {sample.steps.map((step, i) => (
+                    <li key={i}>
+                      <span className="proc-modal__step-num">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -755,14 +491,14 @@ function SampleTile({ sample, onClick }) {
   return (
     <button
       type="button"
-      className="proc-tile"
+      className={`proc-tile${sample.featured ? " proc-tile--featured" : ""}`}
       style={{ "--accent": sample.accent }}
       onClick={onClick}
       aria-label={`${sample.name}, ${sample.short}`}
     >
       <figure className="proc-tile__media">
         <img
-          src={`/process/${sample.id}.jpg`}
+          src={sampleImageSrc(sample)}
           alt=""
           loading="lazy"
           onError={(e) => {
@@ -770,6 +506,9 @@ function SampleTile({ sample, onClick }) {
           }}
         />
         <span className="proc-tile__family">{sample.family}</span>
+        {sample.featured && (
+          <span className="proc-tile__badge">Project material</span>
+        )}
         <figcaption className="proc-tile__caption">
           <span className="proc-tile__name">{sample.name}</span>
         </figcaption>
@@ -825,34 +564,24 @@ export default function Process() {
       <main className="proc-main">
         <header className="proc-intro">
           <p className="proc-intro__eyebrow">The Hybrid lab</p>
-          <h1 className="proc-intro__title">How it&apos;s made</h1>
+          <h1 className="proc-intro__title">Materials</h1>
           <p className="proc-intro__lead">
-            Recycled filaments, home-grown biomaterials, and the film that
-            shows how a bioplastic comes to life.
+            Recycled filaments, home-grown biomaterials, and the film that shows
+            how a bioplastic comes to life.
           </p>
         </header>
 
         <section className="proc-video" aria-label="Cooking a bioplastic">
-          <div className="proc-video__frame">
+          <div className="proc-video__frame proc-video__frame--portrait">
             <video
               className="proc-video__media"
               controls
+              playsInline
               preload="metadata"
-              poster="/process/video-poster.jpg"
-              src="/process/bioplastic.mp4"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
+              src="/process/biomaterial.mp4"
             >
               Your browser does not support the video tag.
             </video>
-            <div className="proc-video__placeholder" aria-hidden>
-              <svg width="46" height="46" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M10 8l6 4-6 4V8z" fill="currentColor" />
-              </svg>
-              <p>Process film coming soon</p>
-            </div>
           </div>
         </section>
 
@@ -863,32 +592,35 @@ export default function Process() {
               Recycled filaments
             </h2>
             <p className="proc-section__lead">
-              The Hybrid shell is printed in oyster shell filament. But many
-              other waste streams can be turned into filament. Here are the
-              ones we&apos;ve tested in the studio.
+              Eight recycled and bio-based filaments explored in the studio,
+              from oyster shell composites to ocean nylon and wood fiber PLA.
             </p>
           </header>
 
-          <div className="proc-grid">
+          <div className="proc-grid proc-grid--4">
             {FILAMENTS.map((s) => (
               <SampleTile key={s.id} sample={s} onClick={() => openSample(s)} />
             ))}
           </div>
         </section>
 
-        <section className="proc-section proc-section--alt" aria-labelledby="bio-head">
+        <section
+          className="proc-section proc-section--alt"
+          aria-labelledby="bio-head"
+        >
           <header className="proc-section__head">
             <p className="proc-section__eyebrow">From the kitchen</p>
             <h2 id="bio-head" className="proc-section__title">
               Biomaterials
             </h2>
             <p className="proc-section__lead">
-              Made from food waste, algae, fungi and starches. Each tile opens
-              a full recipe with ingredients, steps, drying time. Try them at home.
+              Made from food waste, algae, fungi and starches. Each tile opens a
+              full recipe with ingredients, steps, drying time. Try them at
+              home.
             </p>
           </header>
 
-          <div className="proc-grid">
+          <div className="proc-grid proc-grid--4">
             {BIOMATERIALS.map((s) => (
               <SampleTile key={s.id} sample={s} onClick={() => openSample(s)} />
             ))}
@@ -902,7 +634,13 @@ export default function Process() {
             className="proc-footer__link"
           >
             Back to home
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden
+            >
               <path
                 d="M3 8h10M8 3l5 5-5 5"
                 stroke="currentColor"
@@ -922,10 +660,7 @@ export default function Process() {
       />
 
       {menuOpen && (
-        <MenuOverlay
-          ref={menuOverlayRef}
-          onClose={() => setMenuOpen(false)}
-        />
+        <MenuOverlay ref={menuOverlayRef} onClose={() => setMenuOpen(false)} />
       )}
     </div>
   );

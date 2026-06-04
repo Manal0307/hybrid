@@ -11,8 +11,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/materials" element={<Materials />} />
-        <Route path="/process" element={<Process />} />
+        <Route path="/materials" element={<Process />} />
+        <Route path="/process" element={<Materials />} />
       </Routes>
     </AmbientSoundProvider>
   );

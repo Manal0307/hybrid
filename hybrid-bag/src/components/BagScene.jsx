@@ -68,29 +68,29 @@ const HOTSPOT_REVEAL_END_VH = EMERGENCE_END + 0.55;
 // Position calculée depuis la bbox du modèle pour épouser la silhouette (arc, pas colonne droite).
 const BAG_HOTSPOTS = [
   {
-    title: "3D-printed structure",
-    body: "Outer shell printed from a filament made of recycled oyster shells.",
+    title: "Oyster shell structure",
+    body: "Outer shell 3D-printed from PLA enriched with recycled oyster shells.",
     side: -1,
     heightT: 0.97,
     radialIn: 0.11,
   },
   {
-    title: "Bioplastic inner lining",
-    body: "Inner bag crafted from an eco-friendly bioplastic made of flowers and red cabbage.",
+    title: "Red cabbage bioplastic",
+    body: "Inner bag cast from a soft bioplastic based on red cabbage extract.",
     side: -1,
     heightT: 0.50,
     screenOffset: { x: -5, y: -18 },
   },
   {
-    title: "Recycled fabric trims",
-    body: "Decorative details made from upcycled fabric and bioplastic.",
+    title: "Recycled textiles",
+    body: "Trims and woven details made from upcycled textile offcuts.",
     side: 1,
     heightT: 0.97,
     radialIn: 0.11,
   },
   {
-    title: "Coral-inspired design",
-    body: "Organic shapes echoing the silhouettes of corals and other marine forms.",
+    title: "Flower bioplastics",
+    body: "Decorative florals set in a gelatin bioplastic with dried petals.",
     side: 1,
     heightT: 0.50,
     screenOffset: { x: 5, y: -18 },

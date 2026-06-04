@@ -21,14 +21,14 @@ const MATERIALS = [
   {
     id: "oyster-filament",
     num: "01",
-    name: "Recycled oyster shell",
+    name: "Oyster shell PLA",
     role: "3D-printed structure",
     description:
-      "The outer shell is 3D-printed from a filament made of crushed oyster shells recovered from coastal waste. Naturally rigid and lightweight, it forms the bag’s structural frame without virgin plastic.",
+      "The bag’s outer shell is 3D-printed from a filament made of crushed oyster shells recovered from coastal waste. Rigid, lightweight, it forms the structural frame of Hybrid without virgin plastic.",
     specs: [
       { label: "Source", value: "Oyster shells" },
-      { label: "Process", value: "3D printing" },
-      { label: "Weight", value: "Ultra-light" },
+      { label: "Process", value: "FDM 3D printing" },
+      { label: "Role", value: "Outer structure" },
       { label: "End of life", value: "Circular" },
     ],
     accent: "#d4c4a0",
@@ -36,13 +36,13 @@ const MATERIALS = [
   {
     id: "bioplastic-lining",
     num: "02",
-    name: "Cabbage bioplastic",
-    role: "Inner lining",
+    name: "Red cabbage bioplastic",
+    role: "Inner bag",
     description:
-      "The inner bag is crafted from an eco-friendly bioplastic made of flowers and red cabbage, a soft, plant-based alternative to conventional synthetic liners.",
+      "The inner pouch is cast from a home-grown bioplastic based on red cabbage extract — soft, plant-based, and biodegradable. It replaces a conventional synthetic liner.",
     specs: [
-      { label: "Source", value: "Flowers & red cabbage" },
-      { label: "Type", value: "Bioplastic" },
+      { label: "Source", value: "Red cabbage" },
+      { label: "Type", value: "Gelatin bioplastic" },
       { label: "Feel", value: "Soft, flexible" },
       { label: "Biodegradable", value: "Yes" },
     ],
@@ -51,32 +51,32 @@ const MATERIALS = [
   {
     id: "recycled-fabric",
     num: "03",
-    name: "Recycled fabric trims",
-    role: "Surface details",
+    name: "Recycled textiles",
+    role: "Woven trims",
     description:
-      "Decorative details are made from upcycled fabric offcuts and bioplastic, applied to the surface for texture and character. Each piece carries its own pattern.",
+      "Trims and woven surface details are made from upcycled textile offcuts — reclaimed fabric waste given a second life on the bag.",
     specs: [
       { label: "Origin", value: "Textile waste" },
       { label: "Recycled", value: "100%" },
       { label: "Finish", value: "Hand-applied" },
       { label: "Care", value: "Spot clean" },
     ],
-    accent: "#2a9adf",
+    accent: "#8a5c38",
   },
   {
-    id: "coral-form",
+    id: "flower-biomaterial",
     num: "04",
-    name: "Coral-inspired design",
-    role: "Organic form",
+    name: "Flower bioplastic",
+    role: "Biomaterial florals",
     description:
-      "The bag’s silhouette echoes corals and other marine forms: porous structures, soft curves, and textures drawn from underwater life, shaped through digital craft.",
+      "Decorative florals are set in a gelatin bioplastic with dried petals — the same family of kitchen-made biomaterials as the inner lining, grown and cast by hand.",
     specs: [
-      { label: "Inspiration", value: "Marine corals" },
-      { label: "Method", value: "Digital craft" },
-      { label: "Texture", value: "Organic" },
-      { label: "Uniqueness", value: "One of a kind" },
+      { label: "Source", value: "Dried flower petals" },
+      { label: "Binder", value: "Food gelatin" },
+      { label: "Process", value: "Home-cast film" },
+      { label: "Biodegradable", value: "Yes" },
     ],
-    accent: "#c4956a",
+    accent: "#e8a8c4",
   },
 ];
 
@@ -136,87 +136,94 @@ function buildOyster() {
   return g;
 }
 
-function buildAlgae() {
+/** Doublure — film souple violet (chou rouge / bioplastique) */
+function buildCabbageLining() {
   const g = new THREE.Group();
-  for (let i = 0; i < 7; i++) {
-    const angle = (i / 7) * Math.PI * 2;
-    const geo = new THREE.PlaneGeometry(0.3, 2.4, 4, 36);
+  const pouchMat = new THREE.MeshPhysicalMaterial({
+    color: 0x6a2878,
+    metalness: 0,
+    roughness: 0.35,
+    transmission: 0.55,
+    thickness: 0.65,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.92,
+  });
+  const pouch = new THREE.Mesh(
+    new THREE.SphereGeometry(0.95, 48, 48),
+    pouchMat,
+  );
+  pouch.scale.set(1.05, 0.72, 0.88);
+  g.add(pouch);
+
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const geo = new THREE.PlaneGeometry(0.42, 1.85, 4, 28);
     const pos = geo.attributes.position;
     for (let j = 0; j < pos.count; j++) {
       const y = pos.getY(j);
-      const wobble = Math.sin(y * 2.8 + i * 1.1) * (0.08 + (y + 1.2) * 0.07);
+      const wobble = Math.sin(y * 3.2 + i) * 0.06;
       pos.setX(j, pos.getX(j) + wobble);
-      pos.setZ(j, Math.sin(y * 1.8 + i * 0.9) * 0.06);
     }
     geo.computeVertexNormals();
-    const l = i / 7;
+    const t = i / 6;
     const mat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x156628).lerp(new THREE.Color(0x3db860), l),
+      color: new THREE.Color(0x4a1848).lerp(new THREE.Color(0xb868c8), t),
       metalness: 0,
-      roughness: 0.55,
-      transmission: 0.2,
-      thickness: 0.4,
+      roughness: 0.4,
+      transmission: 0.42,
+      thickness: 0.35,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 1,
+      opacity: 0.88,
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.rotation.y = angle;
-    mesh.position.set(Math.sin(angle) * 0.14, 0, Math.cos(angle) * 0.14);
-    g.add(mesh);
+    const sheet = new THREE.Mesh(geo, mat);
+    sheet.rotation.y = angle;
+    sheet.position.set(Math.sin(angle) * 0.22, 0.05, Math.cos(angle) * 0.22);
+    g.add(sheet);
   }
   return g;
 }
 
-function buildNet() {
+/** Fleurs — pétales en bioplastique (gelatin + pétales séchés) */
+function buildFlowers() {
   const g = new THREE.Group();
-  const R = 1.1;
-  const ropeMat = new THREE.MeshStandardMaterial({
-    color: 0x2070a0,
-    metalness: 0.15,
-    roughness: 0.6,
-    transparent: true,
-    opacity: 1,
-  });
-  for (let lat = 1; lat < 8; lat++) {
-    const phi = (lat / 8) * Math.PI;
-    const y = R * Math.cos(phi);
-    const r = R * Math.sin(phi);
-    const pts = [];
-    for (let t = 0; t <= 1; t += 0.025) {
-      const a = t * Math.PI * 2;
-      pts.push(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r));
-    }
-    pts.push(pts[0].clone());
-    const tube = new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(pts, true),
-      80,
-      0.02,
-      5,
+  const petalColors = [0xf0c8d8, 0xe8a8c4, 0xf8e0ec, 0xd890b0];
+  for (let i = 0; i < 10; i++) {
+    const angle = (i / 10) * Math.PI * 2;
+    const tilt = 0.35 + (i % 3) * 0.15;
+    const geo = new THREE.SphereGeometry(0.38, 20, 16);
+    geo.scale(1.15, 0.18, 0.55);
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: petalColors[i % petalColors.length],
+      metalness: 0,
+      roughness: 0.45,
+      transmission: 0.28,
+      thickness: 0.25,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const petal = new THREE.Mesh(geo, mat);
+    petal.rotation.set(tilt, angle, Math.sin(angle) * 0.25);
+    petal.position.set(
+      Math.cos(angle) * 0.55,
+      (i % 4) * 0.12 - 0.18,
+      Math.sin(angle) * 0.55,
     );
-    g.add(new THREE.Mesh(tube, ropeMat.clone()));
+    g.add(petal);
   }
-  for (let lon = 0; lon < 10; lon++) {
-    const theta = (lon / 10) * Math.PI * 2;
-    const pts = [];
-    for (let t = 0; t <= 1; t += 0.04) {
-      const phi = t * Math.PI;
-      pts.push(
-        new THREE.Vector3(
-          R * Math.sin(phi) * Math.cos(theta),
-          R * Math.cos(phi),
-          R * Math.sin(phi) * Math.sin(theta),
-        ),
-      );
-    }
-    const tube = new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(pts),
-      30,
-      0.02,
-      5,
-    );
-    g.add(new THREE.Mesh(tube, ropeMat.clone()));
-  }
+  const center = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 24, 24),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xfff4e8,
+      roughness: 0.5,
+      transmission: 0.15,
+      transparent: true,
+      opacity: 0.95,
+    }),
+  );
+  g.add(center);
   return g;
 }
 
@@ -251,7 +258,12 @@ function buildTextile() {
   return g;
 }
 
-const BUILDERS = [buildOyster, buildAlgae, buildNet, buildTextile];
+const BUILDERS = [
+  buildOyster,
+  buildCabbageLining,
+  buildTextile,
+  buildFlowers,
+];
 
 /** Viewer central : sac (aucune sélection) ou maquette matière + clic pour détail */
 function MaterialsViewer({ focusMaterial, onOpenDetail }) {
@@ -669,10 +681,10 @@ export default function Materials() {
       <main className="mat-main">
         <header className="mat-intro">
           <p className="mat-intro__eyebrow">Hybrid bag</p>
-          <h1 className="mat-intro__title">What it&apos;s made of</h1>
+          <h1 className="mat-intro__title">How it&apos;s made</h1>
           <p className="mat-lead">
-            Reclaimed matter and bio-based materials, shaped into one bag.
-            Pick a material to explore it in 3D.
+            Oyster-shell structure, red-cabbage inner bag, recycled textiles and
+            flower bioplastics — pick a layer to explore it in 3D.
           </p>
         </header>
 
@@ -832,9 +844,9 @@ export default function Materials() {
 
           <div className="mat-process__grid">
             {[
-              { num: "01", title: "Sourcing", caption: "Reclaimed oyster shells and floral waste collected from local producers." },
-              { num: "02", title: "3D printing", caption: "The structural shell is printed layer by layer, no virgin plastic involved." },
-              { num: "03", title: "Hand-finishing", caption: "Bioplastic lining, recycled trims and coral-like details applied by hand." },
+              { num: "01", title: "Sourcing", caption: "Oyster shells, red cabbage, textile offcuts and dried petals collected for the bag." },
+              { num: "02", title: "3D printing", caption: "The oyster-shell structure is printed layer by layer — no virgin plastic." },
+              { num: "03", title: "Hand-finishing", caption: "Red-cabbage lining, recycled textiles and flower bioplastics applied by hand." },
             ].map((step) => (
               <article key={step.num} className="mat-process__card">
                 <figure className="mat-process__media">
