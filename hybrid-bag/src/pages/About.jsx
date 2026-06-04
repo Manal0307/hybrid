@@ -20,6 +20,9 @@ const FAQ = [
   },
 ];
 
+const HYBRID_TIKTOK = "https://www.tiktok.com/@hybridspace";
+const HYBRID_INSTAGRAM = "https://www.instagram.com/mnl.blh";
+
 const SOCIAL_LINKS = [
   {
     id: "linkedin",
@@ -29,12 +32,24 @@ const SOCIAL_LINKS = [
   {
     id: "instagram",
     label: "Instagram",
-    href: "https://www.instagram.com/manalboulahya",
+    href: HYBRID_INSTAGRAM,
   },
   {
     id: "tiktok",
     label: "TikTok",
-    href: "https://www.tiktok.com/@manalboulahya",
+    href: HYBRID_TIKTOK,
+  },
+];
+
+/** URLs TikTok résolues depuis vm.tiktok.com (@hybridspace) */
+const TIKTOK_VIDEOS = [
+  {
+    url: "https://www.tiktok.com/@hybridspace/video/7634110651274743073",
+    caption: "Bioplastic demolding",
+  },
+  {
+    url: "https://www.tiktok.com/@hybridspace/photo/7633799617225690400",
+    caption: "Hybrid lab",
   },
 ];
 
@@ -64,7 +79,14 @@ function SocialIcon({ id }) {
           stroke="currentColor"
           strokeWidth="1.6"
         />
-        <circle cx="12" cy="12" r="3.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        <circle
+          cx="12"
+          cy="12"
+          r="3.6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+        />
         <circle cx="17.2" cy="6.8" r="1" fill="currentColor" />
       </svg>
     );
@@ -80,12 +102,10 @@ function SocialIcon({ id }) {
   );
 }
 
-const GALLERY = [
-  { src: "/about/01.jpg", caption: "Hybrid bag, front view" },
-  { src: "/about/02.jpg", caption: "Material & texture detail" },
-  { src: "/about/03.jpg", caption: "3D printing & structure" },
-  { src: "/about/04.jpg", caption: "Studio & process" },
-];
+function tiktokEmbedId(url) {
+  const match = url.match(/\/(?:video|photo)\/(\d+)/);
+  return match ? match[1] : null;
+}
 
 function revealCls(id, revealed, ...extra) {
   return [
@@ -97,122 +117,172 @@ function revealCls(id, revealed, ...extra) {
     .join(" ");
 }
 
-function AboutCarousel({ slides, revealed }) {
+function AboutTikTokCarousel({ videos, revealed }) {
+  const slides = videos.filter((v) => tiktokEmbedId(v.url));
   const [index, setIndex] = useState(0);
-  const [broken, setBroken] = useState(() => new Set());
 
   const go = useCallback(
     (dir) => {
+      if (!slides.length) return;
       setIndex((i) => (i + dir + slides.length) % slides.length);
     },
     [slides.length],
   );
 
   useEffect(() => {
+    if (!slides.length) return;
     const onKey = (e) => {
       if (e.key === "ArrowLeft") go(-1);
       if (e.key === "ArrowRight") go(1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go]);
-
-  const markBroken = (src) => {
-    setBroken((prev) => new Set(prev).add(src));
-  };
+  }, [go, slides.length]);
 
   const slide = slides[index];
+  const hasVideos = slides.length > 0;
 
   return (
     <section
       data-reveal="gallery"
       className={revealCls("gallery", revealed, "about-gallery")}
-      aria-label="Project gallery"
+      aria-label="TikTok videos"
     >
       <header className="about-gallery__head">
-        <p className="about-gallery__eyebrow">Gallery</p>
-        <h2 className="about-block__title">The bag in pictures</h2>
+        <p className="about-gallery__eyebrow">Making-of</p>
+        <h2 className="about-block__title">Behind the scenes</h2>
+        <p className="about-gallery__lead">
+          Short clips from the lab: biomaterials, 3D printing and tests along
+          the way.
+        </p>
       </header>
 
-      <div className="about-gallery__frame">
-        <button
-          type="button"
-          className="about-gallery__nav about-gallery__nav--prev"
-          aria-label="Previous photo"
-          onClick={() => go(-1)}
-        >
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-            <path
-              d="M10 3L5 8l5 5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+      <div
+        className={`about-gallery__frame${hasVideos ? " about-gallery__frame--video" : ""}`}
+      >
+        {hasVideos && (
+          <button
+            type="button"
+            className="about-gallery__nav about-gallery__nav--prev"
+            aria-label="Previous video"
+            onClick={() => go(-1)}
+          >
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+              <path
+                d="M10 3L5 8l5 5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
 
         <div
           className="about-gallery__viewport"
           aria-live="polite"
           aria-atomic="true"
         >
-          <div
-            className="about-gallery__track"
-            style={{ transform: `translateX(-${index * 100}%)` }}
-          >
-            {slides.map((item) => (
-              <figure key={item.src} className="about-gallery__slide">
-                {broken.has(item.src) ? (
-                  <div className="about-gallery__placeholder" aria-hidden="true" />
-                ) : (
-                  <img
-                    src={item.src}
-                    alt={item.caption}
-                    loading="lazy"
-                    onError={() => markBroken(item.src)}
-                  />
-                )}
-              </figure>
-            ))}
-          </div>
+          {hasVideos ? (
+            <div
+              className="about-gallery__track"
+              style={{ transform: `translateX(-${index * 100}%)` }}
+            >
+              {slides.map((item, i) => {
+                const id = tiktokEmbedId(item.url);
+                return (
+                  <figure
+                    key={item.url}
+                    className="about-gallery__slide about-gallery__slide--video"
+                  >
+                    {i === index && id && (
+                      <iframe
+                        title={item.caption || `TikTok video ${i + 1}`}
+                        src={`https://www.tiktok.com/embed/v2/${id}?lang=en`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                        allowFullScreen
+                        loading="lazy"
+                      />
+                    )}
+                  </figure>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="about-gallery__empty">
+              <p className="about-gallery__empty-text">
+                TikTok videos will appear here once their links are added to the
+                site.
+              </p>
+              <div className="about-gallery__profile-links">
+                <a
+                  href={HYBRID_TIKTOK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="about-gallery__profile-btn"
+                >
+                  @hybridspace on TikTok
+                </a>
+                <a
+                  href={HYBRID_INSTAGRAM}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="about-gallery__profile-btn about-gallery__profile-btn--ig"
+                >
+                  @mnl.blh on Instagram
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
-        <button
-          type="button"
-          className="about-gallery__nav about-gallery__nav--next"
-          aria-label="Next photo"
-          onClick={() => go(1)}
-        >
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-            <path
-              d="M6 3l5 5-5 5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <p className="about-gallery__caption">{slide.caption}</p>
-
-      <div className="about-gallery__dots" role="tablist" aria-label="Gallery slides">
-        {slides.map((item, i) => (
+        {hasVideos && (
           <button
-            key={item.src}
             type="button"
-            role="tab"
-            className={`about-gallery__dot${i === index ? " is-active" : ""}`}
-            aria-selected={i === index}
-            aria-label={`Slide ${i + 1}: ${item.caption}`}
-            onClick={() => setIndex(i)}
-          />
-        ))}
+            className="about-gallery__nav about-gallery__nav--next"
+            aria-label="Next video"
+            onClick={() => go(1)}
+          >
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+              <path
+                d="M6 3l5 5-5 5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
       </div>
+
+      {hasVideos && (
+        <>
+          <p className="about-gallery__caption">
+            {slide.caption || `Video ${index + 1} of ${slides.length}`}
+          </p>
+          <div
+            className="about-gallery__dots"
+            role="tablist"
+            aria-label="TikTok slides"
+          >
+            {slides.map((item, i) => (
+              <button
+                key={item.url}
+                type="button"
+                role="tab"
+                className={`about-gallery__dot${i === index ? " is-active" : ""}`}
+                aria-selected={i === index}
+                aria-label={`Video ${i + 1}`}
+                onClick={() => setIndex(i)}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }
@@ -231,7 +301,12 @@ function AboutFaqAccordion({ items, revealed }) {
           <div
             key={item.q}
             data-reveal={`faq-${i}`}
-            className={revealCls(`faq-${i}`, revealed, "about-faq__item", isOpen && "is-open")}
+            className={revealCls(
+              `faq-${i}`,
+              revealed,
+              "about-faq__item",
+              isOpen && "is-open",
+            )}
           >
             <button
               type="button"
@@ -289,7 +364,9 @@ function useScrollReveal(containerRef) {
       setRevealed(keys);
     };
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     if (reduceMotion) {
       revealAll();
       return;
@@ -337,7 +414,12 @@ export default function About() {
       <header
         className={`top-nav top-nav--visible${menuOpen ? " top-nav--menu-open" : ""}`}
       >
-        <Link to={homeBagLink.pathname} state={homeBagLink.state} className="brand-mark" aria-label="Hybrid home">
+        <Link
+          to={homeBagLink.pathname}
+          state={homeBagLink.state}
+          className="brand-mark"
+          aria-label="Hybrid home"
+        >
           Hybrid
         </Link>
         <div className="nav-actions">
@@ -363,22 +445,37 @@ export default function About() {
         <header className="about-intro">
           <p
             data-reveal="intro-eyebrow"
-            className={revealCls("intro-eyebrow", revealed, "about-intro__eyebrow")}
+            className={revealCls(
+              "intro-eyebrow",
+              revealed,
+              "about-intro__eyebrow",
+            )}
           >
             Hybrid
           </p>
           <h1
             data-reveal="intro-title"
-            className={revealCls("intro-title", revealed, "about-intro__title", "about-reveal--d1")}
+            className={revealCls(
+              "intro-title",
+              revealed,
+              "about-intro__title",
+              "about-reveal--d1",
+            )}
           >
             About the project
           </h1>
           <p
             data-reveal="intro-lead"
-            className={revealCls("intro-lead", revealed, "about-intro__lead", "about-reveal--d2")}
+            className={revealCls(
+              "intro-lead",
+              revealed,
+              "about-intro__lead",
+              "about-reveal--d2",
+            )}
           >
-            Hybrid is a fashion accessory engineered differently, where reclaimed
-            matter, biomaterials and 3D printing meet in a single everyday object.
+            Hybrid is a fashion accessory engineered differently, where
+            reclaimed matter, biomaterials and 3D printing meet in a single
+            everyday object.
           </p>
         </header>
 
@@ -392,7 +489,12 @@ export default function About() {
           </h2>
           <p
             data-reveal="about-me-p1"
-            className={revealCls("about-me-p1", revealed, "about-block__text", "about-reveal--d1")}
+            className={revealCls(
+              "about-me-p1",
+              revealed,
+              "about-block__text",
+              "about-reveal--d1",
+            )}
           >
             I&apos;m <strong>Manal Boulahya</strong>, a student in{" "}
             <strong>Multimedia &amp; Creative Technology</strong> at Erasmus
@@ -402,14 +504,17 @@ export default function About() {
           </p>
           <p
             data-reveal="about-me-p2"
-            className={revealCls("about-me-p2", revealed, "about-block__text", "about-reveal--d2")}
+            className={revealCls(
+              "about-me-p2",
+              revealed,
+              "about-block__text",
+              "about-reveal--d2",
+            )}
           >
             Hybrid is where that curiosity comes together: a real object, built
             by hand and machine, and this site to tell its story.
           </p>
         </section>
-
-        <AboutCarousel slides={GALLERY} revealed={revealed} />
 
         <section
           data-reveal="mission"
@@ -421,22 +526,34 @@ export default function About() {
           </h2>
           <p
             data-reveal="mission-p1"
-            className={revealCls("mission-p1", revealed, "about-block__text", "about-reveal--d1")}
+            className={revealCls(
+              "mission-p1",
+              revealed,
+              "about-block__text",
+              "about-reveal--d1",
+            )}
           >
-            We believe waste is not an endpoint. Oyster shells, cabbage bioplastics,
-            recycled fabrics. Each material tells a story of second chances. Hybrid
-            proves that a contemporary bag can be beautiful, functional and circular
-            by design.
+            We believe waste is not an endpoint. Oyster shells, cabbage
+            bioplastics, recycled fabrics. Each material tells a story of second
+            chances. Hybrid proves that a contemporary bag can be beautiful,
+            functional and circular by design.
           </p>
           <p
             data-reveal="mission-p2"
-            className={revealCls("mission-p2", revealed, "about-block__text", "about-reveal--d2")}
+            className={revealCls(
+              "mission-p2",
+              revealed,
+              "about-block__text",
+              "about-reveal--d2",
+            )}
           >
-            The project sits at the crossroads of fashion, material
-            research and digital fabrication, a small lab experiment turned into
-            something you can carry every day.
+            The project sits at the crossroads of fashion, material research and
+            digital fabrication, a small lab experiment turned into something
+            you can carry every day.
           </p>
         </section>
+
+        <AboutTikTokCarousel videos={TIKTOK_VIDEOS} revealed={revealed} />
 
         <section
           data-reveal="faq"
@@ -459,22 +576,48 @@ export default function About() {
           </h2>
           <p
             data-reveal="contact-text"
-            className={revealCls("contact-text", revealed, "about-block__text", "about-reveal--d1")}
+            className={revealCls(
+              "contact-text",
+              revealed,
+              "about-block__text",
+              "about-reveal--d1",
+            )}
           >
-            For collaborations, press or questions about the project, reach out at
+            For collaborations, press or questions about the project:
           </p>
           <a
             data-reveal="contact-email"
             href="mailto:manal.boulahya@student.ehb.be"
-            className={revealCls("contact-email", revealed, "about-contact__link", "about-reveal--d2")}
+            className={revealCls(
+              "contact-email",
+              revealed,
+              "about-contact__link",
+              "about-reveal--d2",
+            )}
           >
             manal.boulahya@student.ehb.be
           </a>
 
+          <p
+            data-reveal="contact-social-lead"
+            className={revealCls(
+              "contact-social-lead",
+              revealed,
+              "about-contact__social-lead",
+              "about-reveal--d2",
+            )}
+          >
+            More on social
+          </p>
           <ul
             data-reveal="contact-social"
-            className={revealCls("contact-social", revealed, "about-contact__social", "about-reveal--d3")}
-            aria-label="Social media"
+            className={revealCls(
+              "contact-social",
+              revealed,
+              "about-contact__social",
+              "about-reveal--d3",
+            )}
+            aria-label="Social media: TikTok, Instagram and LinkedIn"
           >
             {SOCIAL_LINKS.map((item) => (
               <li key={item.id}>
@@ -490,7 +633,6 @@ export default function About() {
               </li>
             ))}
           </ul>
-
         </section>
 
         <footer

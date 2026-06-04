@@ -84,6 +84,14 @@
   margin-bottom: 1.5rem;
 }
 
+.about-gallery__lead {
+  max-width: 28rem;
+  margin: 0.65rem auto 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--about-brown-soft);
+}
+
 .about-gallery__eyebrow {
   font-size: 0.62rem;
   letter-spacing: 0.32em;
@@ -97,6 +105,11 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
+}
+
+.about-gallery__frame--video .about-gallery__viewport {
+  max-width: min(100%, 340px);
+  margin-inline: auto;
 }
 
 .about-gallery__viewport {
@@ -116,26 +129,69 @@
 .about-gallery__slide {
   margin: 0;
   flex: 0 0 100%;
-  aspect-ratio: 4 / 3;
   overflow: hidden;
 }
 
-.about-gallery__slide img {
+.about-gallery__slide--video {
+  aspect-ratio: 9 / 16;
+  max-height: min(72vh, 620px);
+  margin-inline: auto;
+  background: #0f0f0f;
+}
+
+.about-gallery__slide--video iframe {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  border: 0;
   display: block;
 }
 
-.about-gallery__placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    145deg,
-    #fdf6f9 0%,
-    #f0e4ee 45%,
-    #e5dae8 100%
-  );
+.about-gallery__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  min-height: 280px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.about-gallery__empty-text {
+  margin: 0;
+  max-width: 22rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--about-brown-soft);
+}
+
+.about-gallery__profile-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.about-gallery__profile-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--about-line);
+  background: rgba(255, 254, 252, 0.92);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--about-brown-dark);
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.about-gallery__profile-btn:hover {
+  background: #fff;
+  border-color: rgba(154, 128, 112, 0.35);
 }
 
 .about-gallery__nav {
@@ -150,7 +206,10 @@
   background: rgba(255, 254, 252, 0.92);
   color: var(--about-brown-dark);
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.15s;
 }
 
 .about-gallery__nav:hover {
@@ -186,7 +245,9 @@
   border-radius: 50%;
   background: rgba(154, 128, 112, 0.28);
   cursor: pointer;
-  transition: background 0.25s, transform 0.25s;
+  transition:
+    background 0.25s,
+    transform 0.25s;
 }
 
 .about-gallery__dot.is-active {
@@ -382,7 +443,9 @@
   text-decoration: none;
   border-bottom: 1px solid rgba(154, 128, 112, 0.45);
   padding-bottom: 0.2rem;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .about-contact__link:hover {
@@ -390,11 +453,19 @@
   border-color: var(--about-brown);
 }
 
+.about-contact__social-lead {
+  margin: 1.5rem 0 0.65rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--about-brown);
+}
+
 .about-contact__social {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  margin: 1.35rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }

@@ -5,6 +5,9 @@ import SoundButton from "../components/SoundButton";
 import { homeBagLink } from "../utils/homeNav";
 import "./Process.css";
 
+const BIOMATERIAL_VIDEO_URL =
+  "https://res.cloudinary.com/deq5iutqv/video/upload/v1780610582/v26044gc0000d8aov4vog65pf2tg7rmg_chk0gq.mov";
+
 /* ──────────────────────────────────────────────────────────────────────────
    Recycled filaments. alternatives utilisées pour l'impression 3D
    ────────────────────────────────────────────────────────────────────────── */
@@ -19,7 +22,7 @@ const FILAMENTS = [
     aspect: "Cool grey-blue, clean, slightly glossy",
     usage: "Functional parts, durable prototypes, everyday objects",
     description:
-      "rPET filament is made from recycled polyethylene terephthalate — typically from plastic bottles and packaging waste. It turns a common waste stream into a strong, printable material with a cooler, more technical finish than standard PLA.\n\nIt offers good layer adhesion and mechanical resistance, making it suitable for functional parts and objects that need a bit more durability.",
+      "rPET filament is made from recycled polyethylene terephthalate, typically from plastic bottles and packaging waste. It turns a common waste stream into a strong, printable material with a cooler, more technical finish than standard PLA.\n\nIt offers good layer adhesion and mechanical resistance, making it suitable for functional parts and objects that need a bit more durability.",
     keyQualities: [
       "Made from recycled PET waste",
       "Strong and durable",
@@ -69,7 +72,7 @@ const FILAMENTS = [
   },
   {
     id: "wound-up-coffee",
-    name: "Wound Up — PLA Coffee",
+    name: "Wound Up, PLA Coffee",
     short: "Coffee waste composite",
     family: "Organic / Biocomposite",
     accent: "#6b4a32",
@@ -149,7 +152,7 @@ const FILAMENTS = [
   },
   {
     id: "pla-ardoise",
-    name: "PLA Ardoise — Coproduit",
+    name: "PLA Ardoise, Coproduit",
     short: "Revalorized slate waste",
     family: "Mineral / Revalorized Stone Waste",
     accent: "#6a6868",
@@ -224,7 +227,7 @@ const BIOMATERIALS = [
     family: "Citrus-based",
     accent: "#f4b48a",
     description:
-      "Orange peels cooked into an amber, slightly fragrant translucent film — a separate studio test from the cucumber recipe.",
+      "Orange peels cooked into an amber, slightly fragrant translucent film, a separate studio test from the cucumber recipe.",
     ingredients: [
       "150 g orange peels",
       "200 ml water",
@@ -275,7 +278,7 @@ const BIOMATERIALS = [
       "Whisk in gelatin slowly until fully dissolved.",
       "Pour onto a silicone mat, spread as evenly as possible.",
       "Let dry at room temperature for 24–48 hours.",
-      "Peel carefully — very brittle without plasticiser.",
+      "Peel carefully. Very brittle without plasticiser.",
     ],
   },
   {
@@ -329,7 +332,7 @@ const BIOMATERIALS = [
     family: "Gelatin-based",
     accent: "#88b8d8",
     description:
-      "Gelatin film tinted blue with a pearlescent finish — a studio experiment to mimic mother-of-pearl for small samples and jewellery tests.",
+      "Gelatin film tinted blue with a pearlescent finish, a studio experiment to mimic mother-of-pearl for small samples and jewellery tests.",
     ingredients: [
       "12 g food gelatin",
       "100 ml water",
@@ -578,7 +581,7 @@ export default function Process() {
               controls
               playsInline
               preload="metadata"
-              src="/process/biomaterial.mp4"
+              src={BIOMATERIAL_VIDEO_URL}
             >
               Your browser does not support the video tag.
             </video>
