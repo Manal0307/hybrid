@@ -73,28 +73,28 @@ const BAG_HOTSPOTS = [
     body: "Coral-inspired lattice 3D-printed in oyster-shell filament, organic and pleasant to the touch.",
     side: -1,
     heightT: 0.97,
-    screenOffset: { x: -42, y: -6 },
+    screenOffset: { x: -34, y: 0 },
   },
   {
     title: "Red cabbage bioplastic",
     body: "Inner bag in solid, translucent red cabbage bioplastic, sewn on a sewing machine.",
     side: -1,
     heightT: 0.50,
-    screenOffset: { x: -48, y: -10 },
+    screenOffset: { x: -38, y: 0 },
   },
   {
     title: "Recycled textiles",
     body: "Fabric recovered at R-use Fabric in Ixelles, applied as trims on the bag.",
     side: 1,
     heightT: 0.97,
-    screenOffset: { x: 42, y: -6 },
+    screenOffset: { x: 34, y: 0 },
   },
   {
     title: "Handmade flowers",
     body: "Flowers made by hand from recycled textile, red cabbage bioplastics and pearls from an old broken necklace.",
     side: 1,
     heightT: 0.50,
-    screenOffset: { x: 48, y: -10 },
+    screenOffset: { x: 38, y: 0 },
   },
 ];
 
@@ -102,7 +102,7 @@ const BAG_HOTSPOTS = [
 function computeHotspotLocalOffset(side, heightT, halfW, bagH, radialIn = 0) {
   const yLocal = bagH * THREE.MathUtils.lerp(0.30, 0.95, heightT);
   const curve = Math.pow(1 - heightT, 1.28);
-  const margin = Math.max(0.06, 0.16 + curve * 0.26 - radialIn);
+  const margin = Math.max(0.06, 0.18 + curve * 0.24 - radialIn);
   const xLocal = side * (halfW + margin);
   const zLocal = 0.02 + curve * 0.05;
   return new THREE.Vector3(xLocal, yLocal, zLocal);
@@ -975,14 +975,16 @@ export default function BagScene({
             }}
             className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}`}
           >
-            <button
-              type="button"
-              className="product-hotspot__pin"
-              aria-label={spot.title}
-            />
-            <div className="product-hotspot__panel">
-              <h3 className="product-hotspot__title">{spot.title}</h3>
-              <p className="product-hotspot__body">{spot.body}</p>
+            <div className="product-hotspot__anchor">
+              <button
+                type="button"
+                className="product-hotspot__pin"
+                aria-label={spot.title}
+              />
+              <div className="product-hotspot__panel">
+                <h3 className="product-hotspot__title">{spot.title}</h3>
+                <p className="product-hotspot__body">{spot.body}</p>
+              </div>
             </div>
           </div>
         ))}

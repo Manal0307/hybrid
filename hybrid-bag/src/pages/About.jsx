@@ -25,11 +25,6 @@ const HYBRID_INSTAGRAM = "https://www.instagram.com/mnl.blh";
 
 const SOCIAL_LINKS = [
   {
-    id: "linkedin",
-    label: "LinkedIn",
-    href: "https://www.linkedin.com/in/manalboulahya",
-  },
-  {
     id: "instagram",
     label: "Instagram",
     href: HYBRID_INSTAGRAM,
@@ -54,17 +49,6 @@ const TIKTOK_VIDEOS = [
 ];
 
 function SocialIcon({ id }) {
-  if (id === "linkedin") {
-    return (
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <path
-          d="M6.5 8.5h3v8h-3v-8Zm1.5-4.5a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5ZM10.5 8.5h2.9v1.1h.04c.4-.75 1.38-1.55 2.84-1.55 3.04 0 3.6 2 3.6 4.6v3.85h-3v-3.42c0-.82-.02-1.88-1.15-1.88-1.18 0-1.36.92-1.36 1.87v3.43h-3v-8Z"
-          fill="currentColor"
-        />
-      </svg>
-    );
-  }
-
   if (id === "instagram") {
     return (
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -617,7 +601,7 @@ export default function About() {
               "about-contact__social",
               "about-reveal--d3",
             )}
-            aria-label="Social media: TikTok, Instagram and LinkedIn"
+            aria-label="Social media: TikTok and Instagram"
           >
             {SOCIAL_LINKS.map((item) => (
               <li key={item.id}>

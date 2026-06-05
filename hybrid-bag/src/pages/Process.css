@@ -36,6 +36,36 @@
   margin: 0 auto;
 }
 
+.proc-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 1.15s cubic-bezier(0.32, 1, 0.36, 1),
+    transform 1.15s cubic-bezier(0.32, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.proc-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.proc-reveal--d1 {
+  transition-delay: 0.14s;
+}
+
+.proc-reveal--d2 {
+  transition-delay: 0.28s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proc-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* ─── Intro ────────────────────────────────────────────────────────────── */
 .proc-intro {
   max-width: 40rem;
@@ -271,6 +301,8 @@
 .proc-video {
   margin-top: 0;
   margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
 }
 
 .proc-video__frame {
@@ -292,10 +324,10 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 
-/* Vidéo en longueur — pleine largeur du contenu (comme au départ), sans bandes noires */
+/* Vidéo portrait — taille moyenne, centrée */
 .proc-video__frame--portrait {
   width: 100%;
-  max-width: 100%;
+  max-width: min(44rem, 84vw);
 }
 
 .proc-video__frame--portrait .proc-video__media {

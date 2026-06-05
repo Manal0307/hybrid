@@ -520,10 +520,74 @@ function SampleTile({ sample, onClick }) {
   );
 }
 
+function revealCls(id, revealed, ...extra) {
+  return [
+    "proc-reveal",
+    revealed.has(id) && "is-visible",
+    ...extra.filter(Boolean),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function useScrollReveal(containerRef) {
+  const [revealed, setRevealed] = useState(() => new Set());
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const items = root.querySelectorAll("[data-reveal]");
+    if (!items.length) return;
+
+    const revealAll = () => {
+      const keys = new Set();
+      items.forEach((el) => {
+        if (el.dataset.reveal) keys.add(el.dataset.reveal);
+      });
+      setRevealed(keys);
+    };
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduceMotion) {
+      revealAll();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const key = entry.target.dataset.reveal;
+          if (key) {
+            setRevealed((prev) => {
+              if (prev.has(key)) return prev;
+              const next = new Set(prev);
+              next.add(key);
+              return next;
+            });
+          }
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -6% 0px" },
+    );
+
+    items.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  return revealed;
+}
+
 export default function Process() {
   const [activeSample, setActiveSample] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuOverlayRef = useRef(null);
+  const mainRef = useRef(null);
+  const revealed = useScrollReveal(mainRef);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -564,18 +628,50 @@ export default function Process() {
         </div>
       </header>
 
-      <main className="proc-main">
+      <main ref={mainRef} className="proc-main">
         <header className="proc-intro">
-          <p className="proc-intro__eyebrow">The Hybrid lab</p>
-          <h1 className="proc-intro__title">Materials</h1>
-          <p className="proc-intro__lead">
+          <p
+            data-reveal="intro-eyebrow"
+            className={revealCls("intro-eyebrow", revealed, "proc-intro__eyebrow")}
+          >
+            The Hybrid lab
+          </p>
+          <h1
+            data-reveal="intro-title"
+            className={revealCls(
+              "intro-title",
+              revealed,
+              "proc-intro__title",
+              "proc-reveal--d1",
+            )}
+          >
+            Materials
+          </h1>
+          <p
+            data-reveal="intro-lead"
+            className={revealCls(
+              "intro-lead",
+              revealed,
+              "proc-intro__lead",
+              "proc-reveal--d2",
+            )}
+          >
             Recycled filaments, home-grown biomaterials, and the film that shows
             how a bioplastic comes to life.
           </p>
         </header>
 
         <section className="proc-video" aria-label="Cooking a bioplastic">
-          <div className="proc-video__frame proc-video__frame--portrait">
+          <div
+            data-reveal="video"
+            className={revealCls(
+              "video",
+              revealed,
+              "proc-video__frame",
+              "proc-video__frame--portrait",
+              "proc-reveal--d1",
+            )}
+          >
             <video
               className="proc-video__media"
               controls
@@ -590,17 +686,52 @@ export default function Process() {
 
         <section className="proc-section" aria-labelledby="filaments-head">
           <header className="proc-section__head">
-            <p className="proc-section__eyebrow">3D printing</p>
-            <h2 id="filaments-head" className="proc-section__title">
+            <p
+              data-reveal="filaments-eyebrow"
+              className={revealCls(
+                "filaments-eyebrow",
+                revealed,
+                "proc-section__eyebrow",
+              )}
+            >
+              3D printing
+            </p>
+            <h2
+              id="filaments-head"
+              data-reveal="filaments-title"
+              className={revealCls(
+                "filaments-title",
+                revealed,
+                "proc-section__title",
+                "proc-reveal--d1",
+              )}
+            >
               Recycled filaments
             </h2>
-            <p className="proc-section__lead">
+            <p
+              data-reveal="filaments-lead"
+              className={revealCls(
+                "filaments-lead",
+                revealed,
+                "proc-section__lead",
+                "proc-reveal--d2",
+              )}
+            >
               Eight recycled and bio-based filaments explored in the studio,
               from oyster shell composites to ocean nylon and wood fiber PLA.
             </p>
           </header>
 
-          <div className="proc-grid proc-grid--4">
+          <div
+            data-reveal="filaments-grid"
+            className={revealCls(
+              "filaments-grid",
+              revealed,
+              "proc-grid",
+              "proc-grid--4",
+              "proc-reveal--d2",
+            )}
+          >
             {FILAMENTS.map((s) => (
               <SampleTile key={s.id} sample={s} onClick={() => openSample(s)} />
             ))}
@@ -612,18 +743,53 @@ export default function Process() {
           aria-labelledby="bio-head"
         >
           <header className="proc-section__head">
-            <p className="proc-section__eyebrow">From the kitchen</p>
-            <h2 id="bio-head" className="proc-section__title">
+            <p
+              data-reveal="bio-eyebrow"
+              className={revealCls(
+                "bio-eyebrow",
+                revealed,
+                "proc-section__eyebrow",
+              )}
+            >
+              From the kitchen
+            </p>
+            <h2
+              id="bio-head"
+              data-reveal="bio-title"
+              className={revealCls(
+                "bio-title",
+                revealed,
+                "proc-section__title",
+                "proc-reveal--d1",
+              )}
+            >
               Biomaterials
             </h2>
-            <p className="proc-section__lead">
+            <p
+              data-reveal="bio-lead"
+              className={revealCls(
+                "bio-lead",
+                revealed,
+                "proc-section__lead",
+                "proc-reveal--d2",
+              )}
+            >
               Made from food waste, algae, fungi and starches. Each tile opens a
               full recipe with ingredients, steps, drying time. Try them at
               home.
             </p>
           </header>
 
-          <div className="proc-grid proc-grid--4">
+          <div
+            data-reveal="bio-grid"
+            className={revealCls(
+              "bio-grid",
+              revealed,
+              "proc-grid",
+              "proc-grid--4",
+              "proc-reveal--d2",
+            )}
+          >
             {BIOMATERIALS.map((s) => (
               <SampleTile key={s.id} sample={s} onClick={() => openSample(s)} />
             ))}
