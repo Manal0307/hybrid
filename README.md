@@ -56,16 +56,6 @@ npm run lint     # ESLint
 ## Bronnenlijst
 
 
-### Website & deploy
-
-| Bron | Gebruikt voor | Code |
-| :--- | :------------ | :--- |
-| [React](https://react.dev) | UI, pagina's, componenten | `src/pages/`, `src/components/` |
-| [Vite](https://vite.dev) | Dev server & build | `vite.config.js` |
-| [React Router](https://reactrouter.com) | Navigatie tussen routes | `App.jsx` |
-| [Vercel](https://vercel.com/docs/project-configuration#rewrites) | Hosting & SPA routing | `vercel.json` |
-| [MDN](https://developer.mozilla.org) | HTML, CSS, JavaScript | `src/index.css`, layouts |
-
 ### 3D-modellen & assets
 
 | Bron | Gebruikt voor | Code |
