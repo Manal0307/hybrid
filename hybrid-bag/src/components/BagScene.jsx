@@ -19,7 +19,8 @@ const BAG_RAF_START_VH = BAG_START_VH - 1.35;
 const SUN_ELEVATION = 11;
 const SUN_AZIMUTH = 180;
 
-const BAG_FRONT_ROTATION_Y = Math.PI;
+/** finalbag.glb : face avant (fleurs + trous) vers la caméra */
+const BAG_FRONT_ROTATION_Y = -Math.PI / 2;
 const CAMERA_POS = new THREE.Vector3(0, 0.28, 2.35);
 const CAMERA_LOOK = new THREE.Vector3(0, 0.52, -1.85);
 const CAMERA_FOV = 42;
@@ -72,38 +73,38 @@ const BAG_HOTSPOTS = [
     body: "Coral-inspired lattice 3D-printed in oyster-shell filament, organic and pleasant to the touch.",
     side: -1,
     heightT: 0.97,
-    radialIn: 0.11,
+    screenOffset: { x: -42, y: -6 },
   },
   {
     title: "Red cabbage bioplastic",
     body: "Inner bag in solid, translucent red cabbage bioplastic, sewn on a sewing machine.",
     side: -1,
     heightT: 0.50,
-    screenOffset: { x: -5, y: -18 },
+    screenOffset: { x: -48, y: -10 },
   },
   {
     title: "Recycled textiles",
     body: "Fabric recovered at R-use Fabric in Ixelles, applied as trims on the bag.",
     side: 1,
     heightT: 0.97,
-    radialIn: 0.11,
+    screenOffset: { x: 42, y: -6 },
   },
   {
     title: "Handmade flowers",
     body: "Flowers made by hand from recycled textile, red cabbage bioplastics and pearls from an old broken necklace.",
     side: 1,
     heightT: 0.50,
-    screenOffset: { x: 5, y: -18 },
+    screenOffset: { x: 48, y: -10 },
   },
 ];
 
-/** Offset local (espace sac) : arc — haut serré, bas légèrement plus ouvert. */
+/** Offset local (espace sac) : arc autour du sac, marge plus large pour le nouveau modèle. */
 function computeHotspotLocalOffset(side, heightT, halfW, bagH, radialIn = 0) {
   const yLocal = bagH * THREE.MathUtils.lerp(0.30, 0.95, heightT);
   const curve = Math.pow(1 - heightT, 1.28);
-  const margin = Math.max(0.002, 0.008 + curve * 0.17 - radialIn);
+  const margin = Math.max(0.06, 0.16 + curve * 0.26 - radialIn);
   const xLocal = side * (halfW + margin);
-  const zLocal = 0.008 + curve * 0.04;
+  const zLocal = 0.02 + curve * 0.05;
   return new THREE.Vector3(xLocal, yLocal, zLocal);
 }
 
@@ -511,7 +512,7 @@ export default function BagScene({
     };
 
     new GLTFLoader().load(
-      "/models/codebag.glb",
+      "/models/finalbag.glb",
       (gltf) => {
         const model = gltf.scene;
         const box = new THREE.Box3().setFromObject(model);
@@ -533,20 +534,23 @@ export default function BagScene({
           for (const m of mats) {
             if (!m) continue;
             if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
-              // Sac clair qui tranche sur l'eau sombre + reflets colorés du ciel crépusculaire
-              m.color.set(0xe4dadf);
-              m.roughness = 0.72;
-              m.metalness = 0.0;
-              m.envMapIntensity = 0.28;
-              if (m.isMeshPhysicalMaterial) {
-                m.clearcoat = 0.0;
-                m.clearcoatRoughness = 1.0;
-                m.sheen = 0.05;
-                m.sheenRoughness = 0.88;
-                m.sheenColor = new THREE.Color(0xc898b0);
-                m.specularIntensity = 0.08;
+              // Modèle texturé : ne rien modifier (couleurs/textures du GLB telles quelles).
+              if (!m.map) {
+                // Meshes sans texture (palette) : léger tint pour l'intégration scène
+                m.color.set(0xe4dadf);
+                m.roughness = 0.72;
+                m.metalness = 0.0;
+                m.envMapIntensity = 0.28;
+                if (m.isMeshPhysicalMaterial) {
+                  m.clearcoat = 0.0;
+                  m.clearcoatRoughness = 1.0;
+                  m.sheen = 0.05;
+                  m.sheenRoughness = 0.88;
+                  m.sheenColor = new THREE.Color(0xc898b0);
+                  m.specularIntensity = 0.08;
+                }
+                m.needsUpdate = true;
               }
-              m.needsUpdate = true;
             }
           }
         });
@@ -563,7 +567,7 @@ export default function BagScene({
       },
       undefined,
       (err) => {
-        console.error("codebag.glb error:", err);
+        console.error("finalbag.glb error:", err);
         onReadyRef.current?.();
       },
     );
@@ -969,7 +973,7 @@ export default function BagScene({
             ref={(el) => {
               hotspotRefs.current[i] = el;
             }}
-            className="product-hotspot"
+            className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}`}
           >
             <button
               type="button"
