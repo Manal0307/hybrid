@@ -79,4 +79,5 @@ npm run lint     # ESLint
 | [Water](https://threejs.org/docs/#Water) · [Water.js](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/objects/Water.js) | Reflecterend wateroppervlak | `lib/Water.js` |
 | [Yasmina — Three.js beginners](https://youtu.be/xJAfLdUgdc4) | Basis setup Three.js | `BagScene.jsx` |
 | [Lomarco — Water reflections](https://youtu.be/RZzz1Jexm0M) | Water, normal map, reflecties | `loadWaterNormals.js` |
+| [Cursor AI — Création one-pager eau et ciel](docs/bronnen/cursor-one-pager-scene.md) | Eerste 3D-scène: eau, ciel, Water.js, normal maps | `BagScene.jsx`, `lib/Water.js` |
 | [Class Outside — Blender → Three.js](https://youtu.be/_QmhpmZVZIU) | GLB plaatsen in webscène | `BagScene.jsx` |
