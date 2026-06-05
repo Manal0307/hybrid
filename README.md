@@ -1,20 +1,26 @@
 # Hybrid Bag
 
-**School project — Erasmushogeschool Brussel (EHB)**  
+**School project, Erasmushogeschool Brussel (EHB)**  
 Multimedia & Creative Technology · 2025-2026
+
+Immersive web experience for **Hybrid**, a physical fashion accessory that combines 3D printing, biomaterials and recycled textiles into one design object. The site is not a shop: it is a digital showcase built around the real bag.
+
+**Author:** [Manal Boulahya](https://www.linkedin.com/in/manalboulahya) (solo project)
+
+---
 
 ## About the project
 
-**Hybrid Handbag** is a physical bag I designed and made myself, combining 3D printing, biomaterials and recycled textiles. This repo is the **immersive companion website** for that object: not a shop, but a simple way to explore what the bag is made of and how it was created — through 3D scenes, a materials lab and a step-by-step process page.
+Hybrid is a concept bag built from oyster-shell PLA, red-cabbage bioplastic, recycled fabric and handmade florals. This repo is the companion website: 3D scenes, material lab and process documentation.
 
 ---
 
 ## The website
 
-- `/` : Home, 3D bag experience
-- `/materials` : Filaments & biomaterials lab
-- `/process` : How the bag is made (3D layers + photos)
-- `/about` : Project info, TikTok, FAQ, contact
+- `/` : Home, 3D bag experience  
+- `/materials` : Filaments & biomaterials lab  
+- `/process` : How the bag is made (3D layers + photos)  
+- `/about` : Project info, TikTok, FAQ, contact  
 
 Menu navigation on every page.
 
@@ -22,17 +28,12 @@ Menu navigation on every page.
 
 ## Tech stack
 
-- **React 19**
-- **Vite 7**
-- **Three.js**
-- **React Router 7**
-- **CSS**
-- **GLB / glTF**
-- **Cloudinary**
-- **ESLint**
-- **glTF-Transform** — compresses large 3D files before upload (see bronnenlijst)
+- **React 19** + **Vite 7**
+- **Three.js** : WebGL scenes, GLTF/GLB loading, HDRI lighting, custom water shader
+- **React Router 7** : client-side routing
+- **CSS** : custom layout; typography: **Caligula Dodgy**, **Telma**, **Figtree**
 
-No backend. Built and deployed on **[Vercel](https://vercel.com)**.
+No backend. Static build deployable to any static host (Netlify, Vercel, GitHub Pages, etc.).
 
 ---
 
@@ -58,44 +59,44 @@ npm run preview  # preview the production build locally
 npm run lint     # ESLint
 ```
 
+> **Note:** Large GLB files are included for local development. First load of `/process` may take a moment.
+
 ---
 
 ## Bronnenlijst
 
-21 kernbronnen, gegroepeerd per onderdeel van het project.
+### Onderwijs & project
 
-### Website & deploy
+1. Erasmushogeschool Brussel (EHB). *Multimedia & Creative Technology*. https://www.erasmushogeschool.be  
+2. Boulahya, M. (2025-2026). *Hybrid Bag*, concept accessoire, materiaalonderzoek en companion website (schoolproject).
 
-| Bron                                                             | Gebruikt voor             | Code                            |
-| ---------------------------------------------------------------- | ------------------------- | ------------------------------- |
-| [React](https://react.dev)                                       | UI, pagina's, componenten | `src/pages/`, `src/components/` |
-| [Vite](https://vite.dev)                                         | dev server & build        | `vite.config.js`                |
-| [React Router](https://reactrouter.com)                          | navigatie tussen routes   | `App.jsx`                       |
-| [Vercel](https://vercel.com/docs/project-configuration#rewrites) | hosting & SPA routing     | `vercel.json`                   |
-| [MDN](https://developer.mozilla.org)                             | HTML, CSS, JavaScript     | `src/index.css`, layouts        |
+### Materialen & makers (fysiek werk)
 
-### 3D-modellen & assets
+3. R-use Fabric. Hergebruikte stoffen en reststoffen, Ixelles. https://www.rusefabric.com  
+4. Circular Ocean / fishing net filament, gerecycleerd nylon uit visnetten (materiaalinfo op `/materials`).  
+5. PLA Huître, biocomposiet op basis van oesterschelpafval (gebruikt in de 3D-geprinte structuur).  
+6. Eigen ontwikkelde bioplastics op basis van rode kool en andere plantaardige tests (zie biomaterialen op `/materials`).
 
-| Bron                                                                                                   | Gebruikt voor                                                            | Code                            |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------- |
-| [Tripo3D](https://www.tripo3d.ai)                                                                      | GLB-scans materiaallagen                                                 | `public/models/`                |
-| [Blender glTF export](https://docs.blender.org/manual/en/latest/addons/import_export/scene_gltf2.html) | export sac naar `.glb`                                                   | `finalbag.glb`                  |
-| [glTF-Transform](https://gltf-transform.dev/)                                                          | GLB verkleinen vóór upload (`--compress false --texture-compress false`) | `public/models/finalbag.glb`    |
-| [Khronos glTF](https://www.khronos.org/gltf)                                                           | GLB-bestandsformaat                                                      | `BagScene.jsx`, `Materials.jsx` |
-| [Poly Haven](https://polyhaven.com/a/table_mountain_1_puresky)                                         | HDRI-verlichting `/process`                                              | `Materials.jsx`                 |
-| [Cloudinary](https://cloudinary.com)                                                                   | biomaterial-video `/materials`                                           | `Process.jsx`                   |
+### 3D-modellen & beeld
 
-### Scène 3D — homepage (`BagScene.jsx`)
+7. Tripo3D. 3D-scans / modellen (`filament.glb`, `innerbag.glb`, `tissu.glb`, `flowers.glb`). https://www.tripo3d.ai  
+8. Poly Haven. HDRI *table_mountain_1_puresky* (verlichting 3D-viewer). https://polyhaven.com/a/table_mountain_1_puresky  
+9. Cloudinary. Biomateriaal-procesvideo (gehoste `.mov` op `/materials`). https://cloudinary.com  
 
-| Bron                                                                                                                             | Gebruikt voor                                                                                      | Code                  |
-| -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------- |
-| [Three.js](https://threejs.org)                                                                                                  | Algemene inspiratie: scene, lights, loaders — basis homepage-scène (ook bij refresh aan het begin) | `BagScene.jsx`        |
-| [WebGLRenderer](https://threejs.org/docs/pages/WebGLRenderer.html)                                                               | canvas-render, tone mapping, schaduwen                                                             | `BagScene.jsx`        |
-| [GLTFLoader](https://threejs.org/docs/pages/GLTFLoader.html)                                                                     | `finalbag.glb` inladen                                                                             | `BagScene.jsx`        |
-| [PMREMGenerator](https://threejs.org/docs/pages/PMREMGenerator.html)                                                             | mauve lucht → environment map                                                                      | `BagScene.jsx`        |
-| [Environment maps](https://webglfundamentals.org/webgl/lessons/webgl-environment-maps.html)                                      | reflecties & sfeer op object/water                                                                 | `BagScene.jsx`        |
-| [UnrealBloomPass](https://threejs.org/docs/pages/UnrealBloomPass.html)                                                           | subtiele glow (post-processing)                                                                    | `BagScene.jsx`        |
-| [Water](https://threejs.org/docs/#Water) + [Water.js](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/objects/Water.js) | reflecterend wateroppervlak                                                                        | `lib/Water.js`        |
-| [Yasmina — Three.js beginners](https://youtu.be/xJAfLdUgdc4) (YouTube)                                                           | basis setup Three.js                                                                               | `BagScene.jsx`        |
-| [Lomarco — Water reflections](https://youtu.be/RZzz1Jexm0M) (YouTube)                                                            | water, normal map, reflecties                                                                      | `loadWaterNormals.js` |
-| [Class Outside — Blender → Three.js](https://youtu.be/_QmhpmZVZIU) (YouTube)                                                     | GLB plaatsen in webscène                                                                           | `BagScene.jsx`        |
+### Website, software & libraries
+
+10. React. https://react.dev  
+11. Vite. https://vite.dev  
+12. React Router. https://reactrouter.com  
+13. Three.js & Three.js Water example (`examples/jsm/objects/Water.js`). https://threejs.org  
+14. TikTok Embed API / iframe embed (`tiktok.com/embed/v2`). https://developers.tiktok.com  
+
+### Typografie & UI
+
+15. Google Fonts, Figtree. https://fonts.google.com/specimen/Figtree  
+16. Telma & Caligula Dodgy, projectfonts in `hybrid-bag/public/fonts/`.
+
+### Documentatie & inspiratie (web development)
+
+17. MDN Web Docs, WebGL, HTML, CSS, JavaScript. https://developer.mozilla.org  
+18. GLTF / GLB-specificatie (Khronos Group). https://www.khronos.org/gltf  
