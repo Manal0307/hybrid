@@ -32,7 +32,8 @@ const EMERGENCE_SPIN_Y = 0;
 const BAG_SCENE_TAIL_VH = 0.45;
 
 /** Scroll absolu (vh) : voile levé, sac en surface, fleurs en place */
-export const BAG_SCENE_FULL_VH = BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH;
+export const BAG_SCENE_FULL_VH =
+  BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH;
 /** Scroll absolu où le CTA « Discover Materials » apparaît. */
 export const PRODUCT_REVEAL_VH =
   BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH + 0.75;
@@ -129,7 +130,7 @@ function createRandom(seed) {
   };
 }
 
-/** Ciel équirect : bande rose pâle à l'horizon (milieu) ; mauve au zénith et partout hors horizon. */
+/** Ciel équirect : crépuscule mauve uniforme (sans bande rosée à l'horizon). */
 function createBagSkyEnvironmentTexture() {
   const canvas = document.createElement("canvas");
   canvas.width = 2048;
@@ -137,7 +138,6 @@ function createBagSkyEnvironmentTexture() {
   const ctx = canvas.getContext("2d");
 
   const g = ctx.createLinearGradient(0, 0, 0, 1024);
-  /* Transition mauve ↔ rose très longue et douce (plus de « bord » net). */
   g.addColorStop(0.0, "#2a2428");
   g.addColorStop(0.1, "#2e282c");
   g.addColorStop(0.2, "#363038");
@@ -146,106 +146,47 @@ function createBagSkyEnvironmentTexture() {
   g.addColorStop(0.36, "#51424c");
   g.addColorStop(0.4, "#5a4a54");
   g.addColorStop(0.42, "#64525c");
-  g.addColorStop(0.43, "#6a565f");
-  g.addColorStop(0.44, "#6f5a64");
-  g.addColorStop(0.45, "#775e6a");
-  g.addColorStop(0.46, "#806672");
-  g.addColorStop(0.47, "#8a7079");
-  g.addColorStop(0.475, "#937a82");
-  g.addColorStop(0.48, "#9d848a");
-  g.addColorStop(0.485, "#a78c92");
-  g.addColorStop(0.49, "#b0989c");
-  g.addColorStop(0.492, "#b8a0a4");
-  g.addColorStop(0.494, "#c0a8ac");
-  g.addColorStop(0.496, "#c8b2b6");
-  g.addColorStop(0.4975, "#d4c0c4");
-  g.addColorStop(0.499, "#e0ccd0");
-  g.addColorStop(0.5, "#ead6da");
-  g.addColorStop(0.501, "#f0e0e6");
-  g.addColorStop(0.502, "#f6e8ee");
-  g.addColorStop(0.5035, "#faedf2");
-  g.addColorStop(0.505, "#fce8f0");
-  g.addColorStop(0.507, "#fdf2f6");
-  g.addColorStop(0.509, "#fff6f9");
-  g.addColorStop(0.511, "#fff9fb");
-  g.addColorStop(0.513, "#fffbfc");
-  g.addColorStop(0.515, "#fff9fb");
-  g.addColorStop(0.517, "#fff6f9");
-  g.addColorStop(0.519, "#fdf2f6");
-  g.addColorStop(0.521, "#fce8f0");
-  g.addColorStop(0.523, "#f2e6ec");
-  g.addColorStop(0.525, "#e8d8e2");
-  g.addColorStop(0.527, "#dccad6");
-  g.addColorStop(0.53, "#ceb8c6");
-  g.addColorStop(0.534, "#bea8b6");
-  g.addColorStop(0.538, "#b098a8");
-  g.addColorStop(0.542, "#a68a9c");
-  g.addColorStop(0.546, "#9e8294");
-  g.addColorStop(0.55, "#987c8e");
-  g.addColorStop(0.555, "#a78699");
-  g.addColorStop(0.56, "#937c8a");
-  g.addColorStop(0.62, "#8a6c7e");
-  g.addColorStop(0.68, "#806472");
-  g.addColorStop(0.75, "#705866");
-  g.addColorStop(0.82, "#64505c");
-  g.addColorStop(0.88, "#574450");
-  g.addColorStop(0.94, "#4a3a44");
-  g.addColorStop(1.0, "#40323c");
+  g.addColorStop(0.44, "#6e5e68");
+  g.addColorStop(0.46, "#786672");
+  g.addColorStop(0.48, "#826c7a");
+  g.addColorStop(0.5, "#887082");
+  g.addColorStop(0.52, "#826c7a");
+  g.addColorStop(0.54, "#786672");
+  g.addColorStop(0.56, "#6e5e68");
+  g.addColorStop(0.62, "#64505c");
+  g.addColorStop(0.68, "#5a4854");
+  g.addColorStop(0.75, "#50404c");
+  g.addColorStop(0.82, "#463844");
+  g.addColorStop(0.88, "#3c303c");
+  g.addColorStop(0.94, "#342834");
+  g.addColorStop(1.0, "#2c222c");
 
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 2048, 1024);
 
-  /* Bande lumineuse large (pas un filet) — plateau doux au centre */
-  const horizonBand = ctx.createLinearGradient(0, 380, 0, 660);
-  horizonBand.addColorStop(0.0, "rgba(255, 252, 254, 0)");
-  horizonBand.addColorStop(0.28, "rgba(255, 248, 252, 0.05)");
-  horizonBand.addColorStop(0.42, "rgba(255, 250, 253, 0.1)");
-  horizonBand.addColorStop(0.5, "rgba(255, 252, 254, 0.11)");
-  horizonBand.addColorStop(0.58, "rgba(255, 248, 252, 0.1)");
-  horizonBand.addColorStop(0.72, "rgba(255, 246, 250, 0.05)");
-  horizonBand.addColorStop(1.0, "rgba(255, 252, 254, 0)");
-  ctx.fillStyle = horizonBand;
-  ctx.fillRect(0, 0, 2048, 1024);
-
-  /* Particules / étoiles sur tout le dôme — plus visibles sur le mauve, plus discrètes sur l'horizon. */
   let seed = 90210;
   const rnd = () => {
     seed = (seed * 1103515245 + 12345) >>> 0;
     return seed / 4294967296;
   };
-  const particleAlpha = (y) => {
-    const dist = Math.abs(y - 512) / 512;
-    return 0.12 + dist * 0.68;
-  };
+  /* Étoiles sur le dôme mauve — évite la zone horizon (y ~ 400–630 px). */
+  const starY = () => (rnd() < 0.72 ? rnd() * 395 : 635 + rnd() * 389);
 
-  for (let i = 0; i < 900; i++) {
+  for (let i = 0; i < 1650; i++) {
     const x = rnd() * 2048;
-    const y = rnd() * 1024;
+    const y = starY();
     const r = rnd() * 1.35 + 0.22;
-    const a = particleAlpha(y) * (0.48 + rnd() * 0.52);
-    ctx.fillStyle = `rgba(255,252,255,${a})`;
+    ctx.fillStyle = `rgba(255,252,255,${0.22 + rnd() * 0.58})`;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  for (let i = 0; i < 680; i++) {
+  for (let i = 0; i < 920; i++) {
     const x = rnd() * 2048;
-    const y = rnd() * 1024;
-    const a = particleAlpha(y) * (0.32 + rnd() * 0.55);
-    ctx.fillStyle = `rgba(252,246,255,${a})`;
+    const y = rnd() < 0.78 ? rnd() * 380 : 640 + rnd() * 384;
+    ctx.fillStyle = `rgba(252,248,255,${0.1 + rnd() * 0.3})`;
     ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
-  }
-
-  for (let i = 0; i < 36; i++) {
-    const x = rnd() * 2048;
-    const y = rnd() * 1024;
-    const r = rnd() * 1.05 + 0.62;
-    const a = particleAlpha(y) * (0.62 + rnd() * 0.38);
-    ctx.fillStyle = `rgba(255,250,255,${a})`;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -308,7 +249,8 @@ function createHeroTitleMesh() {
     const vFov = THREE.MathUtils.degToRad(camera.fov);
     const frustumHeight = 2 * Math.tan(vFov / 2) * dist;
     const frustumWidth = frustumHeight * (viewWidth / viewHeight);
-    const targetWidth = frustumWidth * (1 - HERO_TITLE_VIEW_MARGIN * 2) * HERO_TITLE_SCALE;
+    const targetWidth =
+      frustumWidth * (1 - HERO_TITLE_VIEW_MARGIN * 2) * HERO_TITLE_SCALE;
     const targetHeight = targetWidth / textureAspect;
     mesh.scale.set(targetWidth, targetHeight, 1);
   }
@@ -369,7 +311,7 @@ export default function BagScene({
     scene.background = skyTex;
     scene.environment = pmrem.fromEquirectangular(skyTex).texture;
     scene.environmentIntensity = 0.52;
-    // Brume sombre type crépuscule — profondeur, contraste avec l'horizon lumineux
+    // Brume sombre type crépuscule — profondeur et contraste
     scene.fog = new THREE.FogExp2(0x1e1428, 0.00155);
 
     const camera = new THREE.PerspectiveCamera(
@@ -414,7 +356,7 @@ export default function BagScene({
       clipBias: 0.002,
       waterNormals: createWaterNormalsTexture(512, maxAnisotropy),
       sunDirection: sun.clone().normalize(),
-      sunColor: 0xffe0d8,
+      sunColor: 0xc8b8c8,
       waterColor: 0x142a52,
       distortionScale: 0.14,
       alpha: 1.0,
@@ -456,7 +398,7 @@ export default function BagScene({
     // ── Lumières ─────────────────────────────────────────────────────────────
     // Ambient minimal + hémisphère : ombrage lié aux normales → volume du sac
     scene.add(new THREE.AmbientLight(0x584878, 0.08));
-    scene.add(new THREE.HemisphereLight(0x504090, 0xf8e0d8, 0.34));
+    scene.add(new THREE.HemisphereLight(0x504090, 0x5a4a62, 0.34));
 
     const keyLight = new THREE.DirectionalLight(0xffe8c8, 4.0);
     keyLight.position.set(2.4, 5.8, 3.6);
@@ -804,8 +746,7 @@ export default function BagScene({
 
           if (localY <= emergeEndPx) {
             productFloatAnchor = null;
-            const p =
-              (localY - emergeStartPx) / (emergeEndPx - emergeStartPx);
+            const p = (localY - emergeStartPx) / (emergeEndPx - emergeStartPx);
             bagGroup.position.y = THREE.MathUtils.lerp(
               bagAnim.yBottom,
               bagAnim.ySurface,
@@ -817,8 +758,7 @@ export default function BagScene({
               productFloatAnchor = performance.now();
             }
             const floatT = (performance.now() - productFloatAnchor) * 0.0012;
-            bagGroup.position.y =
-              bagAnim.ySurface + Math.sin(floatT) * 0.06;
+            bagGroup.position.y = bagAnim.ySurface + Math.sin(floatT) * 0.06;
           }
         }
 
@@ -837,7 +777,8 @@ export default function BagScene({
           0,
           1,
         );
-        const hotspotOpacity = hotspotReveal * hotspotReveal * (3 - 2 * hotspotReveal);
+        const hotspotOpacity =
+          hotspotReveal * hotspotReveal * (3 - 2 * hotspotReveal);
 
         if (
           drag.productPhase &&
@@ -903,9 +844,11 @@ export default function BagScene({
           );
           el.style.visibility = hotspotOpacity > 0.03 ? "visible" : "hidden";
           el.style.pointerEvents = hotspotOpacity > 0.45 ? "auto" : "none";
-          el.setAttribute("aria-hidden", hotspotOpacity > 0.45 ? "false" : "true");
+          el.setAttribute(
+            "aria-hidden",
+            hotspotOpacity > 0.45 ? "false" : "true",
+          );
         });
-
       }
 
       const heroOp = heroTitleOpacityRef.current;
@@ -958,36 +901,32 @@ export default function BagScene({
     <>
       <div ref={containerRef} className="scene-container" />
       {phase === "scene" && (
-      <>
-      <p
-        ref={rotateHintRef}
-        className="bag-rotate-hint"
-        aria-hidden="true"
-      >
-        Drag to rotate
-      </p>
-      <div className="product-hotspots-layer">
-        {BAG_HOTSPOTS.map((spot, i) => (
-          <div
-            key={spot.title}
-            ref={(el) => {
-              hotspotRefs.current[i] = el;
-            }}
-            className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}`}
-          >
-            <button
-              type="button"
-              className="product-hotspot__pin"
-              aria-label={spot.title}
-            />
-            <div className="product-hotspot__panel">
-              <h3 className="product-hotspot__title">{spot.title}</h3>
-              <p className="product-hotspot__body">{spot.body}</p>
-            </div>
+        <>
+          <p ref={rotateHintRef} className="bag-rotate-hint" aria-hidden="true">
+            Drag to rotate
+          </p>
+          <div className="product-hotspots-layer">
+            {BAG_HOTSPOTS.map((spot, i) => (
+              <div
+                key={spot.title}
+                ref={(el) => {
+                  hotspotRefs.current[i] = el;
+                }}
+                className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}`}
+              >
+                <button
+                  type="button"
+                  className="product-hotspot__pin"
+                  aria-label={spot.title}
+                />
+                <div className="product-hotspot__panel">
+                  <h3 className="product-hotspot__title">{spot.title}</h3>
+                  <p className="product-hotspot__body">{spot.body}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      </>
+        </>
       )}
     </>
   );
