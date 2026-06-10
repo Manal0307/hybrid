@@ -1,11 +1,17 @@
 import { useAmbientSound } from "../context/AmbientSoundContext";
 
 export default function SoundButton() {
-  const { muted, toggleMuted } = useAmbientSound();
+  const { muted, unlocked, toggleMuted, unlock } = useAmbientSound();
 
   function handleClick(event) {
     event.preventDefault();
     event.stopPropagation();
+
+    if (!unlocked) {
+      unlock();
+      return;
+    }
+
     toggleMuted();
   }
 

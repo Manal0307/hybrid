@@ -1,4 +1,4 @@
-const AUDIO_SRC = "/audio/ambianceloop.mp3";
+const AUDIO_SRC = "/audio/drupplesound.mp3";
 const WATER_SRC = "/audio/watersound2.mp3";
 
 const GLOBAL_KEY = "__hybridAmbientAudio__";
@@ -10,8 +10,7 @@ function getStore() {
       dreamySrc: null,
       water: null,
       waterSrc: null,
-      dreamyPlayId: 0,
-      waterPlayId: 0,
+      primed: false,
     };
   }
 
@@ -21,8 +20,7 @@ function getStore() {
       dreamySrc: null,
       water: null,
       waterSrc: null,
-      dreamyPlayId: 0,
-      waterPlayId: 0,
+      primed: false,
     };
   }
 
@@ -43,6 +41,7 @@ function getOrCreateAudio(key, srcKey, src) {
     store[key]?.pause();
     store[key] = createLoopingAudio(src);
     store[srcKey] = src;
+    store.primed = false;
   }
   return store[key];
 }
@@ -60,28 +59,61 @@ export function preloadAmbientAudio() {
   getWaterAudio();
 }
 
-export function playDreamyAudio(volume) {
-  const store = getStore();
-  const audio = getDreamyAudio();
-  const playId = ++store.dreamyPlayId;
+function whenCanPlay(audio) {
+  if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+    return Promise.resolve();
+  }
 
+  return new Promise((resolve) => {
+    audio.addEventListener("canplay", resolve, { once: true });
+  });
+}
+
+/** Start muted playback as soon as the file is ready (allowed without a gesture). */
+export async function primeAmbientAudio() {
+  const store = getStore();
+  if (store.primed) return;
+
+  const tracks = [getDreamyAudio(), getWaterAudio()];
+  await Promise.all(tracks.map(whenCanPlay));
+
+  for (const audio of tracks) {
+    audio.muted = true;
+    audio.volume = 0;
+    try {
+      await audio.play();
+    } catch {
+      // Retry once the browser allows it.
+    }
+  }
+
+  store.primed = true;
+}
+
+function activateAudio(audio, volume) {
+  const isPlaying = !audio.paused && audio.currentTime > 0;
+
+  audio.muted = false;
   audio.volume = volume;
-  void audio
-    .play()
-    .then(() => {
-      if (playId !== store.dreamyPlayId) {
-        audio.pause();
-        audio.volume = 0;
-      }
-    })
-    .catch(() => {});
+
+  if (isPlaying) return Promise.resolve();
+
+  return audio.play().catch(() => {
+    audio.muted = true;
+    return audio.play().then(() => {
+      audio.muted = false;
+      audio.volume = volume;
+    });
+  });
+}
+
+export function playDreamyAudio(volume) {
+  const audio = getDreamyAudio();
+  void activateAudio(audio, volume);
 }
 
 export function pauseDreamyAudio() {
-  const store = getStore();
-  store.dreamyPlayId += 1;
-
-  const audio = store.dreamy;
+  const audio = getStore().dreamy;
   if (!audio) return;
 
   audio.volume = 0;
@@ -89,27 +121,12 @@ export function pauseDreamyAudio() {
 }
 
 export function playWaterAudio(volume) {
-  const store = getStore();
   const audio = getWaterAudio();
-  const playId = ++store.waterPlayId;
-
-  audio.volume = volume;
-  void audio
-    .play()
-    .then(() => {
-      if (playId !== store.waterPlayId) {
-        audio.pause();
-        audio.volume = 0;
-      }
-    })
-    .catch(() => {});
+  void activateAudio(audio, volume);
 }
 
 export function pauseWaterAudio() {
-  const store = getStore();
-  store.waterPlayId += 1;
-
-  const audio = store.water;
+  const audio = getStore().water;
   if (!audio) return;
 
   audio.volume = 0;

@@ -12,6 +12,7 @@ import {
   playDreamyAudio,
   playWaterAudio,
   preloadAmbientAudio,
+  primeAmbientAudio,
 } from "../utils/ambientAudio";
 
 const AmbientSoundContext = createContext(null);
@@ -21,16 +22,13 @@ const WATER_VOLUME = 0.28;
 
 export function AmbientSoundProvider({ children }) {
   const [muted, setMuted] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
   const unlockedRef = useRef(false);
   const mutedRef = useRef(false);
   const waterActiveRef = useRef(false);
 
   const applyDreamy = useCallback(() => {
-    if (mutedRef.current || !unlockedRef.current) {
-      pauseDreamyAudio();
-      return;
-    }
-
+    if (mutedRef.current || !unlockedRef.current) return;
     playDreamyAudio(VOLUME);
   }, []);
 
@@ -49,7 +47,13 @@ export function AmbientSoundProvider({ children }) {
   }, [applyDreamy, applyWater]);
 
   const unlock = useCallback(() => {
+    if (unlockedRef.current) {
+      applyAll();
+      return;
+    }
+
     unlockedRef.current = true;
+    setUnlocked(true);
     applyAll();
   }, [applyAll]);
 
@@ -63,6 +67,7 @@ export function AmbientSoundProvider({ children }) {
 
   const toggleMuted = useCallback(() => {
     unlockedRef.current = true;
+    setUnlocked(true);
     mutedRef.current = !mutedRef.current;
     const nextMuted = mutedRef.current;
     setMuted(nextMuted);
@@ -78,31 +83,35 @@ export function AmbientSoundProvider({ children }) {
 
   useEffect(() => {
     preloadAmbientAudio();
-    unlockedRef.current = true;
-    applyAll();
-  }, [applyAll]);
+    void primeAmbientAudio().then(() => unlock());
+  }, [unlock]);
 
   useEffect(() => {
-    const onInteract = (event) => {
-      if (event.target.closest(".sound-button")) return;
-      if (mutedRef.current) return;
+    const onInteract = () => {
       unlock();
     };
 
-    window.addEventListener("pointerdown", onInteract);
-    window.addEventListener("keydown", onInteract);
-    window.addEventListener("wheel", onInteract, { passive: true });
+    const capture = { capture: true, passive: true };
+    const once = { capture: true, passive: true, once: true };
+
+    window.addEventListener("pointerdown", onInteract, capture);
+    window.addEventListener("touchstart", onInteract, capture);
+    window.addEventListener("keydown", onInteract, capture);
+    window.addEventListener("wheel", onInteract, once);
+    window.addEventListener("scroll", onInteract, once);
 
     return () => {
-      window.removeEventListener("pointerdown", onInteract);
-      window.removeEventListener("keydown", onInteract);
-      window.removeEventListener("wheel", onInteract);
+      window.removeEventListener("pointerdown", onInteract, capture);
+      window.removeEventListener("touchstart", onInteract, capture);
+      window.removeEventListener("keydown", onInteract, capture);
+      window.removeEventListener("wheel", onInteract, once);
+      window.removeEventListener("scroll", onInteract, once);
     };
   }, [unlock]);
 
   return (
     <AmbientSoundContext.Provider
-      value={{ muted, toggleMuted, unlock, setWaterActive }}
+      value={{ muted, unlocked, toggleMuted, unlock, setWaterActive }}
     >
       {children}
     </AmbientSoundContext.Provider>

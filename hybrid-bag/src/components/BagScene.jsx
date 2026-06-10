@@ -34,14 +34,16 @@ function getViewportLayout(viewWidth, viewHeight) {
   };
 }
 
-const EMERGENCE_START = 0.35; // localY en vh
-const EMERGENCE_END = 1.25;
+const EMERGENCE_START = 0.28; // localY en vh — début de la montée
+const EMERGENCE_END = 1.95; // scroll plus long = sortie plus lente
+const EMERGENCE_PRE_VISIBLE = 0.22; // vh avant EMERGENCE_START : sac visible sous l'eau
 const EMERGENCE_SPIN_Y = 0;
 /** Scroll local après l’émergence (fleurs, snap produit). */
 const BAG_SCENE_TAIL_VH = 0.45;
 
 /** Scroll absolu (vh) : voile levé, sac en surface, fleurs en place */
-export const BAG_SCENE_FULL_VH = BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH;
+export const BAG_SCENE_FULL_VH =
+  BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH;
 /** Scroll absolu où le CTA « Discover Materials » apparaît. */
 export const PRODUCT_REVEAL_VH =
   BAG_START_VH + EMERGENCE_END + BAG_SCENE_TAIL_VH + 0.75;
@@ -89,7 +91,7 @@ const BAG_HOTSPOTS = [
     title: "Red cabbage bioplastic",
     body: "Inner bag in solid, translucent red cabbage bioplastic, sewn on a sewing machine.",
     side: -1,
-    heightT: 0.50,
+    heightT: 0.5,
     screenOffset: { x: -46, y: 0 },
   },
   {
@@ -104,7 +106,7 @@ const BAG_HOTSPOTS = [
     title: "Handmade flowers",
     body: "Flowers made by hand from recycled textile, red cabbage bioplastics and pearls from an old broken necklace.",
     side: 1,
-    heightT: 0.50,
+    heightT: 0.5,
     screenOffset: { x: 46, y: 0 },
   },
 ];
@@ -118,7 +120,7 @@ function computeHotspotLocalOffset(
   radialIn = 0,
   radialOut = 0,
 ) {
-  const yLocal = bagH * THREE.MathUtils.lerp(0.30, 0.95, heightT);
+  const yLocal = bagH * THREE.MathUtils.lerp(0.3, 0.95, heightT);
   const curve = Math.pow(1 - heightT, 1.28);
   const margin = Math.max(0.06, 0.17 + curve * 0.22 - radialIn + radialOut);
   const xLocal = side * (halfW + margin);
@@ -140,14 +142,12 @@ function getHotspotViewportAdjust(viewWidth, viewHeight) {
 }
 
 // ─── Utilitaires ─────────────────────────────────────────────────────────────
-/** Émergence souple : monte vite, petit dépassement, se stabilise */
+/** Montée lente au début, sans overshoot (évite l'effet « pop »). */
 function emergeEase(t) {
   if (t <= 0) return 0;
   if (t >= 1) return 1;
-  // easeOutBack avec overshoot réduit (~5% au-dessus de la surface au max)
-  const c1 = 0.4; // overshoot — standard easeOutBack = 1.70158
-  const c3 = c1 + 1;
-  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  const smooth = t * t * (3 - 2 * t);
+  return Math.pow(smooth, 2.35);
 }
 
 function createRandom(seed) {
@@ -339,7 +339,8 @@ function createHeroTitleMesh() {
     const vFov = THREE.MathUtils.degToRad(camera.fov);
     const frustumHeight = 2 * Math.tan(vFov / 2) * dist;
     const frustumWidth = frustumHeight * (viewWidth / viewHeight);
-    const targetWidth = frustumWidth * (1 - HERO_TITLE_VIEW_MARGIN * 2) * HERO_TITLE_SCALE;
+    const targetWidth =
+      frustumWidth * (1 - HERO_TITLE_VIEW_MARGIN * 2) * HERO_TITLE_SCALE;
     const targetHeight = targetWidth / textureAspect;
     mesh.scale.set(targetWidth, targetHeight, 1);
   }
@@ -859,11 +860,17 @@ export default function BagScene({
       camera.lookAt(CAMERA_LOOK);
 
       if (bagAnim.loaded) {
+        const preEmergencePx = (EMERGENCE_START - EMERGENCE_PRE_VISIBLE) * vh;
         const emergeStartPx = EMERGENCE_START * vh;
         const emergeEndPx = EMERGENCE_END * vh;
 
-        if (localY < emergeStartPx) {
+        if (localY < preEmergencePx) {
           bagGroup.visible = false;
+          bagGroup.position.y = bagAnim.yBottom;
+          bagGroup.rotation.y = BAG_FRONT_ROTATION_Y;
+          productFloatAnchor = null;
+        } else if (localY < emergeStartPx) {
+          bagGroup.visible = true;
           bagGroup.position.y = bagAnim.yBottom;
           bagGroup.rotation.y = BAG_FRONT_ROTATION_Y;
           productFloatAnchor = null;
@@ -872,8 +879,11 @@ export default function BagScene({
 
           if (localY <= emergeEndPx) {
             productFloatAnchor = null;
-            const p =
-              (localY - emergeStartPx) / (emergeEndPx - emergeStartPx);
+            const p = THREE.MathUtils.clamp(
+              (localY - emergeStartPx) / (emergeEndPx - emergeStartPx),
+              0,
+              1,
+            );
             bagGroup.position.y = THREE.MathUtils.lerp(
               bagAnim.yBottom,
               bagAnim.ySurface,
@@ -885,8 +895,7 @@ export default function BagScene({
               productFloatAnchor = performance.now();
             }
             const floatT = (performance.now() - productFloatAnchor) * 0.0012;
-            bagGroup.position.y =
-              bagAnim.ySurface + Math.sin(floatT) * 0.06;
+            bagGroup.position.y = bagAnim.ySurface + Math.sin(floatT) * 0.06;
           }
         }
 
@@ -905,7 +914,8 @@ export default function BagScene({
           0,
           1,
         );
-        const hotspotOpacity = hotspotReveal * hotspotReveal * (3 - 2 * hotspotReveal);
+        const hotspotOpacity =
+          hotspotReveal * hotspotReveal * (3 - 2 * hotspotReveal);
 
         if (
           drag.productPhase &&
@@ -969,7 +979,11 @@ export default function BagScene({
           let pinY = (-worldHotspot.y * 0.5 + 0.5) * h + sy;
 
           if (hotspotAdjust.narrow > 0.05) {
-            pinX = THREE.MathUtils.clamp(pinX, hotspotAdjust.edgePadX, w - hotspotAdjust.edgePadX);
+            pinX = THREE.MathUtils.clamp(
+              pinX,
+              hotspotAdjust.edgePadX,
+              w - hotspotAdjust.edgePadX,
+            );
             pinY = THREE.MathUtils.clamp(
               pinY,
               hotspotAdjust.edgePadY,
@@ -988,9 +1002,11 @@ export default function BagScene({
           );
           el.style.visibility = hotspotOpacity > 0.03 ? "visible" : "hidden";
           el.style.pointerEvents = hotspotOpacity > 0.45 ? "auto" : "none";
-          el.setAttribute("aria-hidden", hotspotOpacity > 0.45 ? "false" : "true");
+          el.setAttribute(
+            "aria-hidden",
+            hotspotOpacity > 0.45 ? "false" : "true",
+          );
         });
-
       }
 
       const heroOp = heroTitleOpacityRef.current;
@@ -1041,65 +1057,61 @@ export default function BagScene({
     <>
       <div ref={containerRef} className="scene-container" />
       {phase === "scene" && (
-      <>
-      <p
-        ref={rotateHintRef}
-        className="bag-rotate-hint"
-        aria-hidden="true"
-      >
-        Drag to rotate
-      </p>
-      <div className="product-hotspots-layer">
-        {BAG_HOTSPOTS.map((spot, i) => (
-          <div
-            key={spot.title}
-            ref={(el) => {
-              hotspotRefs.current[i] = el;
-            }}
-            className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}${activeHotspot === i ? " product-hotspot--active" : ""}`}
-          >
-            <div className="product-hotspot__anchor">
+        <>
+          <p ref={rotateHintRef} className="bag-rotate-hint" aria-hidden="true">
+            Drag to rotate
+          </p>
+          <div className="product-hotspots-layer">
+            {BAG_HOTSPOTS.map((spot, i) => (
+              <div
+                key={spot.title}
+                ref={(el) => {
+                  hotspotRefs.current[i] = el;
+                }}
+                className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}${activeHotspot === i ? " product-hotspot--active" : ""}`}
+              >
+                <div className="product-hotspot__anchor">
+                  <button
+                    type="button"
+                    className="product-hotspot__pin"
+                    aria-label={spot.title}
+                    aria-expanded={activeHotspot === i}
+                    onClick={() =>
+                      setActiveHotspot((prev) => (prev === i ? null : i))
+                    }
+                  />
+                  <div className="product-hotspot__panel">
+                    <h3 className="product-hotspot__title">{spot.title}</h3>
+                    <p className="product-hotspot__body">{spot.body}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {activeHotspot !== null && (
+            <div
+              className="product-hotspot-mobile-card"
+              role="dialog"
+              aria-labelledby="hotspot-mobile-title"
+            >
               <button
                 type="button"
-                className="product-hotspot__pin"
-                aria-label={spot.title}
-                aria-expanded={activeHotspot === i}
-                onClick={() =>
-                  setActiveHotspot((prev) => (prev === i ? null : i))
-                }
+                className="product-hotspot-mobile-card__close"
+                aria-label="Close"
+                onClick={() => setActiveHotspot(null)}
               />
-              <div className="product-hotspot__panel">
-                <h3 className="product-hotspot__title">{spot.title}</h3>
-                <p className="product-hotspot__body">{spot.body}</p>
-              </div>
+              <h3
+                id="hotspot-mobile-title"
+                className="product-hotspot-mobile-card__title"
+              >
+                {BAG_HOTSPOTS[activeHotspot].title}
+              </h3>
+              <p className="product-hotspot-mobile-card__body">
+                {BAG_HOTSPOTS[activeHotspot].body}
+              </p>
             </div>
-          </div>
-        ))}
-      </div>
-      {activeHotspot !== null && (
-        <div
-          className="product-hotspot-mobile-card"
-          role="dialog"
-          aria-labelledby="hotspot-mobile-title"
-        >
-          <button
-            type="button"
-            className="product-hotspot-mobile-card__close"
-            aria-label="Close"
-            onClick={() => setActiveHotspot(null)}
-          />
-          <h3
-            id="hotspot-mobile-title"
-            className="product-hotspot-mobile-card__title"
-          >
-            {BAG_HOTSPOTS[activeHotspot].title}
-          </h3>
-          <p className="product-hotspot-mobile-card__body">
-            {BAG_HOTSPOTS[activeHotspot].body}
-          </p>
-        </div>
-      )}
-      </>
+          )}
+        </>
       )}
     </>
   );

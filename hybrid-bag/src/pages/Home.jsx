@@ -101,6 +101,7 @@ export default function Home() {
   const [bagSceneVisible, setBagSceneVisible] = useState(() => skipIntro);
   const { unlock, setWaterActive } = useAmbientSound();
   const [textRevealing, setTextRevealing] = useState(() => skipIntro);
+  const [introReveal, setIntroReveal] = useState(() => (skipIntro ? 1 : 0));
   const [navVisible, setNavVisible] = useState(() => skipIntro);
   const [uiIntroReady, setUiIntroReady] = useState(() => skipIntro);
   const [hybridHeroOpacity, setHybridHeroOpacity] = useState(0);
@@ -171,17 +172,38 @@ export default function Home() {
     let revealFrame;
     const revealTimer = setTimeout(() => {
       revealFrame = requestAnimationFrame(() => setTextRevealing(true));
-    }, 120);
+    }, 480);
     const sceneTimer = setTimeout(() => {
       setPhase("scene");
       window.scrollTo(0, 0);
-    }, 1500);
+    }, 1800);
     return () => {
       clearTimeout(revealTimer);
       clearTimeout(sceneTimer);
       if (revealFrame) cancelAnimationFrame(revealFrame);
     };
   }, [phase]);
+
+  useEffect(() => {
+    if (!textRevealing || skipIntro) {
+      if (skipIntro) setIntroReveal(1);
+      return;
+    }
+
+    const duration = 1600;
+    const start = performance.now();
+    let frame;
+
+    function tick(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = t * t * (3 - 2 * t);
+      setIntroReveal(eased);
+      if (t < 1) frame = requestAnimationFrame(tick);
+    }
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [textRevealing, skipIntro]);
 
   useEffect(() => {
     if (phase !== "scene") {
@@ -211,11 +233,40 @@ export default function Home() {
   }, [phase, skipIntro]);
 
   useEffect(() => {
+    if (phase !== "scene") {
+      document.body.classList.remove("home-bag-scene");
+      return;
+    }
+    document.body.classList.toggle("home-bag-scene", bagSceneVisible);
+
+    let themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (!themeMeta) {
+      themeMeta = document.createElement("meta");
+      themeMeta.setAttribute("name", "theme-color");
+      document.head.appendChild(themeMeta);
+    }
+    themeMeta.setAttribute(
+      "content",
+      bagSceneVisible ? "#120818" : "#cdb8c8",
+    );
+
+    return () => {
+      document.body.classList.remove("home-bag-scene");
+      themeMeta.setAttribute("content", "#cdb8c8");
+    };
+  }, [phase, bagSceneVisible]);
+
+  useEffect(() => {
     if (phase !== "scene") return;
 
     function onScroll() {
       const vh = window.innerHeight;
-      const y = window.scrollY;
+      const maxScroll = SCROLL_LOCK_VH * vh;
+      let y = window.scrollY;
+      if (y > maxScroll) {
+        window.scrollTo(0, maxScroll);
+        y = maxScroll;
+      }
       const yVh = y / vh;
 
       let nextFade;
@@ -340,21 +391,31 @@ export default function Home() {
         aria-hidden={phase === "loading"}
       >
         <div className="text-sticky">
-          {INTRO_SLIDES.map((slide, i) => (
+          {INTRO_SLIDES.map((slide, i) => {
+            const slideOpacity = getSlideOpacity(
+              i,
+              INTRO_SLIDES.length,
+              textProgress,
+            );
+            const reveal =
+              i === 0 && !skipIntro ? introReveal : 1;
+            const lift = i === 0 && !skipIntro ? (1 - introReveal) * 22 : 0;
+
+            return (
             <div
               key={slide.title}
               className="text-slide"
               style={{
                 opacity:
-                  phase === "loading"
-                    ? 0
-                    : getSlideOpacity(i, INTRO_SLIDES.length, textProgress),
+                  phase === "loading" ? 0 : slideOpacity * reveal,
+                transform: `translate(-50%, calc(-50% + ${lift}px))`,
               }}
             >
               <h2>{slide.title}</h2>
               <p>{slide.body}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
