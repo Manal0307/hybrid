@@ -83,8 +83,8 @@ export function AmbientSoundProvider({ children }) {
 
   useEffect(() => {
     preloadAmbientAudio();
-    void primeAmbientAudio().then(() => unlock());
-  }, [unlock]);
+    void primeAmbientAudio();
+  }, []);
 
   useEffect(() => {
     const onInteract = () => {

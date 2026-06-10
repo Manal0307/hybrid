@@ -90,26 +90,21 @@ export async function primeAmbientAudio() {
   store.primed = true;
 }
 
-function activateAudio(audio, volume) {
-  const isPlaying = !audio.paused && audio.currentTime > 0;
-
+async function activateAudio(audio, volume) {
   audio.muted = false;
   audio.volume = volume;
 
-  if (isPlaying) return Promise.resolve();
+  if (!audio.paused && audio.currentTime > 0) return;
 
-  return audio.play().catch(() => {
-    audio.muted = true;
-    return audio.play().then(() => {
-      audio.muted = false;
-      audio.volume = volume;
-    });
-  });
+  try {
+    await audio.play();
+  } catch {
+    // Blocked until the user interacts (unlock via pointer/scroll/key).
+  }
 }
 
 export function playDreamyAudio(volume) {
-  const audio = getDreamyAudio();
-  void activateAudio(audio, volume);
+  void activateAudio(getDreamyAudio(), volume);
 }
 
 export function pauseDreamyAudio() {
@@ -121,8 +116,7 @@ export function pauseDreamyAudio() {
 }
 
 export function playWaterAudio(volume) {
-  const audio = getWaterAudio();
-  void activateAudio(audio, volume);
+  void activateAudio(getWaterAudio(), volume);
 }
 
 export function pauseWaterAudio() {
