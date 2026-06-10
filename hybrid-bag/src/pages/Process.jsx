@@ -3,10 +3,22 @@ import { Link } from "react-router-dom";
 import MenuOverlay from "../components/MenuOverlay";
 import SoundButton from "../components/SoundButton";
 import { homeBagLink } from "../utils/homeNav";
+import { revealClass, useScrollReveal } from "../utils/useScrollReveal";
 import "./Process.css";
 
 const BIOMATERIAL_VIDEO_URL =
   "https://res.cloudinary.com/deq5iutqv/video/upload/v1780610582/v26044gc0000d8aov4vog65pf2tg7rmg_chk0gq.mov";
+const BIOMATERIAL_VIDEO_MP4 =
+  "https://res.cloudinary.com/deq5iutqv/video/upload/f_mp4,q_auto/v1780610582/v26044gc0000d8aov4vog65pf2tg7rmg_chk0gq.mp4";
+const BIOMATERIAL_VIDEO_POSTER =
+  "https://res.cloudinary.com/deq5iutqv/video/upload/so_0,w_900,c_scale,q_auto,f_jpg/v1780610582/v26044gc0000d8aov4vog65pf2tg7rmg_chk0gq.jpg";
+
+const HERO_REVEAL_KEYS = [
+  "intro-eyebrow",
+  "intro-title",
+  "intro-lead",
+  "video",
+];
 
 /* ──────────────────────────────────────────────────────────────────────────
    Recycled filaments. alternatives utilisées pour l'impression 3D
@@ -490,11 +502,18 @@ function SampleModal({ sample, open, onClose }) {
   );
 }
 
-function SampleTile({ sample, onClick }) {
+function SampleTile({ sample, onClick, revealId, revealed, revealDelay = "" }) {
   return (
     <button
       type="button"
-      className={`proc-tile${sample.featured ? " proc-tile--featured" : ""}`}
+      data-reveal={revealId}
+      className={revealClass(
+        revealId,
+        revealed,
+        "proc-reveal",
+        `proc-tile${sample.featured ? " proc-tile--featured" : ""}`,
+        revealDelay,
+      )}
       style={{ "--accent": sample.accent }}
       onClick={onClick}
       aria-label={`${sample.name}, ${sample.short}`}
@@ -521,65 +540,7 @@ function SampleTile({ sample, onClick }) {
 }
 
 function revealCls(id, revealed, ...extra) {
-  return [
-    "proc-reveal",
-    revealed.has(id) && "is-visible",
-    ...extra.filter(Boolean),
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-function useScrollReveal(containerRef) {
-  const [revealed, setRevealed] = useState(() => new Set());
-
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-
-    const items = root.querySelectorAll("[data-reveal]");
-    if (!items.length) return;
-
-    const revealAll = () => {
-      const keys = new Set();
-      items.forEach((el) => {
-        if (el.dataset.reveal) keys.add(el.dataset.reveal);
-      });
-      setRevealed(keys);
-    };
-
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (reduceMotion) {
-      revealAll();
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const key = entry.target.dataset.reveal;
-          if (key) {
-            setRevealed((prev) => {
-              if (prev.has(key)) return prev;
-              const next = new Set(prev);
-              next.add(key);
-              return next;
-            });
-          }
-          observer.unobserve(entry.target);
-        });
-      },
-      { threshold: 0.18, rootMargin: "0px 0px -6% 0px" },
-    );
-
-    items.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
-  return revealed;
+  return revealClass(id, revealed, "proc-reveal", ...extra);
 }
 
 export default function Process() {
@@ -587,7 +548,7 @@ export default function Process() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuOverlayRef = useRef(null);
   const mainRef = useRef(null);
-  const revealed = useScrollReveal(mainRef);
+  const revealed = useScrollReveal(mainRef, { heroKeys: HERO_REVEAL_KEYS });
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -632,7 +593,11 @@ export default function Process() {
         <header className="proc-intro">
           <p
             data-reveal="intro-eyebrow"
-            className={revealCls("intro-eyebrow", revealed, "proc-intro__eyebrow")}
+            className={revealCls(
+              "intro-eyebrow",
+              revealed,
+              "proc-intro__eyebrow",
+            )}
           >
             The Hybrid lab
           </p>
@@ -677,8 +642,10 @@ export default function Process() {
               controls
               playsInline
               preload="metadata"
-              src={BIOMATERIAL_VIDEO_URL}
+              poster={BIOMATERIAL_VIDEO_POSTER}
             >
+              <source src={BIOMATERIAL_VIDEO_MP4} type="video/mp4" />
+              <source src={BIOMATERIAL_VIDEO_URL} type="video/quicktime" />
               Your browser does not support the video tag.
             </video>
           </div>
@@ -722,18 +689,22 @@ export default function Process() {
             </p>
           </header>
 
-          <div
-            data-reveal="filaments-grid"
-            className={revealCls(
-              "filaments-grid",
-              revealed,
-              "proc-grid",
-              "proc-grid--4",
-              "proc-reveal--d2",
-            )}
-          >
-            {FILAMENTS.map((s) => (
-              <SampleTile key={s.id} sample={s} onClick={() => openSample(s)} />
+          <div className="proc-grid proc-grid--4">
+            {FILAMENTS.map((s, i) => (
+              <SampleTile
+                key={s.id}
+                sample={s}
+                revealId={`filament-${s.id}`}
+                revealed={revealed}
+                revealDelay={
+                  i % 4 === 1
+                    ? "proc-reveal--d1"
+                    : i % 4 === 2
+                      ? "proc-reveal--d2"
+                      : ""
+                }
+                onClick={() => openSample(s)}
+              />
             ))}
           </div>
         </section>
@@ -780,23 +751,61 @@ export default function Process() {
             </p>
           </header>
 
-          <div
-            data-reveal="bio-grid"
-            className={revealCls(
-              "bio-grid",
-              revealed,
-              "proc-grid",
-              "proc-grid--4",
-              "proc-reveal--d2",
-            )}
-          >
-            {BIOMATERIALS.map((s) => (
-              <SampleTile key={s.id} sample={s} onClick={() => openSample(s)} />
+          <div className="proc-grid proc-grid--4">
+            {BIOMATERIALS.map((s, i) => (
+              <SampleTile
+                key={s.id}
+                sample={s}
+                revealId={`bio-${s.id}`}
+                revealed={revealed}
+                revealDelay={
+                  i % 4 === 1
+                    ? "proc-reveal--d1"
+                    : i % 4 === 2
+                      ? "proc-reveal--d2"
+                      : ""
+                }
+                onClick={() => openSample(s)}
+              />
             ))}
           </div>
         </section>
 
         <footer className="proc-footer">
+          <p
+            data-reveal="footer-eyebrow"
+            className={revealCls(
+              "footer-eyebrow",
+              revealed,
+              "proc-footer__eyebrow",
+            )}
+          >
+            Next step
+          </p>
+          <h2
+            data-reveal="footer-title"
+            className={revealCls(
+              "footer-title",
+              revealed,
+              "proc-footer__title",
+              "proc-reveal--d1",
+            )}
+          >
+            Discover the process
+          </h2>
+          <p
+            data-reveal="footer-lead"
+            className={revealCls(
+              "footer-lead",
+              revealed,
+              "proc-footer__lead",
+              "proc-reveal--d2",
+            )}
+          >
+            See how each layer of the Hybrid bag comes together — oyster-shell
+            structure, bioplastic lining, recycled textiles and handmade florals —
+            in an interactive 3D view.
+          </p>
           <Link to="/process" className="cta-button cta-button--inline visible">
             How it&apos;s made
           </Link>

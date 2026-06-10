@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import MenuOverlay from "../components/MenuOverlay";
 import SoundButton from "../components/SoundButton";
 import { homeBagLink } from "../utils/homeNav";
+import { revealClass, useScrollReveal } from "../utils/useScrollReveal";
+import { cloneGltfScene, preloadGltf } from "../utils/gltfCache";
+import { applyHdrEnvironment } from "../utils/hdrEnvironment";
 import "./Materials.css";
 
 const HDRI_PATH = new URL(
@@ -13,7 +14,7 @@ const HDRI_PATH = new URL(
   import.meta.url,
 ).href;
 
-const BAG_MODEL_PATH = "/models/codebag.glb";
+const BAG_MODEL_PATH = "/models/finalbag.glb";
 const FILAMENT_MODEL_PATH = "/models/filament.glb";
 const INNERBAG_MODEL_PATH = "/models/innerbag.glb";
 const TISSU_MODEL_PATH = "/models/tissu.glb";
@@ -21,8 +22,32 @@ const FLOWERS_MODEL_PATH = "/models/flowers.glb";
 const MATERIAL_VIEWER_TARGET = 1.58;
 /** GLB + maquettes matière dans le viewer */
 const MATERIAL_GLB_VIEWER_TARGET = 1.88;
+const MATERIAL_FLOWERS_VIEWER_TARGET = 1.28;
 /** Même orientation que BagScene : face caméra (évite l’effet « de dos »). */
-const BAG_FRONT_ROTATION_Y = Math.PI;
+const BAG_FRONT_ROTATION_Y = -Math.PI / 2;
+
+function getViewerLayout(viewWidth, viewHeight) {
+  const aspect = viewWidth / viewHeight;
+  const narrow = 1 - THREE.MathUtils.smoothstep(aspect, 0.58, 0.92);
+  return {
+    cameraZ: THREE.MathUtils.lerp(3.28, 3.52, narrow),
+    fov: THREE.MathUtils.lerp(38, 41, narrow),
+    bagTarget: THREE.MathUtils.lerp(1.52, 1.38, narrow),
+  };
+}
+
+function centerGroupAtOrigin(group) {
+  group.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(group);
+  const center = box.getCenter(new THREE.Vector3());
+
+  if (group.parent) {
+    group.parent.updateMatrixWorld(true);
+    group.position.sub(group.parent.worldToLocal(center));
+  } else {
+    group.position.sub(center);
+  }
+}
 
 /** Index matière → GLB (4 couches du sac) */
 const MATERIAL_GLB = {
@@ -100,10 +125,14 @@ const MATERIALS = [
   },
 ];
 
+const MAT_HERO_REVEAL_KEYS = ["intro-eyebrow", "intro-title", "intro-lead"];
+
 function setGroupOpacity(group, opacity) {
   group.traverse((child) => {
     if ((child.isMesh || child.isLine) && child.material) {
-      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      const mats = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
       for (const m of mats) {
         if (m && "opacity" in m) {
           m.transparent = opacity < 1;
@@ -143,10 +172,12 @@ function createMaterialRoot() {
 }
 
 /** Viewer central : sac (aucune sélection) ou maquette matière + clic pour détail */
-function MaterialsViewer({ focusMaterial, onOpenDetail }) {
+function MaterialsViewer({ focusMaterial, onOpenDetail, onBagReady }) {
   const mountRef = useRef(null);
   const focusRef = useRef(focusMaterial);
   const onOpenDetailRef = useRef(onOpenDetail);
+  const onBagReadyRef = useRef(onBagReady);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     focusRef.current = focusMaterial;
@@ -154,6 +185,9 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
   useEffect(() => {
     onOpenDetailRef.current = onOpenDetail;
   }, [onOpenDetail]);
+  useEffect(() => {
+    onBagReadyRef.current = onBagReady;
+  }, [onBagReady]);
 
   useEffect(() => {
     const container = mountRef.current;
@@ -169,18 +203,31 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
-      40,
+      38,
       container.clientWidth / container.clientHeight,
       0.1,
       100,
     );
-    camera.position.set(0, 0.06, 3.35);
+
+    function updateCameraLayout() {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      const layout = getViewerLayout(w, h);
+      camera.aspect = w / h;
+      camera.fov = layout.fov;
+      camera.position.set(0, 0, layout.cameraZ);
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      return layout;
+    }
+
+    updateCameraLayout();
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     pmrem.compileEquirectangularShader();
-    new HDRLoader().load(HDRI_PATH, (tex) => {
-      tex.mapping = THREE.EquirectangularReflectionMapping;
-      scene.environment = pmrem.fromEquirectangular(tex).texture;
+    void applyHdrEnvironment(scene, pmrem, HDRI_PATH).catch((err) => {
+      console.error("HDRI load:", err);
     });
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.55));
@@ -197,8 +244,12 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
     const bagWrapper = new THREE.Group();
     bagWrapper.visible = true;
     bagWrapper.rotation.y = BAG_FRONT_ROTATION_Y;
-    bagWrapper.position.set(0, -0.07, 0);
     spin.add(bagWrapper);
+
+    let viewerLayout = getViewerLayout(
+      container.clientWidth,
+      container.clientHeight,
+    );
 
     const materialRoots = [0, 1, 2, 3].map(() => {
       const g = createMaterialRoot();
@@ -206,40 +257,64 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
       return g;
     });
 
-    const gltfLoader = new GLTFLoader();
-    const materialModelsReady = [false, false, false, false];
+    let cancelled = false;
 
-    gltfLoader.load(
-      BAG_MODEL_PATH,
-      (gltf) => {
-        bagWrapper.add(fitModelInViewer(gltf.scene));
-      },
-      undefined,
-      (err) => console.error("codebag.glb:", err),
-    );
-
-    for (const [index, path] of Object.entries(MATERIAL_GLB)) {
-      const i = Number(index);
-      gltfLoader.load(
-        path,
-        (gltf) => {
-          const root = materialRoots[i];
-          root.clear();
-          const orient = new THREE.Group();
-          orient.add(gltf.scene);
-          const rot = MATERIAL_MODEL_ROTATION[i];
-          if (rot) orient.rotation.set(rot.x ?? 0, rot.y ?? 0, rot.z ?? 0);
-          root.add(fitModelInViewer(orient, MATERIAL_GLB_VIEWER_TARGET));
-          materialModelsReady[i] = true;
-          if (focusRef.current === i) {
-            setGroupOpacity(root, 1);
-            root.visible = true;
-          }
-        },
-        undefined,
-        (err) => console.error(`GLB ${path}:`, err),
+    function attachMaterialModel(index, gltf) {
+      const root = materialRoots[index];
+      root.clear();
+      const orient = new THREE.Group();
+      orient.add(cloneGltfScene(gltf));
+      const rot = MATERIAL_MODEL_ROTATION[index];
+      if (rot) orient.rotation.set(rot.x ?? 0, rot.y ?? 0, rot.z ?? 0);
+      root.add(
+        fitModelInViewer(
+          orient,
+          index === 3
+            ? MATERIAL_FLOWERS_VIEWER_TARGET
+            : MATERIAL_GLB_VIEWER_TARGET,
+        ),
       );
+      centerGroupAtOrigin(root);
+      if (focusRef.current === index) {
+        setGroupOpacity(root, 1);
+        root.visible = true;
+      }
     }
+
+    void preloadGltf(BAG_MODEL_PATH)
+      .then((gltf) => {
+        if (cancelled) return;
+        bagWrapper.add(
+          fitModelInViewer(
+            cloneGltfScene(gltf),
+            viewerLayout.bagTarget,
+          ),
+        );
+        centerGroupAtOrigin(bagWrapper);
+        setLoading(false);
+        onBagReadyRef.current?.();
+
+        const stagger = window.matchMedia("(max-width: 820px)").matches
+          ? 180
+          : 0;
+
+        for (const [index, path] of Object.entries(MATERIAL_GLB)) {
+          const i = Number(index);
+          window.setTimeout(() => {
+            if (cancelled) return;
+            preloadGltf(path)
+              .then((materialGltf) => {
+                if (cancelled) return;
+                attachMaterialModel(i, materialGltf);
+              })
+              .catch((err) => console.error(`GLB ${path}:`, err));
+          }, stagger * i);
+        }
+      })
+      .catch((err) => {
+        console.error("finalbag.glb:", err);
+        if (!cancelled) setLoading(false);
+      });
 
     const matOpacities = [0, 0, 0, 0];
     let bagOpacity = 1;
@@ -281,7 +356,10 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
 
       const dx = e.clientX - dragStartX;
       const dy = e.clientY - dragStartY;
-      if (!isDragging && (Math.abs(dx) > DRAG_THRESH || Math.abs(dy) > DRAG_THRESH)) {
+      if (
+        !isDragging &&
+        (Math.abs(dx) > DRAG_THRESH || Math.abs(dy) > DRAG_THRESH)
+      ) {
         isDragging = true;
         renderer.domElement.classList.add("is-grabbing");
       }
@@ -327,11 +405,7 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
     renderer.domElement.addEventListener("pointerleave", onPointerLeave);
 
     const onResize = () => {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      viewerLayout = updateCameraLayout();
     };
     window.addEventListener("resize", onResize);
 
@@ -357,7 +431,9 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
       if (bagWrapper.visible) {
         bagWrapper.traverse((child) => {
           if ((child.isMesh || child.isLine) && child.material) {
-            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            const mats = Array.isArray(child.material)
+              ? child.material
+              : [child.material];
             for (const m of mats) {
               if (m && "opacity" in m) {
                 m.transparent = bagOpacity < 1;
@@ -400,6 +476,7 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
     animate();
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
       renderer.domElement.removeEventListener("pointerdown", onDown);
@@ -420,7 +497,9 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
       bagWrapper.traverse((child) => {
         if (child.isMesh) {
           child.geometry?.dispose();
-          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          const mats = Array.isArray(child.material)
+            ? child.material
+            : [child.material];
           mats.forEach((m) => m?.dispose?.());
         }
       });
@@ -432,7 +511,17 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
     };
   }, []);
 
-  return <div ref={mountRef} className="mat-viewer-canvas" />;
+  return (
+    <div className="mat-viewer-canvas-wrap">
+      {loading && (
+        <div className="mat-viewer-loading" aria-live="polite">
+          <span className="mat-viewer-loading__ring" aria-hidden />
+          <span className="mat-viewer-loading__label">Loading 3D model…</span>
+        </div>
+      )}
+      <div ref={mountRef} className="mat-viewer-canvas" />
+    </div>
+  );
 }
 
 function MaterialDetailModal({ material, open, onClose }) {
@@ -454,11 +543,7 @@ function MaterialDetailModal({ material, open, onClose }) {
   if (!open || !material) return null;
 
   return (
-    <div
-      className="mat-modal-backdrop"
-      onClick={onClose}
-      role="presentation"
-    >
+    <div className="mat-modal-backdrop" onClick={onClose} role="presentation">
       <div
         className="mat-modal"
         role="dialog"
@@ -490,7 +575,10 @@ function MaterialDetailModal({ material, open, onClose }) {
           </button>
         </header>
         <div className="mat-modal__body">
-          <span className="mat-modal-num" aria-describedby="mat-modal-sheet-label">
+          <span
+            className="mat-modal-num"
+            aria-describedby="mat-modal-sheet-label"
+          >
             {material.num}
           </span>
           <h2 id="mat-modal-title" className="mat-modal-title">
@@ -519,9 +607,14 @@ export default function Materials() {
   const [detailIndex, setDetailIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuOverlayRef = useRef(null);
+  const mainRef = useRef(null);
+  const revealed = useScrollReveal(mainRef, {
+    heroKeys: MAT_HERO_REVEAL_KEYS,
+  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    preloadGltf(BAG_MODEL_PATH);
   }, []);
 
   const openDetail = useCallback((idx) => {
@@ -538,7 +631,8 @@ export default function Materials() {
     <div
       className="mat-page"
       style={{
-        "--accent": focusMaterial != null ? MATERIALS[focusMaterial].accent : "#c9a0b8",
+        "--accent":
+          focusMaterial != null ? MATERIALS[focusMaterial].accent : "#c9a0b8",
       }}
     >
       <header
@@ -571,17 +665,51 @@ export default function Materials() {
         </div>
       </header>
 
-      <main className="mat-main">
+      <main ref={mainRef} className="mat-main">
         <header className="mat-intro">
-          <p className="mat-intro__eyebrow">Hybrid bag</p>
-          <h1 className="mat-intro__title">How it&apos;s made</h1>
-          <p className="mat-lead">
+          <p
+            data-reveal="intro-eyebrow"
+            className={revealClass(
+              "intro-eyebrow",
+              revealed,
+              "mat-reveal",
+              "mat-intro__eyebrow",
+            )}
+          >
+            Hybrid bag
+          </p>
+          <h1
+            data-reveal="intro-title"
+            className={revealClass(
+              "intro-title",
+              revealed,
+              "mat-reveal",
+              "mat-intro__title",
+              "mat-reveal--d1",
+            )}
+          >
+            How it&apos;s made
+          </h1>
+          <p
+            data-reveal="intro-lead"
+            className={revealClass(
+              "intro-lead",
+              revealed,
+              "mat-reveal",
+              "mat-lead",
+              "mat-reveal--d2",
+            )}
+          >
             Oyster-shell structure, red-cabbage inner bag, recycled textiles and
             flower bioplastics. Pick a layer to explore it in 3D.
           </p>
         </header>
 
-        <section className="mat-stage" aria-label="Material selector">
+        <section
+          aria-label="Material selector"
+          data-reveal="stage"
+          className={revealClass("stage", revealed, "mat-reveal", "mat-stage", "mat-reveal--d1")}
+        >
           <div className="mat-orb-col mat-orb-col--left">
             {leftOrbs.map((m, i) => {
               const idx = i;
@@ -608,7 +736,10 @@ export default function Materials() {
             className={`mat-viewer-wrap${focusMaterial != null ? " mat-viewer-wrap--detail" : ""}`}
           >
             <div className="mat-viewer-glow" aria-hidden />
-            <MaterialsViewer focusMaterial={focusMaterial} onOpenDetail={openDetail} />
+            <MaterialsViewer
+              focusMaterial={focusMaterial}
+              onOpenDetail={openDetail}
+            />
             {focusMaterial != null && (
               <div className="mat-viewer-click-badge" role="status">
                 <svg
@@ -672,15 +803,43 @@ export default function Materials() {
 
         <section className="mat-showcase" aria-label="Material details">
           <header className="mat-section-head">
-            <p className="mat-section-eyebrow">Up close</p>
-            <h2 className="mat-section-title">Each material, in detail</h2>
+            <p
+              data-reveal="showcase-eyebrow"
+              className={revealClass(
+                "showcase-eyebrow",
+                revealed,
+                "mat-reveal",
+                "mat-section-eyebrow",
+              )}
+            >
+              Up close
+            </p>
+            <h2
+              data-reveal="showcase-title"
+              className={revealClass(
+                "showcase-title",
+                revealed,
+                "mat-reveal",
+                "mat-section-title",
+                "mat-reveal--d1",
+              )}
+            >
+              Each material, in detail
+            </h2>
           </header>
 
           <div className="mat-showcase__grid">
             {MATERIALS.map((m, i) => (
               <article
                 key={m.id}
-                className={`mat-showcase__card${i % 2 === 1 ? " mat-showcase__card--flip" : ""}`}
+                data-reveal={`showcase-${m.id}`}
+                className={revealClass(
+                  `showcase-${m.id}`,
+                  revealed,
+                  "mat-reveal",
+                  `mat-showcase__card${i % 2 === 1 ? " mat-showcase__card--flip" : ""}`,
+                  i % 2 === 0 ? "mat-reveal--d1" : "mat-reveal--d2",
+                )}
                 style={{ "--accent": m.accent }}
               >
                 <figure className="mat-showcase__media">
@@ -727,7 +886,15 @@ export default function Materials() {
         </section>
 
         <section className="mat-final" aria-label="The final piece">
-          <div className="mat-final__inner">
+          <div
+            data-reveal="final"
+            className={revealClass(
+              "final",
+              revealed,
+              "mat-reveal",
+              "mat-final__inner",
+            )}
+          >
             <div className="mat-final__media">
               <img
                 src="/materials/bag-final.png"
@@ -744,17 +911,53 @@ export default function Materials() {
               <p className="mat-section-lead">
                 The shell is inspired by ocean corals, 3D-printed in oyster
                 filament with an open organic lattice, light and pleasant to the
-                touch, pierced so the translucent inner bag
-                shows through. The lining is red cabbage bioplastic, sewn on a
-                sewing machine. Handmade flowers, recycled textile, varied red
-                cabbage bioplastics and pearls from a broken necklace, sit on
-                the shell alongside other reclaimed trims.
+                touch, pierced so the translucent inner bag shows through. The
+                lining is red cabbage bioplastic, sewn on a sewing machine.
+                Handmade flowers, recycled textile, varied red cabbage
+                bioplastics and pearls from a broken necklace, sit on the shell
+                alongside other reclaimed trims.
               </p>
             </div>
           </div>
         </section>
 
         <footer className="mat-footer">
+          <p
+            data-reveal="footer-eyebrow"
+            className={revealClass(
+              "footer-eyebrow",
+              revealed,
+              "mat-reveal",
+              "mat-footer__eyebrow",
+            )}
+          >
+            The story
+          </p>
+          <h2
+            data-reveal="footer-title"
+            className={revealClass(
+              "footer-title",
+              revealed,
+              "mat-reveal",
+              "mat-footer__title",
+              "mat-reveal--d1",
+            )}
+          >
+            Meet the maker
+          </h2>
+          <p
+            data-reveal="footer-lead"
+            className={revealClass(
+              "footer-lead",
+              revealed,
+              "mat-reveal",
+              "mat-footer__lead",
+              "mat-reveal--d2",
+            )}
+          >
+            Learn about the Hybrid project, the lab in Brussels, and the
+            thinking behind this bag — from food waste to finished object.
+          </p>
           <Link to="/about" className="cta-button cta-button--inline visible">
             About
           </Link>
@@ -768,10 +971,7 @@ export default function Materials() {
       />
 
       {menuOpen && (
-        <MenuOverlay
-          ref={menuOverlayRef}
-          onClose={() => setMenuOpen(false)}
-        />
+        <MenuOverlay ref={menuOverlayRef} onClose={() => setMenuOpen(false)} />
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { createWaterNormalsTexture } from "../utils/waterNormalsTexture";
 import { loadWaterNormals } from "../utils/loadWaterNormals";
+import { preloadGltf } from "../utils/gltfCache";
 
 /** Durée (en vh) du track de textes affichés sur fond mauve avant l’apparition du sac. */
 export const TEXT_TRACK_BEFORE_BAG_VH = 4;
@@ -80,31 +81,39 @@ const HOTSPOT_REVEAL_END_VH = EMERGENCE_END + 0.55;
 // Position calculée depuis la bbox du modèle pour épouser la silhouette (arc, pas colonne droite).
 const BAG_HOTSPOTS = [
   {
+    num: "01",
     title: "Oyster shell structure",
     body: "Coral-inspired lattice 3D-printed in oyster-shell filament, organic and pleasant to the touch.",
+    accent: "#d4c4a0",
     side: -1,
     heightT: 0.97,
     radialIn: 0.15,
     screenOffset: { x: -18, y: 0 },
   },
   {
+    num: "02",
     title: "Red cabbage bioplastic",
     body: "Inner bag in solid, translucent red cabbage bioplastic, sewn on a sewing machine.",
+    accent: "#b878c8",
     side: -1,
     heightT: 0.5,
     screenOffset: { x: -46, y: 0 },
   },
   {
+    num: "03",
     title: "Recycled textiles",
     body: "Fabric recovered at R-use Fabric in Ixelles, applied as trims on the bag.",
+    accent: "#c49a72",
     side: 1,
     heightT: 0.97,
     radialIn: 0.15,
     screenOffset: { x: 18, y: 0 },
   },
   {
+    num: "04",
     title: "Handmade flowers",
     body: "Flowers made by hand from recycled textile, red cabbage bioplastics and pearls from an old broken necklace.",
+    accent: "#e8a8c4",
     side: 1,
     heightT: 0.5,
     screenOffset: { x: 46, y: 0 },
@@ -573,10 +582,9 @@ export default function BagScene({
     let bagModel = null;
     let bagMaxDim = 1;
 
-    new GLTFLoader().load(
-      "/models/finalbag.glb",
+    void preloadGltf("/models/finalbag.glb").then(
       (gltf) => {
-        const model = gltf.scene;
+        const model = gltf.scene.clone(true);
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
@@ -634,7 +642,6 @@ export default function BagScene({
         bagGroup.rotation.y = BAG_FRONT_ROTATION_Y;
         onReadyRef.current?.();
       },
-      undefined,
       (err) => {
         console.error("finalbag.glb error:", err);
         onReadyRef.current?.();
@@ -1069,6 +1076,7 @@ export default function BagScene({
                   hotspotRefs.current[i] = el;
                 }}
                 className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}${activeHotspot === i ? " product-hotspot--active" : ""}`}
+                style={{ "--hotspot-accent": spot.accent }}
               >
                 <div className="product-hotspot__anchor">
                   <button
@@ -1081,6 +1089,9 @@ export default function BagScene({
                     }
                   />
                   <div className="product-hotspot__panel">
+                    <span className="product-hotspot__eyebrow">
+                      Layer {spot.num}
+                    </span>
                     <h3 className="product-hotspot__title">{spot.title}</h3>
                     <p className="product-hotspot__body">{spot.body}</p>
                   </div>
@@ -1089,27 +1100,41 @@ export default function BagScene({
             ))}
           </div>
           {activeHotspot !== null && (
-            <div
-              className="product-hotspot-mobile-card"
-              role="dialog"
-              aria-labelledby="hotspot-mobile-title"
-            >
+            <>
               <button
                 type="button"
-                className="product-hotspot-mobile-card__close"
-                aria-label="Close"
+                className="product-hotspot-mobile-backdrop"
+                aria-label="Close detail"
                 onClick={() => setActiveHotspot(null)}
               />
-              <h3
-                id="hotspot-mobile-title"
-                className="product-hotspot-mobile-card__title"
+              <div
+                className="product-hotspot-mobile-card"
+                role="dialog"
+                aria-labelledby="hotspot-mobile-title"
+                style={{
+                  "--hotspot-accent": BAG_HOTSPOTS[activeHotspot].accent,
+                }}
               >
-                {BAG_HOTSPOTS[activeHotspot].title}
-              </h3>
-              <p className="product-hotspot-mobile-card__body">
-                {BAG_HOTSPOTS[activeHotspot].body}
-              </p>
-            </div>
+                <button
+                  type="button"
+                  className="product-hotspot-mobile-card__close"
+                  aria-label="Close"
+                  onClick={() => setActiveHotspot(null)}
+                />
+                <span className="product-hotspot-mobile-card__eyebrow">
+                  Layer {BAG_HOTSPOTS[activeHotspot].num}
+                </span>
+                <h3
+                  id="hotspot-mobile-title"
+                  className="product-hotspot-mobile-card__title"
+                >
+                  {BAG_HOTSPOTS[activeHotspot].title}
+                </h3>
+                <p className="product-hotspot-mobile-card__body">
+                  {BAG_HOTSPOTS[activeHotspot].body}
+                </p>
+              </div>
+            </>
           )}
         </>
       )}

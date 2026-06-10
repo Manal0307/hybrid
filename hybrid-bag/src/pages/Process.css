@@ -196,12 +196,7 @@
   margin: 0;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: linear-gradient(
-    138deg,
-    color-mix(in srgb, var(--accent, #c9a0b8) 20%, #fffdfe) 0%,
-    color-mix(in srgb, var(--accent, #c9a0b8) 38%, #f4e6ee) 70%,
-    color-mix(in srgb, var(--accent, #c9a0b8) 26%, #e8d4e2) 100%
-  );
+  background: #f3f1ef;
 }
 
 .proc-tile__media img {
@@ -211,21 +206,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-/* Voile beige / rosé — visible par-dessus la photo (comme avant sans image) */
-.proc-tile__media::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    138deg,
-    color-mix(in srgb, var(--accent, #e8d0c8) 22%, rgba(255, 253, 250, 0.72)) 0%,
-    color-mix(in srgb, var(--accent, #d4b8a8) 38%, rgba(244, 230, 220, 0.55)) 55%,
-    color-mix(in srgb, var(--accent, #c9a890) 28%, rgba(232, 216, 200, 0.62)) 100%
-  );
 }
 
 .proc-tile__family {
@@ -328,13 +308,17 @@
 .proc-video__frame--portrait {
   width: 100%;
   max-width: min(44rem, 84vw);
+  aspect-ratio: 9 / 16;
+  max-height: min(72vh, 680px);
 }
 
 .proc-video__frame--portrait .proc-video__media {
   display: block;
   width: 100%;
-  height: auto;
-  background: transparent;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: #f3e8f0;
 }
 
 .proc-video__placeholder {
@@ -367,7 +351,37 @@
 .proc-footer {
   margin-top: 6rem;
   padding: 2.5rem 1rem 4rem;
+  max-width: 36rem;
+  margin-inline: auto;
   text-align: center;
+}
+
+.proc-footer__eyebrow {
+  font-size: 0.66rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--proc-mauve);
+  margin-bottom: 0.55rem;
+}
+
+.proc-footer__title {
+  font-family: "CaligulaDodgy", "Figtree", sans-serif;
+  font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--proc-ink);
+  line-height: 1.2;
+  margin-bottom: 0.9rem;
+}
+
+.proc-footer__lead {
+  margin: 0 auto 1.75rem;
+  max-width: 32rem;
+  font-size: clamp(0.85rem, 1.2vw, 0.95rem);
+  line-height: 1.75;
+  letter-spacing: 0.04em;
+  color: var(--proc-ink-soft);
 }
 
 .proc-footer .cta-button--inline {
@@ -483,12 +497,7 @@
   position: relative;
   margin: 1.35rem -1.6rem 1.5rem;
   aspect-ratio: 16 / 9;
-  background: linear-gradient(
-    138deg,
-    color-mix(in srgb, var(--accent, #c9a0b8) 22%, #fffdfe) 0%,
-    color-mix(in srgb, var(--accent, #c9a0b8) 40%, #f4e6ee) 65%,
-    color-mix(in srgb, var(--accent, #c9a0b8) 28%, #e8d4e2) 100%
-  );
+  background: #f3f1ef;
   border-block: 1px solid var(--proc-line);
   overflow: hidden;
 }
@@ -500,20 +509,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.proc-modal__media::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    138deg,
-    color-mix(in srgb, var(--accent, #e8d0c8) 18%, rgba(255, 253, 250, 0.65)) 0%,
-    color-mix(in srgb, var(--accent, #d4b8a8) 32%, rgba(244, 230, 220, 0.48)) 55%,
-    color-mix(in srgb, var(--accent, #c9a890) 24%, rgba(232, 216, 200, 0.55)) 100%
-  );
 }
 
 .proc-modal__title {
@@ -662,6 +657,32 @@
 @media (max-width: 700px) {
   .proc-main {
     padding-top: 5rem;
+  }
+
+  .proc-section {
+    margin-top: 3rem;
+  }
+
+  .proc-section--alt {
+    margin-top: 3.5rem;
+  }
+
+  .proc-reveal {
+    transform: translateY(14px);
+    transition-duration: 0.82s cubic-bezier(0.32, 1, 0.36, 1);
+  }
+
+  .proc-reveal--d1 {
+    transition-delay: 0.05s;
+  }
+
+  .proc-reveal--d2 {
+    transition-delay: 0.1s;
+  }
+
+  .proc-video__frame--portrait {
+    max-width: min(22rem, 92vw);
+    max-height: min(68vh, 620px);
   }
 
   .proc-grid--4 {

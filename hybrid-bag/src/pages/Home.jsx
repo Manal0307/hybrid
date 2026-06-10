@@ -24,8 +24,8 @@ const TEXT_TRACK_VH = TEXT_TRACK_BEFORE_BAG_VH;
 const FADE_OUT_START = TEXT_TRACK_VH - 0.6;
 const FADE_OUT_END = BAG_START_VH + 0.4;
 
-/** Spacer calculé pour que la page se termine pile au scroll lock — pas de clamp brutal. */
-const SPACER2_VH = Math.max(0, SCROLL_LOCK_VH - TEXT_TRACK_VH);
+/** Spacer : hauteur page = (TEXT + SPACER) × 100vh ; scroll max = SCROLL_LOCK_VH × innerHeight. */
+const SPACER2_VH = Math.max(0, SCROLL_LOCK_VH - TEXT_TRACK_VH + 1);
 
 /** Titre « Hybrid Handbag » : visible sur l’eau, disparaît quand le sac émerge. */
 const BAG_EMERGENCE_START_VH = BAG_START_VH + EMERGENCE_START;
@@ -107,6 +107,8 @@ export default function Home() {
   const [hybridHeroOpacity, setHybridHeroOpacity] = useState(0);
   const menuOverlayRef = useRef(null);
   const textTrackRef = useRef(null);
+  const bagSceneLatchedRef = useRef(skipIntro);
+  const fadeClearedRef = useRef(skipIntro);
 
   useEffect(() => {
     if (skipIntro || phase === "loadingExit" || phase === "scene") {
@@ -234,9 +236,11 @@ export default function Home() {
 
   useEffect(() => {
     if (phase !== "scene") {
+      document.documentElement.classList.remove("home-bag-scene");
       document.body.classList.remove("home-bag-scene");
       return;
     }
+    document.documentElement.classList.toggle("home-bag-scene", bagSceneVisible);
     document.body.classList.toggle("home-bag-scene", bagSceneVisible);
 
     let themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -251,6 +255,7 @@ export default function Home() {
     );
 
     return () => {
+      document.documentElement.classList.remove("home-bag-scene");
       document.body.classList.remove("home-bag-scene");
       themeMeta.setAttribute("content", "#cdb8c8");
     };
@@ -270,12 +275,13 @@ export default function Home() {
       const yVh = y / vh;
 
       let nextFade;
-      if (yVh <= FADE_OUT_START) {
-        nextFade = 1;
-      } else if (yVh < FADE_OUT_END) {
-        nextFade = 1 - smoothstep(FADE_OUT_START, FADE_OUT_END, yVh);
-      } else {
+      if (fadeClearedRef.current || yVh >= FADE_OUT_END) {
+        fadeClearedRef.current = true;
         nextFade = 0;
+      } else if (yVh <= FADE_OUT_START) {
+        nextFade = 1;
+      } else {
+        nextFade = 1 - smoothstep(FADE_OUT_START, FADE_OUT_END, yVh);
       }
       setFadeOpacity(nextFade);
 
@@ -292,8 +298,15 @@ export default function Home() {
 
       setHybridHeroOpacity(skipIntro ? 0 : getHybridHeroOpacity(yVh));
 
-      setProductVisible(y >= PRODUCT_REVEAL_VH * vh);
-      setBagSceneVisible(yVh >= FADE_OUT_START);
+      const atProduct = y >= PRODUCT_REVEAL_VH * vh;
+      if (yVh >= FADE_OUT_START || atProduct) {
+        bagSceneLatchedRef.current = true;
+      } else if (yVh < FADE_OUT_START - 0.8) {
+        bagSceneLatchedRef.current = false;
+        fadeClearedRef.current = false;
+      }
+      setBagSceneVisible(bagSceneLatchedRef.current);
+      setProductVisible(atProduct);
       if (uiIntroReady) {
         setScrollHintVisible(yVh < BAG_START_VH + 0.5);
       }

@@ -538,7 +538,7 @@ export default function About() {
           aria-labelledby="about-mission"
         >
           <h2 id="about-mission" className="about-block__title">
-            Our mission
+            My mission
           </h2>
           <p
             data-reveal="mission-p1"
@@ -549,7 +549,7 @@ export default function About() {
               "about-reveal--d1",
             )}
           >
-            We believe waste is not an endpoint. Oyster shells, cabbage
+            I believe waste is not an endpoint. Oyster shells, cabbage
             bioplastics, recycled fabrics. Each material tells a story of second
             chances. Hybrid proves that a contemporary bag can be beautiful,
             functional and circular by design.
