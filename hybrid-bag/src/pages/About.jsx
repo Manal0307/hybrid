@@ -36,15 +36,21 @@ const SOCIAL_LINKS = [
   },
 ];
 
-/** URLs TikTok résolues depuis vm.tiktok.com (@hybridspace) */
-const TIKTOK_VIDEOS = [
+/** Clips behind-the-scenes — vidéos Cloudinary, clic → TikTok */
+const BEHIND_THE_SCENES_CLIPS = [
   {
-    url: "https://www.tiktok.com/@hybridspace/video/7634110651274743073",
     caption: "Bioplastic demolding",
+    videoUrl:
+      "https://res.cloudinary.com/deq5iutqv/video/upload/v1780955255/e4bb52f117194f798b08342a9a584aec_vg0uqg.mov",
+    tiktokUrl:
+      "https://www.tiktok.com/@hybridspace/video/7634110651274743073",
   },
   {
-    url: "https://www.tiktok.com/@hybridspace/photo/7633799617225690400",
     caption: "Hybrid lab",
+    videoUrl:
+      "https://res.cloudinary.com/deq5iutqv/video/upload/v1780955283/63b56c1b7a2c4688bacad1a8803f83f3_al1pmj.mov",
+    tiktokUrl:
+      "https://www.tiktok.com/@hybridspace/photo/7633799617225690400",
   },
 ];
 
@@ -86,11 +92,6 @@ function SocialIcon({ id }) {
   );
 }
 
-function tiktokEmbedId(url) {
-  const match = url.match(/\/(?:video|photo)\/(\d+)/);
-  return match ? match[1] : null;
-}
-
 function revealCls(id, revealed, ...extra) {
   return [
     "about-reveal",
@@ -101,9 +102,10 @@ function revealCls(id, revealed, ...extra) {
     .join(" ");
 }
 
-function AboutTikTokCarousel({ videos, revealed }) {
-  const slides = videos.filter((v) => tiktokEmbedId(v.url));
+function AboutClipsCarousel({ clips, revealed }) {
+  const slides = clips.filter((c) => c.videoUrl);
   const [index, setIndex] = useState(0);
+  const videoRefs = useRef([]);
 
   const go = useCallback(
     (dir) => {
@@ -112,6 +114,10 @@ function AboutTikTokCarousel({ videos, revealed }) {
     },
     [slides.length],
   );
+
+  const selectSlide = useCallback((i) => {
+    setIndex(i);
+  }, []);
 
   useEffect(() => {
     if (!slides.length) return;
@@ -122,6 +128,23 @@ function AboutTikTokCarousel({ videos, revealed }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [go, slides.length]);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduceMotion) return;
+
+    videoRefs.current.forEach((video, i) => {
+      if (!video) return;
+      if (i === index) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
+  }, [index, slides.length]);
 
   const slide = slides[index];
   const hasVideos = slides.length > 0;
@@ -174,31 +197,40 @@ function AboutTikTokCarousel({ videos, revealed }) {
               className="about-gallery__track"
               style={{ transform: `translateX(-${index * 100}%)` }}
             >
-              {slides.map((item, i) => {
-                const id = tiktokEmbedId(item.url);
-                return (
-                  <figure
-                    key={item.url}
-                    className="about-gallery__slide about-gallery__slide--video"
+              {slides.map((item, i) => (
+                <figure
+                  key={item.tiktokUrl + item.caption}
+                  className="about-gallery__slide about-gallery__slide--video"
+                >
+                  <a
+                    href={item.tiktokUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="about-gallery__clip-link"
+                    aria-label={`${item.caption} — view on TikTok`}
                   >
-                    {i === index && id && (
-                      <iframe
-                        title={item.caption || `TikTok video ${i + 1}`}
-                        src={`https://www.tiktok.com/embed/v2/${id}?lang=en`}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                        allowFullScreen
-                        loading="lazy"
-                      />
-                    )}
-                  </figure>
-                );
-              })}
+                    <video
+                      ref={(el) => {
+                        videoRefs.current[i] = el;
+                      }}
+                      className="about-gallery__clip-video"
+                      src={item.videoUrl}
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                    />
+                    <span className="about-gallery__clip-badge">
+                      View on TikTok
+                    </span>
+                  </a>
+                </figure>
+              ))}
             </div>
           ) : (
             <div className="about-gallery__empty">
               <p className="about-gallery__empty-text">
-                TikTok videos will appear here once their links are added to the
-                site.
+                Clips from the lab will appear here soon.
               </p>
               <div className="about-gallery__profile-links">
                 <a
@@ -261,7 +293,7 @@ function AboutTikTokCarousel({ videos, revealed }) {
                 className={`about-gallery__dot${i === index ? " is-active" : ""}`}
                 aria-selected={i === index}
                 aria-label={`Video ${i + 1}`}
-                onClick={() => setIndex(i)}
+                onClick={() => selectSlide(i)}
               />
             ))}
           </div>
@@ -537,7 +569,7 @@ export default function About() {
           </p>
         </section>
 
-        <AboutTikTokCarousel videos={TIKTOK_VIDEOS} revealed={revealed} />
+        <AboutClipsCarousel clips={BEHIND_THE_SCENES_CLIPS} revealed={revealed} />
 
         <section
           data-reveal="faq"

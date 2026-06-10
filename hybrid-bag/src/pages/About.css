@@ -146,6 +146,49 @@
   display: block;
 }
 
+.about-gallery__clip-link {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.about-gallery__clip-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #0f0f0f;
+}
+
+.about-gallery__clip-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 248, 242, 0.35);
+  background: rgba(20, 16, 22, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff8f2;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.about-gallery__clip-link:hover .about-gallery__clip-badge,
+.about-gallery__clip-link:focus-visible .about-gallery__clip-badge {
+  background: rgba(20, 16, 22, 0.72);
+  border-color: rgba(255, 248, 242, 0.55);
+}
+
 .about-gallery__empty {
   display: flex;
   flex-direction: column;

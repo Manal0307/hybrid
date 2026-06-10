@@ -797,27 +797,8 @@ export default function Process() {
         </section>
 
         <footer className="proc-footer">
-          <Link
-            to={homeBagLink.pathname}
-            state={homeBagLink.state}
-            className="proc-footer__link"
-          >
-            Back to home
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden
-            >
-              <path
-                d="M3 8h10M8 3l5 5-5 5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+          <Link to="/process" className="cta-button cta-button--inline visible">
+            How it&apos;s made
           </Link>
         </footer>
       </main>

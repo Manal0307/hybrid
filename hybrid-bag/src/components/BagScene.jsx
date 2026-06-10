@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Water } from "../lib/Water.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -21,9 +21,18 @@ const SUN_AZIMUTH = 180;
 
 /** finalbag.glb : face avant (fleurs + trous) vers la caméra */
 const BAG_FRONT_ROTATION_Y = -Math.PI / 2;
-const CAMERA_POS = new THREE.Vector3(0, 0.28, 2.35);
 const CAMERA_LOOK = new THREE.Vector3(0, 0.52, -1.85);
-const CAMERA_FOV = 42;
+
+/** Sac + caméra : plus petits / reculés sur écrans étroits (iPhone portrait). */
+function getViewportLayout(viewWidth, viewHeight) {
+  const aspect = viewWidth / viewHeight;
+  const narrow = 1 - THREE.MathUtils.smoothstep(aspect, 0.58, 0.92);
+  return {
+    bagTargetDim: THREE.MathUtils.lerp(1.45, 1.12, narrow),
+    cameraZ: THREE.MathUtils.lerp(2.35, 2.62, narrow),
+    cameraFov: THREE.MathUtils.lerp(42, 44, narrow),
+  };
+}
 
 const EMERGENCE_START = 0.35; // localY en vh
 const EMERGENCE_END = 1.25;
@@ -73,39 +82,61 @@ const BAG_HOTSPOTS = [
     body: "Coral-inspired lattice 3D-printed in oyster-shell filament, organic and pleasant to the touch.",
     side: -1,
     heightT: 0.97,
-    screenOffset: { x: -34, y: 0 },
+    radialIn: 0.15,
+    screenOffset: { x: -18, y: 0 },
   },
   {
     title: "Red cabbage bioplastic",
     body: "Inner bag in solid, translucent red cabbage bioplastic, sewn on a sewing machine.",
     side: -1,
     heightT: 0.50,
-    screenOffset: { x: -38, y: 0 },
+    screenOffset: { x: -46, y: 0 },
   },
   {
     title: "Recycled textiles",
     body: "Fabric recovered at R-use Fabric in Ixelles, applied as trims on the bag.",
     side: 1,
     heightT: 0.97,
-    screenOffset: { x: 34, y: 0 },
+    radialIn: 0.15,
+    screenOffset: { x: 18, y: 0 },
   },
   {
     title: "Handmade flowers",
     body: "Flowers made by hand from recycled textile, red cabbage bioplastics and pearls from an old broken necklace.",
     side: 1,
     heightT: 0.50,
-    screenOffset: { x: 38, y: 0 },
+    screenOffset: { x: 46, y: 0 },
   },
 ];
 
 /** Offset local (espace sac) : arc autour du sac, marge plus large pour le nouveau modèle. */
-function computeHotspotLocalOffset(side, heightT, halfW, bagH, radialIn = 0) {
+function computeHotspotLocalOffset(
+  side,
+  heightT,
+  halfW,
+  bagH,
+  radialIn = 0,
+  radialOut = 0,
+) {
   const yLocal = bagH * THREE.MathUtils.lerp(0.30, 0.95, heightT);
   const curve = Math.pow(1 - heightT, 1.28);
-  const margin = Math.max(0.06, 0.18 + curve * 0.24 - radialIn);
+  const margin = Math.max(0.06, 0.17 + curve * 0.22 - radialIn + radialOut);
   const xLocal = side * (halfW + margin);
   const zLocal = 0.02 + curve * 0.05;
   return new THREE.Vector3(xLocal, yLocal, zLocal);
+}
+
+function getHotspotViewportAdjust(viewWidth, viewHeight) {
+  const aspect = viewWidth / viewHeight;
+  const narrow = 1 - THREE.MathUtils.smoothstep(aspect, 0.58, 0.92);
+  return {
+    narrow,
+    radialIn: 0,
+    radialOut: narrow * 0.1,
+    offsetScale: THREE.MathUtils.lerp(1, 0.85, narrow),
+    edgePadX: 28,
+    edgePadY: 96,
+  };
 }
 
 // ─── Utilitaires ─────────────────────────────────────────────────────────────
@@ -326,6 +357,7 @@ export default function BagScene({
   const containerRef = useRef(null);
   const hotspotRefs = useRef([]);
   const rotateHintRef = useRef(null);
+  const [activeHotspot, setActiveHotspot] = useState(null);
   const onReadyRef = useRef(onReady);
   const phaseRef = useRef(phase);
   const snapRef = useRef(snapToProduct);
@@ -352,7 +384,7 @@ export default function BagScene({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x120818, 1);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     container.appendChild(renderer.domElement);
     const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
     // Caché par défaut — le RAF démarre un peu avant BAG_START_VH (sac déjà rendu sous le voile)
@@ -372,14 +404,39 @@ export default function BagScene({
     // Brume sombre type crépuscule — profondeur, contraste avec l'horizon lumineux
     scene.fog = new THREE.FogExp2(0x1e1428, 0.00155);
 
+    const viewport = getViewportLayout(
+      container.clientWidth,
+      container.clientHeight,
+    );
+
     const camera = new THREE.PerspectiveCamera(
-      CAMERA_FOV,
+      viewport.cameraFov,
       container.clientWidth / container.clientHeight,
       0.05,
       20000,
     );
-    camera.position.copy(CAMERA_POS);
+    camera.position.set(0, 0.28, viewport.cameraZ);
     camera.lookAt(CAMERA_LOOK);
+
+    let currentLayout = viewport;
+
+    function applyViewportLayout(w, h) {
+      currentLayout = getViewportLayout(w, h);
+      camera.fov = currentLayout.cameraFov;
+      camera.aspect = w / h;
+      camera.position.set(0, 0.28, currentLayout.cameraZ);
+      camera.updateProjectionMatrix();
+      camera.lookAt(CAMERA_LOOK);
+      heroTitle.fitToView(camera, w, h);
+
+      if (bagModel && bagAnim.loaded && bagAnim.baseSize) {
+        const s = currentLayout.bagTargetDim / bagMaxDim;
+        bagModel.scale.setScalar(s);
+        bagAnim.halfW = (bagAnim.baseSize.x * s) / 2;
+        bagAnim.height = bagAnim.baseSize.y * s;
+        bagAnim.yBottom = -(bagAnim.baseSize.y * s + 0.5);
+      }
+    }
 
     const heroTitle = createHeroTitleMesh();
     scene.add(heroTitle.mesh);
@@ -509,7 +566,11 @@ export default function BagScene({
       loaded: false,
       halfW: 0.42,
       height: 1.2,
+      baseSize: null,
     };
+
+    let bagModel = null;
+    let bagMaxDim = 1;
 
     new GLTFLoader().load(
       "/models/finalbag.glb",
@@ -519,7 +580,14 @@ export default function BagScene({
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
-        const s = 1.45 / maxDim;
+        bagModel = model;
+        bagMaxDim = maxDim;
+        bagAnim.baseSize = size.clone();
+        const layout = getViewportLayout(
+          container.clientWidth,
+          container.clientHeight,
+        );
+        const s = layout.bagTargetDim / maxDim;
         model.scale.setScalar(s);
         model.position.set(
           -center.x * s,
@@ -787,7 +855,7 @@ export default function BagScene({
         }
       }
 
-      camera.position.copy(CAMERA_POS);
+      camera.position.set(0, 0.28, currentLayout.cameraZ);
       camera.lookAt(CAMERA_LOOK);
 
       if (bagAnim.loaded) {
@@ -852,6 +920,7 @@ export default function BagScene({
         // autour de lui même quand on le fait tourner au drag.
         const w = container.clientWidth;
         const h = container.clientHeight;
+        const hotspotAdjust = getHotspotViewportAdjust(w, h);
 
         BAG_HOTSPOTS.forEach((spot, i) => {
           const el = hotspotRefs.current[i];
@@ -862,6 +931,7 @@ export default function BagScene({
             el.style.visibility = "hidden";
             el.style.pointerEvents = "none";
             el.setAttribute("aria-hidden", "true");
+            el.removeAttribute("data-panel-above");
           };
 
           if (!isProduct || hotspotOpacity <= 0) {
@@ -876,6 +946,7 @@ export default function BagScene({
               bagAnim.halfW,
               bagAnim.height,
               spot.radialIn ?? 0,
+              hotspotAdjust.radialOut,
             ),
           );
           worldHotspot.x += bagGroup.position.x;
@@ -885,17 +956,31 @@ export default function BagScene({
           if (
             worldHotspot.z < -1 ||
             worldHotspot.z > 1 ||
-            Math.abs(worldHotspot.x) > 1.1 ||
-            Math.abs(worldHotspot.y) > 1.1
+            Math.abs(worldHotspot.x) > 1.15 ||
+            Math.abs(worldHotspot.y) > 1.15
           ) {
             hide();
             return;
           }
 
-          const sx = spot.screenOffset?.x ?? 0;
-          const sy = spot.screenOffset?.y ?? 0;
-          el.style.left = `${(worldHotspot.x * 0.5 + 0.5) * w + sx}px`;
-          el.style.top = `${(-worldHotspot.y * 0.5 + 0.5) * h + sy}px`;
+          const sx = (spot.screenOffset?.x ?? 0) * hotspotAdjust.offsetScale;
+          const sy = (spot.screenOffset?.y ?? 0) * hotspotAdjust.offsetScale;
+          let pinX = (worldHotspot.x * 0.5 + 0.5) * w + sx;
+          let pinY = (-worldHotspot.y * 0.5 + 0.5) * h + sy;
+
+          if (hotspotAdjust.narrow > 0.05) {
+            pinX = THREE.MathUtils.clamp(pinX, hotspotAdjust.edgePadX, w - hotspotAdjust.edgePadX);
+            pinY = THREE.MathUtils.clamp(
+              pinY,
+              hotspotAdjust.edgePadY,
+              h - hotspotAdjust.edgePadY - 120,
+            );
+          } else {
+            el.removeAttribute("data-panel-above");
+          }
+
+          el.style.left = `${pinX}px`;
+          el.style.top = `${pinY}px`;
           el.style.opacity = String(hotspotOpacity);
           el.style.setProperty(
             "--hotspot-scale",
@@ -920,15 +1005,13 @@ export default function BagScene({
     function onResize() {
       const w = container.clientWidth;
       const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
       renderer.setSize(w, h);
       composer.setSize(w, h);
       const mb = getWaterMirrorBufferSize(renderer);
       water.setMirrorRenderTargetSize(mb.w, mb.h);
       heroTitle.draw();
       heroTitle.texture.needsUpdate = true;
-      heroTitle.fitToView(camera, w, h);
+      applyViewportLayout(w, h);
     }
     window.addEventListener("resize", onResize);
 
@@ -973,13 +1056,17 @@ export default function BagScene({
             ref={(el) => {
               hotspotRefs.current[i] = el;
             }}
-            className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}`}
+            className={`product-hotspot${spot.side < 0 ? " product-hotspot--left" : " product-hotspot--right"}${activeHotspot === i ? " product-hotspot--active" : ""}`}
           >
             <div className="product-hotspot__anchor">
               <button
                 type="button"
                 className="product-hotspot__pin"
                 aria-label={spot.title}
+                aria-expanded={activeHotspot === i}
+                onClick={() =>
+                  setActiveHotspot((prev) => (prev === i ? null : i))
+                }
               />
               <div className="product-hotspot__panel">
                 <h3 className="product-hotspot__title">{spot.title}</h3>
@@ -989,6 +1076,29 @@ export default function BagScene({
           </div>
         ))}
       </div>
+      {activeHotspot !== null && (
+        <div
+          className="product-hotspot-mobile-card"
+          role="dialog"
+          aria-labelledby="hotspot-mobile-title"
+        >
+          <button
+            type="button"
+            className="product-hotspot-mobile-card__close"
+            aria-label="Close"
+            onClick={() => setActiveHotspot(null)}
+          />
+          <h3
+            id="hotspot-mobile-title"
+            className="product-hotspot-mobile-card__title"
+          >
+            {BAG_HOTSPOTS[activeHotspot].title}
+          </h3>
+          <p className="product-hotspot-mobile-card__body">
+            {BAG_HOTSPOTS[activeHotspot].body}
+          </p>
+        </div>
+      )}
       </>
       )}
     </>

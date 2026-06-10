@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import MenuOverlay from "../components/MenuOverlay";
 import SoundButton from "../components/SoundButton";
 import { homeBagLink } from "../utils/homeNav";
@@ -178,7 +178,7 @@ function MaterialsViewer({ focusMaterial, onOpenDetail }) {
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     pmrem.compileEquirectangularShader();
-    new RGBELoader().load(HDRI_PATH, (tex) => {
+    new HDRLoader().load(HDRI_PATH, (tex) => {
       tex.mapping = THREE.EquirectangularReflectionMapping;
       scene.environment = pmrem.fromEquirectangular(tex).texture;
     });
@@ -604,7 +604,9 @@ export default function Materials() {
             })}
           </div>
 
-          <div className="mat-viewer-wrap">
+          <div
+            className={`mat-viewer-wrap${focusMaterial != null ? " mat-viewer-wrap--detail" : ""}`}
+          >
             <div className="mat-viewer-glow" aria-hidden />
             <MaterialsViewer focusMaterial={focusMaterial} onOpenDetail={openDetail} />
             {focusMaterial != null && (
@@ -632,7 +634,7 @@ export default function Materials() {
             >
               {focusMaterial == null
                 ? "Drag to rotate the bag in 3D, or pick a material on the sides"
-                : "Drag to rotate in 3D · click without dragging for the full sheet"}
+                : "Drag to rotate · tap the shape for the full sheet"}
             </p>
             {focusMaterial != null && (
               <button
@@ -753,21 +755,8 @@ export default function Materials() {
         </section>
 
         <footer className="mat-footer">
-          <Link
-            to={homeBagLink.pathname}
-            state={homeBagLink.state}
-            className="mat-footer-link"
-          >
-            Back to home
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <path
-                d="M3 8h10M8 3l5 5-5 5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+          <Link to="/about" className="cta-button cta-button--inline visible">
+            About
           </Link>
         </footer>
       </main>

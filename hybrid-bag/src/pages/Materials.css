@@ -322,10 +322,16 @@
 
 /* ─── Footer ───────────────────────────────────────────────────────────────── */
 .mat-footer {
-  margin-top: 3.5rem;
-  padding-top: 2.5rem;
-  border-top: 1px solid var(--mat-line-soft);
+  margin-top: 6rem;
+  padding: 2.5rem 1rem 4rem;
   text-align: center;
+}
+
+.mat-footer .cta-button--inline {
+  position: static;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -588,36 +594,6 @@
   margin-bottom: 1.2rem;
 }
 
-/* ─── Footer ───────────────────────────────────────────────────────────────── */
-.mat-footer {
-  margin-top: 6rem;
-  padding-top: 2.5rem;
-  border-top: 1px solid var(--mat-line-soft);
-  text-align: center;
-}
-
-.mat-footer-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--mat-brown);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(154, 128, 112, 0.28);
-  padding-bottom: 0.35rem;
-  transition:
-    gap 0.25s,
-    color 0.25s;
-}
-
-.mat-footer-link:hover {
-  gap: 1rem;
-  color: var(--mat-brown-dark);
-}
-
-/* ─── Modale ───────────────────────────────────────────────────────────────── */
 .mat-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -837,7 +813,34 @@
 
   .mat-viewer-wrap {
     order: -1;
-    height: min(54vh, 460px);
+    height: min(58vh, 500px);
+    min-height: 400px;
+  }
+
+  .mat-viewer-wrap--detail .mat-reset-bag {
+    top: 0.7rem;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100% - 1.5rem);
+    white-space: nowrap;
+  }
+
+  .mat-viewer-wrap--detail .mat-viewer-click-badge {
+    display: none;
+  }
+
+  .mat-viewer-hint {
+    bottom: 1rem;
+    width: calc(100% - 2rem);
+    font-size: 0.54rem;
+    letter-spacing: 0.1em;
+    line-height: 1.5;
+  }
+
+  .mat-viewer-hint--detail {
+    letter-spacing: 0.09em;
+    max-width: none;
   }
 
   .mat-showcase__card,
@@ -868,6 +871,23 @@
 }
 
 @media (max-width: 520px) {
+  .mat-viewer-wrap {
+    min-height: 420px;
+    height: min(62vh, 520px);
+  }
+
+  .mat-viewer-hint {
+    font-size: 0.5rem;
+    letter-spacing: 0.08em;
+    line-height: 1.55;
+  }
+
+  .mat-reset-bag {
+    font-size: 0.54rem;
+    letter-spacing: 0.12em;
+    padding: 0.5rem 0.85rem;
+  }
+
   .mat-modal-specs {
     grid-template-columns: 1fr;
   }

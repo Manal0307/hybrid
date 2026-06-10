@@ -366,30 +366,15 @@
 /* ─── Footer ───────────────────────────────────────────────────────────── */
 .proc-footer {
   margin-top: 6rem;
-  padding-top: 2.5rem;
-  border-top: 1px solid var(--proc-line);
+  padding: 2.5rem 1rem 4rem;
   text-align: center;
 }
 
-.proc-footer__link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--proc-mauve);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(143, 122, 144, 0.35);
-  padding-bottom: 0.35rem;
-  transition:
-    gap 0.25s,
-    color 0.25s;
-}
-
-.proc-footer__link:hover {
-  gap: 1rem;
-  color: var(--proc-ink);
+.proc-footer .cta-button--inline {
+  position: static;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
