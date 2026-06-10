@@ -17,7 +17,7 @@ const HDRI_PATH = new URL(
 const BAG_MODEL_PATH = "/models/finalbag.glb";
 const FILAMENT_MODEL_PATH = "/models/filament.glb";
 const INNERBAG_MODEL_PATH = "/models/innerbag.glb";
-const TISSU_MODEL_PATH = "/models/tissu.glb";
+const TEXTIEL_MODEL_PATH = "/models/textiel.glb";
 const FLOWERS_MODEL_PATH = "/models/flowers.glb";
 const MATERIAL_VIEWER_TARGET = 1.58;
 /** GLB + maquettes matière dans le viewer */
@@ -53,11 +53,11 @@ function centerGroupAtOrigin(group) {
 const MATERIAL_GLB = {
   0: FILAMENT_MODEL_PATH,
   1: INNERBAG_MODEL_PATH,
-  2: TISSU_MODEL_PATH,
+  2: TEXTIEL_MODEL_PATH,
   3: FLOWERS_MODEL_PATH,
 };
 
-/** Rotation initiale par matière (tissu exporté à plat → dressé face caméra) */
+/** Rotation initiale par matière (textiel exporté à plat → dressé face caméra) */
 const MATERIAL_MODEL_ROTATION = {
   2: { x: -Math.PI / 2, y: Math.PI, z: 0 },
 };
