@@ -13,6 +13,7 @@ import {
   playWaterAudio,
   preloadAmbientAudio,
   primeAmbientAudio,
+  unmutePrimedAmbient,
 } from "../utils/ambientAudio";
 
 const AmbientSoundContext = createContext(null);
@@ -26,6 +27,8 @@ export function AmbientSoundProvider({ children }) {
   const unlockedRef = useRef(false);
   const mutedRef = useRef(false);
   const waterActiveRef = useRef(false);
+  const homeReadyRef = useRef(false);
+  const dreamyPrimedRef = useRef(false);
 
   const applyDreamy = useCallback(() => {
     if (mutedRef.current || !unlockedRef.current) return;
@@ -45,6 +48,30 @@ export function AmbientSoundProvider({ children }) {
     applyDreamy();
     applyWater();
   }, [applyDreamy, applyWater]);
+
+  const attemptAutoStart = useCallback(() => {
+    if (mutedRef.current) return;
+
+    if (
+      dreamyPrimedRef.current &&
+      unmutePrimedAmbient(VOLUME, WATER_VOLUME, waterActiveRef.current)
+    ) {
+      unlockedRef.current = true;
+      setUnlocked(true);
+      return;
+    }
+
+    if (!unlockedRef.current) {
+      unlockedRef.current = true;
+      setUnlocked(true);
+    }
+    applyAll();
+  }, [applyAll]);
+
+  const notifyHomeLoadReady = useCallback(() => {
+    homeReadyRef.current = true;
+    attemptAutoStart();
+  }, [attemptAutoStart]);
 
   const unlock = useCallback(() => {
     if (unlockedRef.current) {
@@ -83,8 +110,11 @@ export function AmbientSoundProvider({ children }) {
 
   useEffect(() => {
     preloadAmbientAudio();
-    void primeAmbientAudio();
-  }, []);
+    void primeAmbientAudio().then((dreamyStarted) => {
+      dreamyPrimedRef.current = dreamyStarted;
+      if (homeReadyRef.current) attemptAutoStart();
+    });
+  }, [attemptAutoStart]);
 
   useEffect(() => {
     const onInteract = () => {
@@ -111,7 +141,14 @@ export function AmbientSoundProvider({ children }) {
 
   return (
     <AmbientSoundContext.Provider
-      value={{ muted, unlocked, toggleMuted, unlock, setWaterActive }}
+      value={{
+        muted,
+        unlocked,
+        toggleMuted,
+        unlock,
+        notifyHomeLoadReady,
+        setWaterActive,
+      }}
     >
       {children}
     </AmbientSoundContext.Provider>

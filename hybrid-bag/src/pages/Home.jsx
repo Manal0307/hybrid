@@ -99,7 +99,7 @@ export default function Home() {
   const [productVisible, setProductVisible] = useState(() => skipIntro);
   const [scrollHintVisible, setScrollHintVisible] = useState(false);
   const [bagSceneVisible, setBagSceneVisible] = useState(() => skipIntro);
-  const { unlock, setWaterActive } = useAmbientSound();
+  const { unlock, notifyHomeLoadReady, setWaterActive } = useAmbientSound();
   const [textRevealing, setTextRevealing] = useState(() => skipIntro);
   const [introReveal, setIntroReveal] = useState(() => (skipIntro ? 1 : 0));
   const [navVisible, setNavVisible] = useState(() => skipIntro);
@@ -112,9 +112,9 @@ export default function Home() {
 
   useEffect(() => {
     if (skipIntro || phase === "loadingExit" || phase === "scene") {
-      unlock();
+      notifyHomeLoadReady();
     }
-  }, [phase, skipIntro, unlock]);
+  }, [phase, skipIntro, notifyHomeLoadReady]);
 
   useEffect(() => {
     if (phase !== "scene") {
@@ -160,8 +160,8 @@ export default function Home() {
   }, [skipIntro]);
 
   useEffect(() => {
-    if (loadPercent >= 100) unlock();
-  }, [loadPercent, unlock]);
+    if (loadPercent >= 100) notifyHomeLoadReady();
+  }, [loadPercent, notifyHomeLoadReady]);
 
   useEffect(() => {
     if (phase !== "loading") return;

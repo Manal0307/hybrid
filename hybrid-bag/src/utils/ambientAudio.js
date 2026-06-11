@@ -69,32 +69,66 @@ function whenCanPlay(audio) {
   });
 }
 
+function isPlaying(audio) {
+  return Boolean(audio && !audio.paused && audio.currentTime > 0);
+}
+
 /** Start muted playback as soon as the file is ready (allowed without a gesture). */
 export async function primeAmbientAudio() {
   const store = getStore();
-  if (store.primed) return;
+  if (store.primed) return isPlaying(store.dreamy);
 
   const tracks = [getDreamyAudio(), getWaterAudio()];
   await Promise.all(tracks.map(whenCanPlay));
 
-  for (const audio of tracks) {
+  let dreamyStarted = false;
+  for (let i = 0; i < tracks.length; i++) {
+    const audio = tracks[i];
     audio.muted = true;
     audio.volume = 0;
     try {
       await audio.play();
+      if (i === 0) dreamyStarted = true;
     } catch {
-      // Retry once the browser allows it.
+      // Strict browsers block even muted audio — wait for a user gesture.
     }
   }
 
   store.primed = true;
+  return dreamyStarted;
+}
+
+/** Unmute tracks already playing from primeAmbientAudio (no new play() call). */
+export function unmutePrimedAmbient(dreamyVolume, waterVolume, waterActive) {
+  const store = getStore();
+  let started = false;
+
+  if (isPlaying(store.dreamy)) {
+    store.dreamy.muted = false;
+    store.dreamy.volume = dreamyVolume;
+    started = true;
+  }
+
+  if (waterActive && isPlaying(store.water)) {
+    store.water.muted = false;
+    store.water.volume = waterVolume;
+  } else if (store.water) {
+    store.water.volume = 0;
+    store.water.pause();
+  }
+
+  return started;
 }
 
 async function activateAudio(audio, volume) {
+  if (isPlaying(audio)) {
+    audio.muted = false;
+    audio.volume = volume;
+    return;
+  }
+
   audio.muted = false;
   audio.volume = volume;
-
-  if (!audio.paused && audio.currentTime > 0) return;
 
   try {
     await audio.play();
